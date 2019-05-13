@@ -21,7 +21,8 @@ int main(int argc, char* const argv[])
 
         for (const auto& filename : *opt.filenames) {
             const auto data = acmacs::seqdb::fasta_scan(filename);
-            std::cout << data << '\n';
+            // for (const auto& entry : data)
+            //     std::cout << entry << '\n';
         }
         return 0;
     }
