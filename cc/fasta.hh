@@ -21,13 +21,14 @@ namespace acmacs::seqdb
             std::string sequence;
 
             FastaEntry() = default;
-            FastaEntry(std::string_view rn, std::string seq) : raw_name(rn), sequence(seq) {}
-            void parse_raw_name();
+            FastaEntry(std::string_view rn, std::string_view seq) : raw_name(rn), sequence(seq) {}
+            void parse();
         };
 
         inline std::ostream& operator<<(std::ostream& out, const FastaEntry& entry) { return out << entry.raw_name; }
-        
-        std::vector<FastaEntry> fasta_scan(std::string_view data);
+
+        std::vector<FastaEntry> fasta_scan(std::string_view filename);
+        std::vector<FastaEntry> fasta_scan(std::string_view filename, std::string_view data);
     }
 } // namespace acmacs::seqdb
 

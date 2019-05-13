@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "acmacs-base/argv.hh"
-#include "acmacs-base/read-file.hh"
 #include "acmacs-base/stream.hh"
 #include "seqdb-3/fasta.hh"
 
@@ -21,8 +20,7 @@ int main(int argc, char* const argv[])
         Options opt(argc, argv);
 
         for (const auto& filename : *opt.filenames) {
-            const std::string file_data = acmacs::file::read(filename);
-            const auto data = acmacs::seqdb::fasta_scan(file_data);
+            const auto data = acmacs::seqdb::fasta_scan(filename);
             std::cout << data << '\n';
         }
         return 0;
