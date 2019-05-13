@@ -1,0 +1,27 @@
+#! /bin/bash
+
+TDIR=$(mktemp -d -t XXXXXXX)
+TESTDIR=$(dirname $0)
+
+# ======================================================================
+
+function on_exit
+{
+    rm -rf "$TDIR"
+}
+
+trap on_exit EXIT
+
+function failed
+{
+    echo FAILED >&2
+    exit 1
+}
+
+trap failed ERR
+
+# ======================================================================
+
+export LD_LIBRARY_PATH="${ACMACSD_ROOT}/lib:${LD_LIBRARY_PATH}"
+cd "$TESTDIR"
+echo WARNING: no tests in seqdb3
