@@ -2,7 +2,7 @@
 
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/read-file.hh"
-//#include "acmacs-base/stream.hh"
+#include "acmacs-base/enumerate.hh"
 #include "seqdb-3/fasta.hh"
 
 // ----------------------------------------------------------------------
@@ -20,8 +20,10 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
-        std::vector<acmacs::seqdb::v3::fasta::sequence_t> sequences;
-        for (const auto& filename : *opt.filenames) {
+        std::vector<std::vector<acmacs::seqdb::v3::fasta::sequence_t>> sequences_per_file(opt.filenames->size());
+#pragma omp parallel for default(shared) schedule(static, 4)
+        for (size_t f_no = 0; f_no < opt.filenames->size(); ++f_no) {
+            const auto& filename = (*opt.filenames)[f_no];
             try {
                 const std::string file_data_s = acmacs::file::read(filename);
                 const std::string_view file_data = file_data_s;
@@ -39,7 +41,7 @@ int main(int argc, char* const argv[])
                     if (seq.has_value()) {
                         acmacs::seqdb::v3::fasta::normalize_name(*seq, filename, file_input.line_no);
                         seq->sequence = acmacs::seqdb::v3::fasta::normalize_sequence(sequence_ref.sequence, filename, file_input.line_no);
-                        sequences.push_back(*seq);
+                        sequences_per_file[f_no].push_back(*seq);
                     }
                     else
                         std::cerr << "WARNING: " << filename << ':' << file_input.line_no << ": unable to parse name: " << sequence_ref.name << '\n';
@@ -49,7 +51,12 @@ int main(int argc, char* const argv[])
                 throw std::runtime_error(string::concat(filename, err.what()));
             }
         }
-        std::cout << sequences.size() << " sequences read\n";
+
+        std::vector<acmacs::seqdb::v3::fasta::sequence_t> all_sequences;
+        for (auto& per_file : sequences_per_file)
+            std::move(per_file.begin(), per_file.end(), std::back_inserter(all_sequences)); 
+        std::cout << all_sequences.size() << " sequences read\n";
+
         return 0;
     }
     catch (std::exception& err) {
