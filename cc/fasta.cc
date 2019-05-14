@@ -2,165 +2,156 @@
 #include <algorithm>
 #include <cctype>
 
-#include "acmacs-base/read-file.hh"
 #include "acmacs-base/string-split.hh"
 #include "seqdb-3/fasta.hh"
 
+static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
+
 // ----------------------------------------------------------------------
 
-bool acmacs::seqdb::v3::FastaEntry::parse()
+std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::scan_output_t> acmacs::seqdb::v3::fasta::scan(acmacs::seqdb::v3::fasta::scan_input_t input)
 {
-    if (!name_gisaid_spaces(raw_name) && !name_gisaid_underscores(raw_name)) {
-        std::cerr << "ERROR: " << source_ref << ": unrecognized name: " << raw_name << '\n';
-        return false;
+    for (; !input.done() && (*input.first == '\r' || *input.first == '\n'); ++input.first) {
+        if (*input.first == '\n')
+            ++input.line_no;
     }
-    return normalize_sequence();
+    if (input.done())
+        return {input, {}};
 
-} // acmacs::seqdb::v3::FastaEntry::parse_raw_name
+    if (*input.first != '>')
+        throw scan_error(::string::concat(':', input.line_no, ": '>' expected"));
+    const auto name_start = ++input.first;
+    for (; !input.done() && *input.first != '\n'; ++input.first);
+    if (input.done())
+        throw scan_error(::string::concat(':', input.line_no, ": unexpected end of input"));
+    ++input.line_no;
+    const std::string_view name(name_start, static_cast<size_t>(input.first - name_start));
+    const auto seq_start = ++input.first;
+
+    bool eol = false;
+    for (; !input.done(); ++input.first) {
+        switch (*input.first) {
+          case '>':
+              if (eol)
+                  return {input, {name, std::string_view(seq_start, static_cast<size_t>(input.first - seq_start))}};
+              else
+                  throw scan_error(::string::concat(':', input.line_no, ": unexpected '>'"));
+              // break;
+          case '\n':
+              ++input.line_no;
+              eol = true;
+              break;
+          default:
+              eol = false;
+              break;
+        }
+    }
+    return {input, {name, std::string_view(seq_start, static_cast<size_t>(input.first - seq_start))}};
+
+} // acmacs::seqdb::v3::fasta::scan
 
 // ----------------------------------------------------------------------
 
-bool acmacs::seqdb::v3::FastaEntry::name_gisaid_spaces(std::string_view source)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, std::string_view filename, size_t line_no)
 {
-    // name | date | passage | lab_id | lab | subtype |
-    const auto fields = acmacs::string::split(source, " | ");
+    // name | date | passage | lab_id | lab | subtype | lineage
+
+    const auto fields = acmacs::string::split(name, " | ");
     if (fields.size() < 2)
-        return false;
+        return std::nullopt;
 
-    name = ::string::upper(::string::strip(fields[0]));
-    parse_date(::string::upper(::string::strip(fields[1])));
+    acmacs::seqdb::v3::fasta::sequence_t result;
+    result.name = ::string::upper(::string::strip(fields[0]));
+    result.date = parse_date(::string::upper(::string::strip(fields[1])), filename, line_no);
+    if (fields.size() > 2)
+        result.passage = ::string::upper(::string::strip(fields[2]));
+    if (fields.size() > 3)
+        result.lab_id = ::string::upper(::string::strip(fields[3]));
+    if (fields.size() > 4)
+        result.lab = ::string::upper(::string::strip(fields[4]));
+    if (fields.size() > 5)
+        result.virus_type = ::string::upper(::string::strip(fields[5]));
+    if (fields.size() > 6)
+        result.lineage = ::string::upper(::string::strip(fields[6]));
+    return std::move(result);
 
-    return true;
-
-} // acmacs::seqdb::v3::FastaEntry::name_gisaid_spaces
+} // acmacs::seqdb::v3::fasta::name_gisaid_spaces
 
 // ----------------------------------------------------------------------
 
-bool acmacs::seqdb::v3::FastaEntry::name_gisaid_underscores(std::string_view source)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, std::string_view filename, size_t line_no)
 {
-    const auto fields = acmacs::string::split(source, "_|_");
+    const auto fields = acmacs::string::split(name, "_|_");
     if (fields.size() < 2)
-        return false;
-    std::string source_without_underscores(source);
+        return std::nullopt;
+    std::string source_without_underscores(name);
     ::string::replace(source_without_underscores, '_', ' ');
-    return name_gisaid_spaces(source_without_underscores);
+    return name_gisaid_spaces(source_without_underscores, filename, line_no);
 
-} // acmacs::seqdb::v3::FastaEntry::name_gisaid_underscores
-
-// ----------------------------------------------------------------------
-
-void acmacs::seqdb::v3::FastaEntry::parse_date(std::string_view source)
-{
-    const auto month_and_day_unknown = [source,this]() -> bool {
-        if (source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
-            return this->date.from_string(::string::concat(source.substr(0, 4), "-01-01"), acmacs::throw_on_error::no);
-        }
-        else
-            return false;
-    };
-
-    const auto day_unknown = [source,this]() -> bool {
-        if (source.substr(7) == " (DAY UNKNOWN)") {
-            return this->date.from_string(::string::concat(source.substr(0, 7), "-01"), acmacs::throw_on_error::no);
-        }
-        else
-            return false;
-    };
-
-    if (!date.from_string(source, acmacs::throw_on_error::no) && !month_and_day_unknown() && !day_unknown())
-        std::cerr << "ERROR" << source_ref << ": cannot parse date: [" << source << ']' << '\n';
-
-} // acmacs::seqdb::v3::FastaEntry::parse_date
+} // acmacs::seqdb::v3::fasta::name_gisaid_underscores
 
 // ----------------------------------------------------------------------
 
-bool acmacs::seqdb::v3::FastaEntry::normalize_sequence()
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, std::string_view /*filename*/, size_t /*line_no*/)
 {
+    acmacs::seqdb::v3::fasta::sequence_t result;
+    result.name = ::string::upper(::string::strip(name));
+    return std::move(result);
+
+} // acmacs::seqdb::v3::fasta::name_plain
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source, std::string_view filename, size_t line_no)
+{
+    // parse virus name, extract annotations
+    // adjust subtype
+    // extract reassortant from annotations
+    // parse passage
+    // parse lineage
+
+    return source;
+
+} // acmacs::seqdb::v3::fasta::normalize_name
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence, std::string_view /*filename*/, size_t /*line_no*/)
+{
+    std::string sequence(raw_sequence);
     sequence.erase(std::remove_if(std::begin(sequence), std::end(sequence), [](char c) { return c == '\n' || c == '\r'; }), sequence.end());
     std::transform(std::begin(sequence), std::end(sequence), std::begin(sequence), [](char c) { return std::toupper(c); });
-    return true;
-    
-} // acmacs::seqdb::v3::FastaEntry::normalize_sequence
+    return sequence;
+
+} // acmacs::seqdb::v3::fasta::normalize_sequence
 
 // ----------------------------------------------------------------------
 
-std::ostream& acmacs::seqdb::v3::operator<<(std::ostream& out, const acmacs::seqdb::v3::FastaEntry& entry)
+Date parse_date(std::string_view source, std::string_view filename, size_t line_no)
 {
-    return out << entry.name << ' ' << entry.date; //  << '\n' << entry.sequence << '\n';
-}
+    Date result;
 
-// ----------------------------------------------------------------------
-
-std::vector<acmacs::seqdb::v3::FastaEntry> acmacs::seqdb::v3::fasta_scan(std::string_view filename, std::string_view data)
-{
-    std::vector<acmacs::seqdb::v3::FastaEntry> result;
-    size_t line_no = 1, name_line_no = 1;
-    auto name_start = data.end(), sequence_start = data.end();
-    std::string_view name_data;
-    size_t errors = 0;
-    bool newline = true;
-    auto cp = data.begin();
-
-    const auto emit_sequence = [&]() {
-        if (sequence_start != data.end()) {
-            result.emplace_back(name_data, std::string_view(&*sequence_start, static_cast<size_t>(cp - sequence_start)), source_ref_t{filename, name_line_no});
-            name_data = std::string_view{};
+    const auto month_and_day_unknown = [&]() -> bool {
+        if (source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
+            return result.from_string(::string::concat(source.substr(0, 4), "-01-01"), acmacs::throw_on_error::no);
         }
-        else {
-            std::cerr << "ERROR: " << filename << ':' << line_no << ": empty sequence\n";
-            ++errors;
-        }
+        else
+            return false;
     };
 
-    for (; cp != data.end(); ++cp) {
-        switch (*cp) {
-            case '\n':
-                ++line_no;
-                newline = true;
-                if (name_start != data.end()) {
-                    name_data = std::string_view(&*name_start, static_cast<size_t>(cp - name_start));
-                    name_start = data.end();
-                    sequence_start = cp + 1;
-                }
-                break;
-            case '\r':
-                break;
-            case '>':
-                if (newline) {
-                    if (!name_data.empty())
-                        emit_sequence();
-                    name_start = cp + 1;
-                    name_line_no = line_no;
-                }
-                else {
-                    std::cerr << "ERROR: " << filename << ':' << line_no << ": unexpected >\n";
-                    ++errors;
-                }
-                break;
-            default:
-                newline = false;
-                break;
+    const auto day_unknown = [&]() -> bool {
+        if (source.substr(7) == " (DAY UNKNOWN)") {
+            return result.from_string(::string::concat(source.substr(0, 7), "-01"), acmacs::throw_on_error::no);
         }
-    }
-    emit_sequence();
+        else
+            return false;
+    };
 
-    if (errors)
-        throw std::runtime_error("fasta_scan: errors encountered");
-    std::for_each(std::begin(result), std::end(result), [](auto& entry) { entry.parse(); });
+    if (!result.from_string(source, acmacs::throw_on_error::no) && !month_and_day_unknown() && !day_unknown())
+        std::cerr << "ERROR: " << filename << ':' << line_no << ": cannot parse date: [" << source << ']' << '\n';
     return result;
 
-} // acmacs::seqdb::v3::fasta_scan
-
-// ----------------------------------------------------------------------
-
-std::vector<acmacs::seqdb::v3::FastaEntry> acmacs::seqdb::v3::fasta_scan(std::string_view filename)
-{
-    const std::string file_data = acmacs::file::read(filename);
-    return fasta_scan(filename, file_data);
-
-} // acmacs::seqdb::v3::fasta_scan
-
-// ----------------------------------------------------------------------
+} // acmacs::seqdb::v3::FastaEntry::parse_date
 
 
 // ----------------------------------------------------------------------
