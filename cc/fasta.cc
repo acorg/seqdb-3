@@ -120,7 +120,7 @@ acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmac
     // parse lineage
 
     if (!source.annotations.empty())
-        std::cerr << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.raw_name << "\"\n";
+        std::clog << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.raw_name << '"' << std::endl;
 
     return source;
 
