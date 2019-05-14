@@ -24,6 +24,7 @@ namespace acmacs::seqdb
                 std::string_view::const_iterator first;
                 std::string_view::const_iterator last;
                 size_t line_no = 1;
+                size_t name_line_no = 1;
                 constexpr bool done() const { return first == last; }
             };
 

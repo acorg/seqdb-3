@@ -3,6 +3,7 @@
 #include <cctype>
 
 #include "acmacs-base/string-split.hh"
+#include "acmacs-base/virus-name.hh"
 #include "seqdb-3/fasta.hh"
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
@@ -24,6 +25,7 @@ std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::sca
     for (; !input.done() && *input.first != '\n'; ++input.first);
     if (input.done())
         throw scan_error(::string::concat(':', input.line_no, ": unexpected end of input"));
+    input.name_line_no = input.line_no;
     ++input.line_no;
     const std::string_view name(name_start, static_cast<size_t>(input.first - name_start));
     const auto seq_start = ++input.first;
@@ -73,6 +75,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
         result.virus_type = ::string::upper(::string::strip(fields[5]));
     if (fields.size() > 6)
         result.lineage = ::string::upper(::string::strip(fields[6]));
+    result.raw_name = name;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_spaces
@@ -96,6 +99,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 {
     acmacs::seqdb::v3::fasta::sequence_t result;
     result.name = ::string::upper(::string::strip(name));
+    result.raw_name = result.name;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_plain
@@ -104,11 +108,19 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source, std::string_view filename, size_t line_no)
 {
-    // parse virus name, extract annotations
+    virus_name::Name name_parts(source.name);
+    name_parts.fix_extra(virus_name::Name::report_extra::no);
+    source.name = name_parts.name();
+    source.reassortant = name_parts.reassortant;
+    source.annotations = name_parts.extra;
+
     // adjust subtype
     // extract reassortant from annotations
     // parse passage
     // parse lineage
+
+    if (!source.annotations.empty())
+        std::cerr << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.raw_name << "\"\n";
 
     return source;
 
