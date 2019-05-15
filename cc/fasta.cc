@@ -3,7 +3,7 @@
 #include <cctype>
 
 #include "acmacs-base/string-split.hh"
-#include "acmacs-base/virus-name.hh"
+#include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
@@ -108,8 +108,11 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source, std::string_view filename, size_t line_no)
 {
-    virus_name::Name name_parts(source.name);
-    name_parts.fix_extra(virus_name::Name::report_extra::no);
+    // std::cout << source.name << '\n';
+    // return source;
+
+    ::virus_name::Name name_parts(source.name);
+    name_parts.fix_extra(::virus_name::Name::report_extra::no);
     source.name = name_parts.name();
     source.reassortant = name_parts.reassortant;
     source.annotations = name_parts.extra;
