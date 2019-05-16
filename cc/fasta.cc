@@ -114,7 +114,7 @@ acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmac
     ::virus_name::Name name_parts(source.name);
     name_parts.fix_extra(::virus_name::Name::report_extra::no);
     source.name = name_parts.name();
-    source.reassortant = acmacs::chart::Reassortant{name_parts.reassortant};
+    source.reassortant = acmacs::virus::Reassortant{name_parts.reassortant};
     source.annotations = name_parts.extra;
 
     // adjust subtype
