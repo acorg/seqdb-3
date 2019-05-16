@@ -4,7 +4,8 @@
 #include <optional>
 
 #include "acmacs-base/date.hh"
-#include "acmacs-chart-2/passage.hh"
+#include "acmacs-virus/passage.hh"
+#include "acmacs-virus/reassortant.hh"
 
 // ----------------------------------------------------------------------
 

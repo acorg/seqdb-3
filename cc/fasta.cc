@@ -66,7 +66,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
     result.name = ::string::upper(::string::strip(fields[0]));
     result.date = parse_date(::string::upper(::string::strip(fields[1])), filename, line_no);
     if (fields.size() > 2)
-        result.passage = ::string::upper(::string::strip(fields[2]));
+        result.passage = acmacs::chart::Passage{::string::upper(::string::strip(fields[2]))};
     if (fields.size() > 3)
         result.lab_id = ::string::upper(::string::strip(fields[3]));
     if (fields.size() > 4)
@@ -114,7 +114,7 @@ acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmac
     ::virus_name::Name name_parts(source.name);
     name_parts.fix_extra(::virus_name::Name::report_extra::no);
     source.name = name_parts.name();
-    source.reassortant = name_parts.reassortant;
+    source.reassortant = acmacs::chart::Reassortant{name_parts.reassortant};
     source.annotations = name_parts.extra;
 
     // adjust subtype
