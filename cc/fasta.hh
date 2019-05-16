@@ -41,7 +41,7 @@ namespace acmacs::seqdb
                 std::string name;
                 Date date;
                 acmacs::virus::Reassortant reassortant;
-                acmacs::chart::Passage passage;
+                acmacs::virus::Passage passage;
                 std::string annotations;
                 std::string lab_id;
                 std::string lab;
@@ -78,7 +78,7 @@ namespace acmacs::seqdb
         //     std::string raw_name;
         //     std::string name;
         //     Date date;
-        //     acmacs::chart::Passage passage;
+        //     acmacs::virus::Passage passage;
         //     std::string lab_id;
         //     std::string lab;
         //     std::string virus_type;
