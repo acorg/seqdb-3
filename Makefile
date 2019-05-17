@@ -4,7 +4,8 @@
 TARGETS = \
   $(SEQDB_LIB) \
   $(SEQDB_PY_LIB) \
-  $(DIST)/seqdb3-scan
+  $(DIST)/seqdb3-scan \
+  $(DIST)/seqdb3-names
 
 SEQDB_SOURCES = fasta.cc
 

@@ -4,8 +4,7 @@
 #include <optional>
 
 #include "acmacs-base/date.hh"
-#include "acmacs-virus/passage.hh"
-#include "acmacs-virus/reassortant.hh"
+#include "acmacs-virus/virus-name.hh"
 
 // ----------------------------------------------------------------------
 
@@ -37,8 +36,9 @@ namespace acmacs::seqdb
 
             struct sequence_t
             {
+                std::string fasta_name;
                 std::string raw_name;
-                std::string name;
+                acmacs::virus::virus_name_t name;
                 Date date;
                 acmacs::virus::Reassortant reassortant;
                 acmacs::virus::Passage passage;

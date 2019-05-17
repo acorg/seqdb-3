@@ -63,7 +63,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
         return std::nullopt;
 
     acmacs::seqdb::v3::fasta::sequence_t result;
-    result.name = ::string::upper(::string::strip(fields[0]));
+    result.raw_name = fields[0];
     result.date = parse_date(::string::upper(::string::strip(fields[1])), filename, line_no);
     if (fields.size() > 2)
         result.passage = acmacs::virus::Passage{::string::upper(::string::strip(fields[2]))};
@@ -75,7 +75,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
         result.virus_type = ::string::upper(::string::strip(fields[5]));
     if (fields.size() > 6)
         result.lineage = ::string::upper(::string::strip(fields[6]));
-    result.raw_name = name;
+    result.fasta_name = name;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_spaces
@@ -98,8 +98,8 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, std::string_view /*filename*/, size_t /*line_no*/)
 {
     acmacs::seqdb::v3::fasta::sequence_t result;
-    result.name = ::string::upper(::string::strip(name));
-    result.raw_name = result.name;
+    result.raw_name = name;
+    result.fasta_name = result.raw_name;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_plain
@@ -111,19 +111,17 @@ acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmac
     // std::cout << source.name << '\n';
     // return source;
 
-    ::virus_name::Name name_parts(source.name);
-    name_parts.fix_extra(::virus_name::Name::report_extra::no);
-    source.name = name_parts.name();
-    source.reassortant = acmacs::virus::Reassortant{name_parts.reassortant};
-    source.annotations = name_parts.extra;
+    acmacs::virus::Passage no_passage;
+    std::tie(source.name, source.reassortant, no_passage, source.annotations) = acmacs::virus::parse_name(source.raw_name);
 
     // adjust subtype
-    // extract reassortant from annotations
     // parse passage
     // parse lineage
 
+    if (!no_passage.empty())
+        std::clog << "WARNING: " << filename << ':' << line_no << ": name field contains passage: \"" << no_passage << "\" name: \"" << source.fasta_name << '"' << std::endl;
     if (!source.annotations.empty())
-        std::clog << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.raw_name << '"' << std::endl;
+        std::clog << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.fasta_name << '"' << std::endl;
 
     return source;
 
