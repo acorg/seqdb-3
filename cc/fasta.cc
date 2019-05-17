@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <regex>
 
 #include "acmacs-base/string-split.hh"
 #include "acmacs-virus/virus-name.hh"
@@ -120,9 +121,13 @@ acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmac
 
     if (!no_passage.empty())
         std::clog << "WARNING: " << filename << ':' << line_no << ": name field contains passage: \"" << no_passage << "\" name: \"" << source.fasta_name << '"' << std::endl;
-    if (!source.annotations.empty())
-        std::clog << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.fasta_name << '"' << std::endl;
-
+    if (!source.annotations.empty()) {
+#include "acmacs-base/global-constructors-push.hh"
+        static const std::regex re_valid_annotations{"^\\(([\\d\\-]+|VS\\d+)\\)"}; // Crick stuff from gisaid and HI
+#include "acmacs-base/diagnostics-pop.hh"
+        if (!std::regex_match(source.annotations, re_valid_annotations))
+            std::clog << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.fasta_name << '"' << std::endl;
+    }
     return source;
 
 } // acmacs::seqdb::v3::fasta::normalize_name
