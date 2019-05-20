@@ -58,9 +58,10 @@ namespace acmacs::seqdb
             std::optional<sequence_t> name_gisaid_underscores(std::string_view name, std::string_view filename, size_t line_no);
             std::optional<sequence_t> name_plain(std::string_view name, std::string_view filename, size_t line_no);
 
-            sequence_t& normalize_name(sequence_t& source, std::string_view filename, size_t line_no);
+            // returns error and warning messages
+            std::vector<std::string> normalize_name(sequence_t& source);
 
-            std::string normalize_sequence(std::string_view raw_sequence, std::string_view filename, size_t line_no);
+            std::string normalize_sequence(std::string_view raw_sequence);
 
         } // namespace fasta
 

@@ -40,18 +40,17 @@ int main(int argc, char* const argv[])
                         }
                         if (seq.has_value()) {
                             try {
-                                acmacs::seqdb::v3::fasta::normalize_name(*seq, filename, file_input.name_line_no);
+                                const auto messages = acmacs::seqdb::v3::fasta::normalize_name(*seq);
+                                for (const auto& msg : messages)
+                                    std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": " << msg << '\n';
                                 std::cout << seq->name << '\n';
-                            }
-                            catch (LocationNotFound& err) {
-                                std::cerr << "ERROR: " << filename << ':' << file_input.name_line_no << ": location \"" << err.what() << "\" not found, name: " << sequence_ref.name << '\n';
                             }
                             catch (std::exception& err) {
                                 std::cerr << "ERROR: " << filename << ':' << file_input.name_line_no << ": unable to parse name: " << sequence_ref.name << ": " << err.what() << '\n';
                             }
                         }
                         else
-                            std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": unable to parse name: " << sequence_ref.name << '\n';
+                            std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": unable to parse fasta name: " << sequence_ref.name << '\n';
                     }
                     catch (std::exception& err) {
                         throw std::runtime_error(string::concat(file_input.name_line_no, ": ", err.what()));

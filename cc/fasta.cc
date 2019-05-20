@@ -107,34 +107,36 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::fasta::sequence_t& acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source, std::string_view filename, size_t line_no)
+std::vector<std::string> acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
 {
     // std::cout << source.name << '\n';
     // return source;
 
-    acmacs::virus::Passage no_passage;
-    std::tie(source.name, source.reassortant, no_passage, source.annotations) = acmacs::virus::parse_name(source.raw_name);
+    auto result = acmacs::virus::parse_name(source.raw_name);
+    source.name = result.name;
+    source.reassortant = result.reassortant;
+    source.annotations = result.extra;
 
     // adjust subtype
     // parse passage
     // parse lineage
 
-    if (!no_passage.empty())
-        std::clog << "WARNING: " << filename << ':' << line_no << ": name field contains passage: \"" << no_passage << "\" name: \"" << source.fasta_name << '"' << std::endl;
+    if (!result.passage.empty())
+        result.messages.push_back(::string::concat("name field contains passage: \"", result.passage, "\" name: \"", source.fasta_name, '"'));
     if (!source.annotations.empty()) {
 #include "acmacs-base/global-constructors-push.hh"
         static const std::regex re_valid_annotations{"^\\(([\\d\\-]+|VS\\d+)\\)"}; // Crick stuff from gisaid and HI
 #include "acmacs-base/diagnostics-pop.hh"
         if (!std::regex_match(source.annotations, re_valid_annotations))
-            std::clog << "WARNING: " << filename << ':' << line_no << ": name contains annotations: \"" << source.annotations << "\" name: \"" << source.fasta_name << '"' << std::endl;
+            result.messages.push_back(::string::concat("name contains annotations: \"", source.annotations, "\" name: \"", source.fasta_name, '"'));
     }
-    return source;
+    return result.messages;
 
 } // acmacs::seqdb::v3::fasta::normalize_name
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence, std::string_view /*filename*/, size_t /*line_no*/)
+std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence)
 {
     std::string sequence(raw_sequence);
     sequence.erase(std::remove_if(std::begin(sequence), std::end(sequence), [](char c) { return c == '\n' || c == '\r'; }), sequence.end());
