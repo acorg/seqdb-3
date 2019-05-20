@@ -120,9 +120,12 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
     std::string passage_extra;
     std::tie(source.passage, passage_extra) = acmacs::virus::parse_passage(*source.passage);
     if (!passage_extra.empty()) {
-        source.annotations = ::string::join(" ", {source.annotations, passage_extra});
-        if (source.passage.empty())
+        if (source.passage.empty()) {
             result.messages.emplace_back(acmacs::virus::parse_result_t::message_t::unrecognized_passage, passage_extra);
+            source.passage = acmacs::virus::Passage{passage_extra};
+        }
+        else
+            source.annotations = ::string::join(" ", {source.annotations, passage_extra});
     }
 
     // adjust subtype
