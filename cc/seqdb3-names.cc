@@ -43,7 +43,11 @@ int main(int argc, char* const argv[])
                                 const auto messages = acmacs::seqdb::v3::fasta::normalize_name(*seq);
                                 for (const auto& msg : messages)
                                     std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": " << msg << '\n';
-                                std::cout << seq->name << '\n';
+
+                                std::cout << seq->name;
+                                if (!seq->reassortant.empty())
+                                    std::cout << " R:" << seq->reassortant;
+                                std::cout << '\n';
                             }
                             catch (std::exception& err) {
                                 std::cerr << "ERROR: " << filename << ':' << file_input.name_line_no << ": unable to parse name: " << sequence_ref.name << ": " << err.what() << '\n';
