@@ -4,6 +4,7 @@
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/enumerate.hh"
+#include "locationdb/locdb.hh"
 #include "seqdb-3/fasta.hh"
 
 // ----------------------------------------------------------------------
@@ -31,6 +32,7 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
+        get_locdb();            // load locbd outside of threading code, it is not thread safe
         std::vector<std::vector<scan_result_t>> sequences_per_file(opt.filenames->size());
 #pragma omp parallel for default(shared) schedule(static, 4)
         for (size_t f_no = 0; f_no < opt.filenames->size(); ++f_no) {
