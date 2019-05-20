@@ -121,11 +121,12 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
     // parse passage
     // parse lineage
 
-    if (!result.passage.empty())
-        result.messages.emplace_back("name field contains passage", result.passage);
+    // if (!result.passage.empty())
+    //     result.messages.emplace_back("name field contains passage", result.passage);
+
     if (!source.annotations.empty()) {
 #include "acmacs-base/global-constructors-push.hh"
-        static const std::regex re_valid_annotations{"^\\(([\\d\\-]+|VS\\d+)\\)"}; // Crick stuff from gisaid and HI
+        static const std::regex re_valid_annotations{"^\\(([\\d\\-ABC]+|VS\\d+)\\)"}; // Crick stuff from gisaid and HI
 #include "acmacs-base/diagnostics-pop.hh"
         if (!std::regex_match(source.annotations, re_valid_annotations))
             result.messages.emplace_back("name contains annotations", source.annotations);
