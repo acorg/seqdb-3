@@ -1,9 +1,20 @@
 #include <iostream>
+#include <set>
 
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/enumerate.hh"
 #include "seqdb-3/fasta.hh"
+
+// ----------------------------------------------------------------------
+
+struct scan_result_t
+{
+    acmacs::seqdb::v3::fasta::sequence_t seq;
+    std::vector<acmacs::virus::v2::parse_result_t::message_t> messages;
+    std::string_view filename;
+    size_t line_no;
+};
 
 // ----------------------------------------------------------------------
 
@@ -20,7 +31,7 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
-        std::vector<std::vector<acmacs::seqdb::v3::fasta::sequence_t>> sequences_per_file(opt.filenames->size());
+        std::vector<std::vector<scan_result_t>> sequences_per_file(opt.filenames->size());
 #pragma omp parallel for default(shared) schedule(static, 4)
         for (size_t f_no = 0; f_no < opt.filenames->size(); ++f_no) {
             const auto& filename = (*opt.filenames)[f_no];
@@ -40,10 +51,10 @@ int main(int argc, char* const argv[])
                     }
                     if (seq.has_value()) {
                         const auto messages = acmacs::seqdb::v3::fasta::normalize_name(*seq);
-                        for (const auto& msg : messages)
-                            std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": " << msg << '\n';
+                        // for (const auto& msg : messages)
+                        //     std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": " << msg << '\n';
                         seq->sequence = acmacs::seqdb::v3::fasta::normalize_sequence(sequence_ref.sequence);
-                        sequences_per_file[f_no].push_back(*seq);
+                        sequences_per_file[f_no].push_back({*seq, messages, filename, file_input.name_line_no});
                     }
                     else
                         std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": unable to parse fasta name: " << sequence_ref.name << '\n';
@@ -54,12 +65,35 @@ int main(int argc, char* const argv[])
             }
         }
 
-        std::vector<acmacs::seqdb::v3::fasta::sequence_t> all_sequences;
-        for (auto& per_file : sequences_per_file)
-            std::move(per_file.begin(), per_file.end(), std::back_inserter(all_sequences)); 
-        std::cout << all_sequences.size() << " sequences read\n";
+        int errors = 0;
+        std::set<std::string> location_not_found;
+        for (const auto& per_file : sequences_per_file) {
+            for (const auto& entry : per_file) {
+                for (const auto& msg : entry.messages) {
+                    if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
+                        location_not_found.insert(msg.value);
+                    }
+                    else {
+                        std::cerr << entry.filename << ':' << entry.line_no << ": " << msg << '\n';
+                        ++errors;
+                    }
+                }
+            }
+        }
 
-        return 0;
+        if (!location_not_found.empty()) {
+            std::cerr << "LOCATION NOT FOUND " << location_not_found.size() << '\n';
+            for (const auto& name : location_not_found)
+                std::cerr << "  " << name << '\n';
+            ++errors;
+        }
+
+        // std::vector<acmacs::seqdb::v3::fasta::sequence_t> all_sequences;
+        // for (auto& per_file : sequences_per_file)
+        //     std::move(per_file.begin(), per_file.end(), std::back_inserter(all_sequences));
+        // std::cout << all_sequences.size() << " sequences read\n";
+
+        return errors;
     }
     catch (std::exception& err) {
         std::cerr << "ERROR: " << err.what() << '\n';

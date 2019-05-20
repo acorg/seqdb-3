@@ -107,7 +107,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 // ----------------------------------------------------------------------
 
-std::vector<std::string> acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
+std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
 {
     // std::cout << source.name << '\n';
     // return source;
@@ -122,13 +122,13 @@ std::vector<std::string> acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb:
     // parse lineage
 
     if (!result.passage.empty())
-        result.messages.push_back(::string::concat("name field contains passage: \"", result.passage, "\" name: \"", source.fasta_name, '"'));
+        result.messages.emplace_back("name field contains passage", result.passage);
     if (!source.annotations.empty()) {
 #include "acmacs-base/global-constructors-push.hh"
         static const std::regex re_valid_annotations{"^\\(([\\d\\-]+|VS\\d+)\\)"}; // Crick stuff from gisaid and HI
 #include "acmacs-base/diagnostics-pop.hh"
         if (!std::regex_match(source.annotations, re_valid_annotations))
-            result.messages.push_back(::string::concat("name contains annotations: \"", source.annotations, "\" name: \"", source.fasta_name, '"'));
+            result.messages.emplace_back("name contains annotations", source.annotations);
     }
     return result.messages;
 
