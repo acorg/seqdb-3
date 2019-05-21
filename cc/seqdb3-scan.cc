@@ -1,5 +1,4 @@
 #include <iostream>
-#include <set>
 #include <map>
 
 #include "acmacs-base/argv.hh"
@@ -71,7 +70,7 @@ int main(int argc, char* const argv[])
         }
 
         int errors = 0;
-        std::set<std::string> location_not_found;
+        std::map<std::string, size_t> location_not_found;
         std::map<std::string, size_t> unrecognized_passage;
         for (const auto& per_file : sequences_per_file) {
             for (const auto& entry : per_file) {
@@ -79,7 +78,8 @@ int main(int argc, char* const argv[])
                     if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
                         // if (msg.value == "CHU")
                         //     std::cerr << entry.filename << ':' << entry.line_no << ": " << msg << '\n';
-                        location_not_found.insert(msg.value);
+                        if (auto [iter, inserted] = location_not_found.emplace(msg.value, 1UL); !inserted)
+                            ++iter->second;
                     }
                     else if (msg == acmacs::virus::parse_result_t::message_t::unrecognized_passage) {
                         if (auto [iter, inserted] = unrecognized_passage.emplace(msg.value, 1UL); !inserted)
@@ -102,8 +102,8 @@ int main(int argc, char* const argv[])
 
         if (!location_not_found.empty()) {
             std::cerr << "LOCATION NOT FOUND " << location_not_found.size() << '\n';
-            for (const auto& name : location_not_found)
-                std::cerr << "  " << name << '\n';
+            for (const auto& entry : location_not_found)
+                std::cerr << "  " << std::setw(3) << std::right << entry.second << ' ' << entry.first << '\n';
             ++errors;
         }
 
