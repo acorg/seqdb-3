@@ -136,7 +136,7 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
 
     if (!source.annotations.empty()) {
 #include "acmacs-base/global-constructors-push.hh"
-        static const std::regex re_valid_annotations{"^(\\(([\\d\\-ABC]+|VS\\d+)\\)|[BCD]-?\\d\\.\\d|CDC\\d+A)"}; // Crick stuff from gisaid and HI, C1.4, CDC19A
+        static const std::regex re_valid_annotations{"^(\\((?:[\\d\\-ABC]+|VS\\d+|SU\\d+|\\d\\d/\\d\\d\\d)\\)|[BCD]-?\\d\\.\\d|CDC\\d+A)"}; // Crick stuff from gisaid and HI, C1.4, CDC19A, NIBSC
 #include "acmacs-base/diagnostics-pop.hh"
         if (!std::regex_match(source.annotations, re_valid_annotations))
             result.messages.emplace_back("name contains annotations", source.annotations);
