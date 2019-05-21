@@ -34,10 +34,10 @@ int main(int argc, char* const argv[])
         Options opt(argc, argv);
 
         get_locdb();            // load locbd outside of threading code, it is not thread safe
-        // acmacs::virus::parse_passage("E1"); // init parse_passage static vars, to avoid conflict in multithreading
+        acmacs::virus::parse_passage("E1"); // init parse_passage static vars, to avoid conflict in multithreading
 
         std::vector<std::vector<scan_result_t>> sequences_per_file(opt.filenames->size());
-// #pragma omp parallel for default(shared) schedule(static, 4)
+#pragma omp parallel for default(shared) schedule(static, 4)
         for (size_t f_no = 0; f_no < opt.filenames->size(); ++f_no) {
             const auto& filename = (*opt.filenames)[f_no];
             try {
@@ -66,7 +66,7 @@ int main(int argc, char* const argv[])
                 }
             }
             catch (std::exception& err) {
-                throw std::runtime_error(string::concat(filename, err.what()));
+                throw std::runtime_error(string::concat(filename, ": ", err.what()));
             }
         }
 
