@@ -76,8 +76,8 @@ int main(int argc, char* const argv[])
             for (const auto& entry : per_file) {
                 for (const auto& msg : entry.messages) {
                     if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
-                        // if (msg.value == "CHU")
-                        //     std::cerr << entry.filename << ':' << entry.line_no << ": " << msg << '\n';
+                        if (msg.value == "CRIE")
+                            std::cerr << entry.filename << ':' << entry.line_no << ": " << msg << '\n';
                         if (auto [iter, inserted] = location_not_found.emplace(msg.value, 1UL); !inserted)
                             ++iter->second;
                     }
