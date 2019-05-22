@@ -118,7 +118,7 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
     source.annotations = result.extra;
 
     std::string passage_extra;
-    std::tie(source.passage, passage_extra) = acmacs::virus::parse_passage(*source.passage);
+    std::tie(source.passage, passage_extra) = acmacs::virus::parse_passage(*source.passage, acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
         if (source.passage.empty()) {
             result.messages.emplace_back(acmacs::virus::parse_result_t::message_t::unrecognized_passage, passage_extra);
