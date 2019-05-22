@@ -120,6 +120,9 @@ static const std::regex re_valid_annotations{
         "|CDC\\d+A"
         ")"
 }; // Crick stuff from gisaid and HI, C1.4, CDC19A, NIBSC
+
+static const std::regex re_empty_annotations_if_just{"^[\\(\\)_\\-\\s,\\.]+$"};
+
 #include "acmacs-base/diagnostics-pop.hh"
 
 std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
@@ -149,9 +152,12 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
     // if (!result.passage.empty())
     //     result.messages.emplace_back("name field contains passage", result.passage);
 
+    if (!source.annotations.empty() && std::regex_match(source.annotations, re_empty_annotations_if_just))
+        source.annotations.clear();
+    
     if (!source.annotations.empty()) {
         if (!std::regex_match(source.annotations, re_valid_annotations))
-            result.messages.emplace_back("name contains annotations", source.annotations);
+            result.messages.emplace_back("fasta name contains annotations", source.annotations);
     }
     return result.messages;
 
