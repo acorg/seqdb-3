@@ -115,6 +115,7 @@ static const std::regex re_valid_annotations{
             "|SU\\d+"
             "|\\d\\d/\\d\\d\\d"
             "|CNIC-\\w+"
+            "|TR-\\d+"
             ")\\)"
         "|[BCD]-?\\d\\.\\d"
         "|CDC\\d+A"
@@ -154,7 +155,7 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
 
     if (!source.annotations.empty() && std::regex_match(source.annotations, re_empty_annotations_if_just))
         source.annotations.clear();
-    
+
     if (!source.annotations.empty()) {
         if (!std::regex_match(source.annotations, re_valid_annotations))
             result.messages.emplace_back("fasta name contains annotations", source.annotations);
