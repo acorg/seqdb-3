@@ -10,6 +10,8 @@
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
+static std::string_view parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
+static std::string_view parse_lineage(std::string_view source, std::string_view filename, size_t line_no);
 
 // ----------------------------------------------------------------------
 
@@ -57,7 +59,7 @@ std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::sca
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
 {
     // name | date | passage | lab_id | lab | subtype | lineage
 
@@ -75,9 +77,9 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
     if (fields.size() > 4)
         result.lab = parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no);
     if (fields.size() > 5)
-        result.virus_type = ::string::upper(::string::strip(fields[5]));
+        result.a_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
     if (fields.size() > 6)
-        result.lineage = ::string::upper(::string::strip(fields[6]));
+        result.lineage = parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no);
     result.fasta_name = name;
     return std::move(result);
 
@@ -85,25 +87,27 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no)
 {
     const auto fields = acmacs::string::split(name, "_|_");
     if (fields.size() < 2)
         return std::nullopt;
     std::string source_without_underscores(name);
     ::string::replace(source_without_underscores, '_', ' ');
-    return name_gisaid_spaces(source_without_underscores, lab_hint, filename, line_no);
+    return name_gisaid_spaces(source_without_underscores, hints, filename, line_no);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_underscores
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, std::string_view lab_hint, std::string_view /*filename*/, size_t /*line_no*/)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, const hint_t& hints, std::string_view /*filename*/, size_t /*line_no*/)
 {
     acmacs::seqdb::v3::fasta::sequence_t result;
     result.raw_name = name;
     result.fasta_name = result.raw_name;
-    result.lab = lab_hint;
+    result.lab = hints.lab;
+    result.a_subtype = hints.subtype;
+    result.lineage = hints.lineage;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_plain
@@ -150,7 +154,6 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
             source.annotations = ::string::join(" ", {source.annotations, passage_extra});
     }
 
-    // adjust subtype
     // adjust subtype
     // parse lineage
 
@@ -228,6 +231,24 @@ std::string_view parse_lab(std::string_view source, std::string_view /*filename*
     return source;
 
 } // parse_lab
+
+// ----------------------------------------------------------------------
+
+std::string_view parse_subtype(std::string_view source, std::string_view /*filename*/, size_t /*line_no*/)
+{
+    if (source.size() >= 8 && source[0] == 'A')
+        return source.substr(4);
+    return {};
+
+} // parse_subtype
+
+// ----------------------------------------------------------------------
+
+std::string_view parse_lineage(std::string_view source, std::string_view /*filename*/, size_t /*line_no*/)
+{
+    return source;
+
+} // parse_lineage
 
 // ----------------------------------------------------------------------
 

@@ -7,6 +7,7 @@
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/enumerate.hh"
+#include "acmacs-base/string-split.hh"
 #include "locationdb/locdb.hh"
 #include "seqdb-3/fasta.hh"
 
@@ -32,10 +33,23 @@ struct Options : public argv
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
 
-static inline std::string find_lab_hint(std::string_view filename)
+static inline acmacs::seqdb::fasta::hint_t find_hints(std::string_view filename)
 {
-    const auto stem = fs::path{filename}.stem().string();
-    return ::string::upper(stem.substr(0, stem.find('-')));
+    const auto stem = fs::path{filename}.stem().stem().string();
+    const auto fields = acmacs::string::split(stem, "-");
+    acmacs::seqdb::fasta::hint_t hints;
+    hints.lab = ::string::upper(fields[0]);
+    if (fields[1] == "h1pdm" || fields[1] == "h1")
+        hints.subtype = "H1N1";
+    else if (fields[1] == "h3")
+        hints.subtype = "H3N2";
+    else if (fields[1] == "b" && fields[0] == "niid" && fields.size() == 4) {
+        if (fields[3] == "vic")
+            hints.lineage = "VICTOIRA";
+        else if (fields[3] == "yam")
+            hints.lineage = "YAMAGATA";
+    }
+    return hints;
 }
 
 static inline bool whocc_lab(std::string_view lab)
@@ -54,7 +68,7 @@ int main(int argc, char* const argv[])
 #pragma omp parallel for default(shared) schedule(static, 4)
         for (size_t f_no = 0; f_no < opt.filenames->size(); ++f_no) {
             const auto& filename = (*opt.filenames)[f_no];
-            const auto lab_hint = find_lab_hint(filename);
+            const auto hints = find_hints(filename);
             try {
                 const std::string file_data_s = acmacs::file::read(filename);
                 const std::string_view file_data = file_data_s;
@@ -65,7 +79,7 @@ int main(int argc, char* const argv[])
 
                     std::optional<acmacs::seqdb::v3::fasta::sequence_t> seq;
                     for (auto parser : {&acmacs::seqdb::v3::fasta::name_gisaid_spaces, &acmacs::seqdb::v3::fasta::name_gisaid_underscores, &acmacs::seqdb::v3::fasta::name_plain}) {
-                        seq = (*parser)(sequence_ref.name, lab_hint, filename, file_input.name_line_no);
+                        seq = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
                         if (seq.has_value())
                             break;
                     }

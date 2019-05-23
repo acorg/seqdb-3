@@ -45,18 +45,25 @@ namespace acmacs::seqdb
                 std::string annotations;
                 std::string lab_id;
                 std::string lab;
-                std::string virus_type;
+                std::string a_subtype;
                 std::string lineage;
                 std::string sequence;
+            };
+
+            struct hint_t
+            {
+                std::string lab;
+                std::string subtype;
+                std::string lineage;
             };
 
             // ----------------------------------------------------------------------
 
             std::tuple<scan_input_t, scan_output_t> scan(scan_input_t input);
 
-            std::optional<sequence_t> name_gisaid_spaces(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no);
-            std::optional<sequence_t> name_gisaid_underscores(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no);
-            std::optional<sequence_t> name_plain(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no);
+            std::optional<sequence_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
+            std::optional<sequence_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
+            std::optional<sequence_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
             // returns error and warning messages
             std::vector<acmacs::virus::v2::parse_result_t::message_t> normalize_name(sequence_t& source);
