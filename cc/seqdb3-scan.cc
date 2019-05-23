@@ -27,6 +27,8 @@ struct Options : public argv
 {
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
+    option<bool> all_lab_messages{*this, "all-lab-messages", desc{"otherwise show messages for WHO CCs only"}};
+
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
 
@@ -36,12 +38,17 @@ static inline std::string find_lab_hint(std::string_view filename)
     return ::string::upper(stem.substr(0, stem.find('-')));
 }
 
+static inline bool whocc_lab(std::string_view lab)
+{
+    return lab == "CDC" || lab == "Crick" || lab == "NIID" || lab == "VIDRL"; // || lab == "CNIC"
+}
+
 int main(int argc, char* const argv[])
 {
     try {
         Options opt(argc, argv);
 
-        get_locdb();            // load locbd outside of threading code, it is not thread safe
+        get_locdb(); // load locbd outside of threading code, it is not thread safe
 
         std::vector<std::vector<scan_result_t>> sequences_per_file(opt.filenames->size());
 #pragma omp parallel for default(shared) schedule(static, 4)
@@ -88,20 +95,22 @@ int main(int argc, char* const argv[])
                     if (auto [iter, inserted] = labs.emplace(entry.seq.lab, 1UL); !inserted)
                         ++iter->second;
                 }
-                for (const auto& msg : entry.messages) {
-                    if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
-                        if (msg.value == "CRIE")
-                            fmt::print(stderr, "{}:{}: {}\n", entry.filename, entry.line_no, msg);
-                        if (auto [iter, inserted] = location_not_found.emplace(msg.value, 1UL); !inserted)
-                            ++iter->second;
-                    }
-                    else if (msg == acmacs::virus::parse_result_t::message_t::unrecognized_passage) {
-                        if (auto [iter, inserted] = unrecognized_passage.emplace(msg.value, 1UL); !inserted)
-                            ++iter->second;
-                    }
-                    else {
-                        fmt::print(stderr, "{}:{}: {} --> {}\n", entry.filename, entry.line_no, msg, *entry.seq.name);
-                        ++errors;
+                if (opt.all_lab_messages || whocc_lab(entry.seq.lab)) {
+                    for (const auto& msg : entry.messages) {
+                        if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
+                            if (msg.value == "CRIE")
+                                fmt::print(stderr, "{}:{}: [CRIE] {}\n", entry.filename, entry.line_no, msg);
+                            if (auto [iter, inserted] = location_not_found.emplace(msg.value, 1UL); !inserted)
+                                ++iter->second;
+                        }
+                        else if (msg == acmacs::virus::parse_result_t::message_t::unrecognized_passage) {
+                            if (auto [iter, inserted] = unrecognized_passage.emplace(msg.value, 1UL); !inserted)
+                                ++iter->second;
+                        }
+                        else {
+                            fmt::print(stderr, "{}:{}: {} --> {}\n", entry.filename, entry.line_no, msg, *entry.seq.name);
+                            ++errors;
+                        }
                     }
                 }
             }
@@ -122,7 +131,7 @@ int main(int argc, char* const argv[])
         }
 
         fmt::print(stderr, "\nLABS {}\n", labs.size());
-        std::vector<std::pair<std::string,size_t>> labs_entries(std::begin(labs), std::end(labs));
+        std::vector<std::pair<std::string, size_t>> labs_entries(std::begin(labs), std::end(labs));
         std::sort(labs_entries.begin(), labs_entries.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
         for (const auto& entry : labs_entries)
             fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
