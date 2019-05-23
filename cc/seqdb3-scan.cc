@@ -4,6 +4,7 @@
 
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/filesystem.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/enumerate.hh"
 #include "locationdb/locdb.hh"
@@ -29,6 +30,12 @@ struct Options : public argv
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
 
+static inline std::string find_lab_hint(std::string_view filename)
+{
+    const auto stem = fs::path{filename}.stem().string();
+    return ::string::upper(stem.substr(0, stem.find('-')));
+}
+
 int main(int argc, char* const argv[])
 {
     try {
@@ -40,6 +47,7 @@ int main(int argc, char* const argv[])
 #pragma omp parallel for default(shared) schedule(static, 4)
         for (size_t f_no = 0; f_no < opt.filenames->size(); ++f_no) {
             const auto& filename = (*opt.filenames)[f_no];
+            const auto lab_hint = find_lab_hint(filename);
             try {
                 const std::string file_data_s = acmacs::file::read(filename);
                 const std::string_view file_data = file_data_s;
@@ -50,7 +58,7 @@ int main(int argc, char* const argv[])
 
                     std::optional<acmacs::seqdb::v3::fasta::sequence_t> seq;
                     for (auto parser : {&acmacs::seqdb::v3::fasta::name_gisaid_spaces, &acmacs::seqdb::v3::fasta::name_gisaid_underscores, &acmacs::seqdb::v3::fasta::name_plain}) {
-                        seq = (*parser)(sequence_ref.name, filename, file_input.name_line_no);
+                        seq = (*parser)(sequence_ref.name, lab_hint, filename, file_input.name_line_no);
                         if (seq.has_value())
                             break;
                     }

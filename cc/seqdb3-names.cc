@@ -34,7 +34,7 @@ int main(int argc, char* const argv[])
 
                         std::optional<acmacs::seqdb::v3::fasta::sequence_t> seq;
                         for (auto parser : {&acmacs::seqdb::v3::fasta::name_gisaid_spaces, &acmacs::seqdb::v3::fasta::name_gisaid_underscores, &acmacs::seqdb::v3::fasta::name_plain}) {
-                            seq = (*parser)(sequence_ref.name, filename, file_input.name_line_no);
+                            seq = (*parser)(sequence_ref.name, "", filename, file_input.name_line_no);
                             if (seq.has_value())
                                 break;
                         }

@@ -57,7 +57,7 @@ std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::sca
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no)
 {
     // name | date | passage | lab_id | lab | subtype | lineage
 
@@ -85,24 +85,25 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, std::string_view lab_hint, std::string_view filename, size_t line_no)
 {
     const auto fields = acmacs::string::split(name, "_|_");
     if (fields.size() < 2)
         return std::nullopt;
     std::string source_without_underscores(name);
     ::string::replace(source_without_underscores, '_', ' ');
-    return name_gisaid_spaces(source_without_underscores, filename, line_no);
+    return name_gisaid_spaces(source_without_underscores, lab_hint, filename, line_no);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_underscores
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, std::string_view /*filename*/, size_t /*line_no*/)
+std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, std::string_view lab_hint, std::string_view /*filename*/, size_t /*line_no*/)
 {
     acmacs::seqdb::v3::fasta::sequence_t result;
     result.raw_name = name;
     result.fasta_name = result.raw_name;
+    result.lab = lab_hint;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_plain
