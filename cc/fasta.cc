@@ -182,7 +182,7 @@ Date parse_date(std::string_view source, std::string_view filename, size_t line_
     Date result;
 
     const auto month_and_day_unknown = [&]() -> bool {
-        if (source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
+        if (source.size() > 25 && source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
             return result.from_string(::string::concat(source.substr(0, 4), "-01-01"), acmacs::throw_on_error::no);
         }
         else
@@ -190,14 +190,14 @@ Date parse_date(std::string_view source, std::string_view filename, size_t line_
     };
 
     const auto day_unknown = [&]() -> bool {
-        if (source.substr(7) == " (DAY UNKNOWN)") {
+        if (source.size() > 15 && source.substr(7) == " (DAY UNKNOWN)") {
             return result.from_string(::string::concat(source.substr(0, 7), "-01"), acmacs::throw_on_error::no);
         }
         else
             return false;
     };
 
-    if (!result.from_string(source, acmacs::throw_on_error::no) && !month_and_day_unknown() && !day_unknown())
+    if (!source.empty() && !result.from_string(source, acmacs::throw_on_error::no) && !month_and_day_unknown() && !day_unknown())
         std::cerr << "ERROR: " << filename << ':' << line_no << ": cannot parse date: [" << source << ']' << '\n';
     return result;
 
