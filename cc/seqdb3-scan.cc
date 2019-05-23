@@ -29,6 +29,7 @@ struct Options : public argv
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
     option<bool> all_lab_messages{*this, "all-lab-messages", desc{"otherwise show messages for WHO CCs only"}};
+    option<bool> all_subtypes_messages{*this, "all-subtypes-messages", desc{"otherwise show messages for H1, H3, B only"}};
 
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
@@ -55,6 +56,11 @@ static inline acmacs::seqdb::fasta::hint_t find_hints(std::string_view filename)
 static inline bool whocc_lab(std::string_view lab)
 {
     return lab == "CDC" || lab == "Crick" || lab == "NIID" || lab == "VIDRL"; // || lab == "CNIC"
+}
+
+static inline bool our_subtype(std::string_view subtype)
+{
+    return subtype.empty() || subtype == "H1N1" || subtype == "H3N2";
 }
 
 int main(int argc, char* const argv[])
@@ -109,7 +115,7 @@ int main(int argc, char* const argv[])
                     if (auto [iter, inserted] = labs.emplace(entry.seq.lab, 1UL); !inserted)
                         ++iter->second;
                 }
-                if (opt.all_lab_messages || whocc_lab(entry.seq.lab)) {
+                if ((opt.all_lab_messages || whocc_lab(entry.seq.lab)) && (opt.all_subtypes_messages || our_subtype(entry.seq.a_subtype))) {
                     for (const auto& msg : entry.messages) {
                         if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
                             if (msg.value == "CRIE")
