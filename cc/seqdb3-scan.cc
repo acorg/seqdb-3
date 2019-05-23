@@ -1,7 +1,9 @@
-#include <iostream>
 #include <map>
+#include <vector>
+#include <algorithm>
 
 #include "acmacs-base/argv.hh"
+#include "acmacs-base/fmt.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/enumerate.hh"
 #include "locationdb/locdb.hh"
@@ -60,7 +62,7 @@ int main(int argc, char* const argv[])
                         sequences_per_file[f_no].push_back({*seq, messages, filename, file_input.name_line_no});
                     }
                     else
-                        std::cerr << "WARNING: " << filename << ':' << file_input.name_line_no << ": unable to parse fasta name: " << sequence_ref.name << '\n';
+                        fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
                 }
             }
             catch (std::exception& err) {
@@ -71,12 +73,17 @@ int main(int argc, char* const argv[])
         int errors = 0;
         std::map<std::string, size_t> location_not_found;
         std::map<std::string, size_t> unrecognized_passage;
+        std::map<std::string, size_t> labs;
         for (const auto& per_file : sequences_per_file) {
             for (const auto& entry : per_file) {
+                if (!entry.seq.lab.empty()) {
+                    if (auto [iter, inserted] = labs.emplace(entry.seq.lab, 1UL); !inserted)
+                        ++iter->second;
+                }
                 for (const auto& msg : entry.messages) {
                     if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
                         if (msg.value == "CRIE")
-                            std::cerr << entry.filename << ':' << entry.line_no << ": " << msg << '\n';
+                            fmt::print(stderr, "{}:{}: {}\n", entry.filename, entry.line_no, msg);
                         if (auto [iter, inserted] = location_not_found.emplace(msg.value, 1UL); !inserted)
                             ++iter->second;
                     }
@@ -86,8 +93,6 @@ int main(int argc, char* const argv[])
                     }
                     else {
                         fmt::print(stderr, "{}:{}: {} --> {}\n", entry.filename, entry.line_no, msg, *entry.seq.name);
-                        // std::cerr << entry.filename << ':' << entry.line_no << ": " << msg // << '\n'
-                        //           << " --> " << entry.seq.name << '\n';
                         ++errors;
                     }
                 }
@@ -95,18 +100,24 @@ int main(int argc, char* const argv[])
         }
 
         if (!unrecognized_passage.empty()) {
-            std::cerr << "Unrecognized PASSAGE " << unrecognized_passage.size() << '\n';
+            fmt::print(stderr, "Unrecognized PASSAGE {}\n", unrecognized_passage.size());
             for (const auto& entry : unrecognized_passage)
-                std::cerr << "  " << std::setw(3) << std::right << entry.second << ' ' << entry.first << '\n';
+                fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
             ++errors;
         }
 
         if (!location_not_found.empty()) {
-            std::cerr << "LOCATION NOT FOUND " << location_not_found.size() << '\n';
+            fmt::print(stderr, "LOCATION NOT FOUND {}\n", location_not_found.size());
             for (const auto& entry : location_not_found)
-                std::cerr << "  " << std::setw(3) << std::right << entry.second << ' ' << entry.first << '\n';
+                fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
             ++errors;
         }
+
+        fmt::print(stderr, "\nLABS {}\n", labs.size());
+        std::vector<std::pair<std::string,size_t>> labs_entries(std::begin(labs), std::end(labs));
+        std::sort(labs_entries.begin(), labs_entries.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
+        for (const auto& entry : labs_entries)
+            fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
 
         // std::vector<acmacs::seqdb::v3::fasta::sequence_t> all_sequences;
         // for (auto& per_file : sequences_per_file)

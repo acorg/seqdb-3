@@ -1,13 +1,15 @@
-#include <iostream>
 #include <algorithm>
 #include <cctype>
 #include <regex>
+#include <map>
 
+#include "acmacs-base/fmt.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
+static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
 
 // ----------------------------------------------------------------------
 
@@ -71,7 +73,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
     if (fields.size() > 3)
         result.lab_id = ::string::upper(::string::strip(fields[3]));
     if (fields.size() > 4)
-        result.lab = ::string::upper(::string::strip(fields[4]));
+        result.lab = parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no);
     if (fields.size() > 5)
         result.virus_type = ::string::upper(::string::strip(fields[5]));
     if (fields.size() > 6)
@@ -148,6 +150,7 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
     }
 
     // adjust subtype
+    // adjust subtype
     // parse lineage
 
     // if (!result.passage.empty())
@@ -198,10 +201,34 @@ Date parse_date(std::string_view source, std::string_view filename, size_t line_
     };
 
     if (!source.empty() && !result.from_string(source, acmacs::throw_on_error::no) && !month_and_day_unknown() && !day_unknown())
-        std::cerr << "ERROR: " << filename << ':' << line_no << ": cannot parse date: [" << source << ']' << '\n';
+        fmt::print(stderr, "ERROR: {}:{}: cannot parse date: [{}]\n", filename, line_no, source);
     return result;
 
 } // acmacs::seqdb::v3::FastaEntry::parse_date
+
+// ----------------------------------------------------------------------
+
+#include "acmacs-base/global-constructors-push.hh"
+static const std::map<std::string_view, std::string_view> sLabs{
+    {"CENTERS FOR DISEASE CONTROL AND PREVENTION", "CDC"},
+    {"CRICK WORLDWIDE INFLUENZA CENTRE", "Crick"},
+    {"NATIONAL INSTITUTE FOR MEDICAL RESEARCH", "Crick"},
+    {"NATIONAL INSTITUTE OF INFECTIOUS DISEASES (NIID)", "NIID"},
+    {"WHO COLLABORATING CENTRE FOR REFERENCE AND RESEARCH ON INFLUENZA", "VIDRL"},
+    {"ERASMUS MEDICAL CENTER", "EMC"},
+    {"WHO CHINESE NATIONAL INFLUENZA CENTER", "CNIC"},
+};
+#include "acmacs-base/diagnostics-pop.hh"
+
+std::string_view parse_lab(std::string_view source, std::string_view /*filename*/, size_t /*line_no*/)
+{
+    if (const auto found = sLabs.find(source); found != sLabs.end())
+        return found->second;
+    return source;
+
+} // parse_lab
+
+// ----------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------
