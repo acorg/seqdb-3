@@ -85,8 +85,9 @@ int main(int argc, char* const argv[])
                             ++iter->second;
                     }
                     else {
-                        std::cerr << entry.filename << ':' << entry.line_no << ": " << msg // << '\n'
-                                  << " --> " << entry.seq.name << '\n';
+                        fmt::print(stderr, "{}:{}: {} --> {}\n", entry.filename, entry.line_no, msg, *entry.seq.name);
+                        // std::cerr << entry.filename << ':' << entry.line_no << ": " << msg // << '\n'
+                        //           << " --> " << entry.seq.name << '\n';
                         ++errors;
                     }
                 }
