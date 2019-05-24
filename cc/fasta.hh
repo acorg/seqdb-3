@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <optional>
+#include <vector>
 
 #include "acmacs-base/date.hh"
 #include "acmacs-virus/virus-name.hh"
@@ -17,6 +18,11 @@ namespace acmacs::seqdb
             struct scan_error : public std::runtime_error
             {
                 using std::runtime_error::runtime_error;
+            };
+
+            struct scan_options_t
+            {
+                size_t remove_too_short_nucs{0}; // remove nuc sequences shorter than this (if value 1000, sequence of length 1000 is kept
             };
 
             struct scan_input_t
@@ -50,6 +56,14 @@ namespace acmacs::seqdb
                 std::string sequence;
             };
 
+            struct scan_result_t
+            {
+                sequence_t seq;
+                std::vector<acmacs::virus::v2::parse_result_t::message_t> messages;
+                std::string filename;
+                size_t line_no; // of the sequence name in filename
+            };
+
             struct hint_t
             {
                 std::string lab;
@@ -58,6 +72,11 @@ namespace acmacs::seqdb
             };
 
             // ----------------------------------------------------------------------
+
+            std::vector<scan_result_t> scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
+
+            // ----------------------------------------------------------------------
+            // details
 
             std::tuple<scan_input_t, scan_output_t> scan(scan_input_t input);
 
@@ -68,47 +87,10 @@ namespace acmacs::seqdb
             // returns error and warning messages
             std::vector<acmacs::virus::v2::parse_result_t::message_t> normalize_name(sequence_t& source);
 
-            std::string normalize_sequence(std::string_view raw_sequence);
+            std::string normalize_sequence(std::string_view raw_sequence, const scan_options_t& options);
 
         } // namespace fasta
 
-        // struct source_ref_t
-        // {
-        //     std::string_view filename;
-        //     size_t line_no = 0;
-        // };
-
-        // inline std::ostream& operator<<(std::ostream& out, const source_ref_t& source_ref) { return out << source_ref.filename << ':' << source_ref.line_no; }
-
-        // class FastaEntry
-        // {
-        //   public:
-        //     std::string raw_name;
-        //     std::string name;
-        //     Date date;
-        //     acmacs::virus::Passage passage;
-        //     std::string lab_id;
-        //     std::string lab;
-        //     std::string virus_type;
-        //     std::string sequence;
-        //     source_ref_t source_ref;
-
-        //     FastaEntry() = default;
-        //     FastaEntry(std::string_view rn, std::string_view seq, source_ref_t a_source_ref) : raw_name(rn), sequence(seq), source_ref(a_source_ref) {}
-
-        //   private:
-        //     bool normalize_sequence();
-        //     bool parse();
-        //     bool name_gisaid_spaces(std::string_view source);
-        //     bool name_gisaid_underscores(std::string_view source);
-        //     void parse_date(std::string_view source);
-        //     friend std::vector<FastaEntry> fasta_scan(std::string_view filename, std::string_view data);
-        // };
-
-        // std::ostream& operator<<(std::ostream& out, const FastaEntry& entry);
-
-        // std::vector<FastaEntry> fasta_scan(std::string_view filename);
-        // std::vector<FastaEntry> fasta_scan(std::string_view filename, std::string_view data);
     } // namespace v3
 } // namespace acmacs::seqdb
 

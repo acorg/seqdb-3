@@ -5,6 +5,8 @@
 
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/string-split.hh"
+#include "acmacs-base/read-file.hh"
+#include "locationdb/locdb.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
 
@@ -12,10 +14,61 @@ static Date parse_date(std::string_view source, std::string_view filename, size_
 static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_lineage(std::string_view source, std::string_view filename, size_t line_no);
+static acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename);
 
 // ----------------------------------------------------------------------
 
-std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::scan_output_t> acmacs::seqdb::v3::fasta::scan(acmacs::seqdb::v3::fasta::scan_input_t input)
+std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::scan(const std::vector<std::string_view>& filenames, const scan_options_t& options)
+{
+    using namespace fmt::literals;
+
+    get_locdb(); // load locbd outside of threading code, it is not thread safe
+
+    std::vector<std::vector<scan_result_t>> sequences_per_file(filenames.size());
+#pragma omp parallel for default(shared) schedule(static, 4)
+    for (size_t f_no = 0; f_no < filenames.size(); ++f_no) {
+        const auto& filename = filenames[f_no];
+        const auto hints = find_hints(filename);
+        try {
+            const std::string file_data_s = acmacs::file::read(filename);
+            const std::string_view file_data = file_data_s;
+            scan_input_t file_input{std::begin(file_data), std::end(file_data)};
+            while (!file_input.done()) {
+                scan_output_t sequence_ref;
+                std::tie(file_input, sequence_ref) = scan(file_input);
+
+                std::optional<sequence_t> seq;
+                for (auto parser : {&name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
+                    seq = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
+                    if (seq.has_value())
+                        break;
+                }
+                if (seq.has_value()) {
+                    const auto messages = normalize_name(*seq);
+                    seq->sequence = normalize_sequence(sequence_ref.sequence, options);
+                    if (!seq->sequence.empty())
+                        sequences_per_file[f_no].push_back({*seq, messages, std::string(filename), file_input.name_line_no});
+                }
+                else
+                    fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
+            }
+        }
+        catch (std::exception& err) {
+            throw scan_error("{}: {}"_format(filename, err));
+        }
+    }
+
+    std::vector<scan_result_t> all_sequences;
+    for (auto& per_file : sequences_per_file)
+        std::move(per_file.begin(), per_file.end(), std::back_inserter(all_sequences));
+
+    return all_sequences;
+
+} // acmacs::seqdb::v3::fasta::scan
+
+// ----------------------------------------------------------------------
+
+std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::scan_output_t> acmacs::seqdb::v3::fasta::scan(scan_input_t input)
 {
     for (; !input.done() && (*input.first == '\r' || *input.first == '\n'); ++input.first) {
         if (*input.first == '\n')
@@ -173,10 +226,11 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence)
+std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence, const scan_options_t& options)
 {
     std::string sequence(raw_sequence);
     sequence.erase(std::remove_if(std::begin(sequence), std::end(sequence), [](char c) { return c == '\n' || c == '\r'; }), sequence.end());
+    //$ return empty if too short
     std::transform(std::begin(sequence), std::end(sequence), std::begin(sequence), [](char c) { return std::toupper(c); });
     return sequence;
 
@@ -251,6 +305,25 @@ std::string_view parse_lineage(std::string_view source, std::string_view /*filen
 } // parse_lineage
 
 // ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename)
+{
+    const auto stem = fs::path{filename}.stem().stem().string();
+    const auto fields = acmacs::string::split(stem, "-");
+    acmacs::seqdb::fasta::hint_t hints;
+    hints.lab = ::string::upper(fields[0]);
+    if (fields[1] == "h1pdm" || fields[1] == "h1")
+        hints.subtype = "H1N1";
+    else if (fields[1] == "h3")
+        hints.subtype = "H3N2";
+    else if (fields[1] == "b" && fields[0] == "niid" && fields.size() == 4) {
+        if (fields[3] == "vic")
+            hints.lineage = "VICTOIRA";
+        else if (fields[3] == "yam")
+            hints.lineage = "YAMAGATA";
+    }
+    return hints;
+}
 
 
 // ----------------------------------------------------------------------
