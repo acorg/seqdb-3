@@ -42,7 +42,7 @@ void acmacs::seqdb::v3::sequence_t::translate()
         std::array<translated_t, 3> translated;
         std::transform(acmacs::index_iterator(0UL), acmacs::index_iterator(translated.size()), std::begin(translated), transformation);
         const auto longest_translated = std::max_element(std::begin(translated), std::end(translated), [](const auto& e1, const auto& e2) { return std::get<std::string>(e1).size() < std::get<std::string>(e2).size(); });
-        if (std::get<size_t>(*longest_translated) >= MINIMUM_SEQUENCE_AA_LENGTH) {
+        if (std::get<std::string>(*longest_translated).size() >= MINIMUM_SEQUENCE_AA_LENGTH) {
             std::tie(aa_, nuc_translation_offset_) = *longest_translated;
         }
     }
@@ -105,12 +105,12 @@ void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
         return std::string_view(most_frequent_symbols.data(), 4) == "ACGT" || most_frequent_symbols == "ACGNT" || most_frequent_symbols == "-ACGT";
     };
 
-    if (freq.size() > 1 && freq.size() < 10 && ((freq[0].second > (nuc_.size() / 4) && freq[1].second > (nuc_.size() / 5)) || most_freq_are_acgnt(freq))) {
+    if (freq.size() > 1 && /* freq.size() < 12 && */ ((freq[0].second > (nuc_.size() / 4) && freq[1].second > (nuc_.size() / 5)) || most_freq_are_acgnt(freq))) {
         // looks like nuc
     }
     else {
-        if (freq.size() < 10)
-            fmt::print(stderr, "nuc freq: {} {}\n", nuc_.size(), acmacs::to_string(freq));
+        // if (freq.size() < 12)
+        //    fmt::print(stderr, "nuc freq: {} {}\n", nuc_.size(), acmacs::to_string(freq));
         aa_ = nuc_;
         nuc_.clear();
     }
