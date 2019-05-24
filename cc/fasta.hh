@@ -6,6 +6,7 @@
 
 #include "acmacs-base/date.hh"
 #include "acmacs-virus/virus-name.hh"
+#include "seqdb-3/sequence.hh"
 
 // ----------------------------------------------------------------------
 
@@ -53,7 +54,7 @@ namespace acmacs::seqdb
                 std::string lab;
                 std::string type_subtype;
                 std::string lineage;
-                std::string sequence;
+                seqdb::sequence_t sequence;
             };
 
             struct scan_result_t
@@ -89,7 +90,7 @@ namespace acmacs::seqdb
             // returns error and warning messages
             messages_t normalize_name(sequence_t& source);
 
-            std::string normalize_sequence(std::string_view raw_sequence, messages_t& messages, const scan_options_t& options);
+            std::optional<acmacs::seqdb::sequence_t> import_sequence(std::string_view raw_sequence, const scan_options_t& options);
 
         } // namespace fasta
 

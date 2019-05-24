@@ -32,8 +32,14 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
+        auto all_sequences = acmacs::seqdb::fasta::scan(opt.filenames, {});
 
-        const auto all_sequences = acmacs::seqdb::fasta::scan(opt.filenames, {});
+#pragma omp parallel for default(shared) schedule(static, 256)
+        for (size_t e_no = 0; e_no < all_sequences.size(); ++e_no) {
+            auto& entry = all_sequences[e_no];
+            entry.seq.sequence.translate();
+        }
+
         const auto errors = report(all_sequences, opt);
 
         return errors;
@@ -87,9 +93,7 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
         update(subtypes, entry.seq.type_subtype);
         if (entry.seq.type_subtype.empty())
             fmt::print(stderr, "{}:{}: No subtype for {}\n", entry.filename, entry.line_no, *entry.seq.name);
-        update(subtypes_sequence_length.emplace(entry.seq.type_subtype, std::map<size_t, size_t>{}).first->second, entry.seq.sequence.size());
-        // if (auto [iter, inserted] = subtypes_sequence_length.emplace(source, std::map<size_t,size_t>{}).first.emplace(entry.seq.sequence.size(), 1UL); !inserted)
-        //     ++iter->second;
+        update(subtypes_sequence_length.emplace(entry.seq.type_subtype, std::map<size_t, size_t>{}).first->second, entry.seq.sequence.nuc().size());
 
         if (!entry.seq.lineage.empty())
             update(lineages, entry.seq.lineage);
