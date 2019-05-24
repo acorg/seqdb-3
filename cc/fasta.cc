@@ -2,6 +2,7 @@
 #include <cctype>
 #include <regex>
 #include <map>
+#include <array>
 
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/string-split.hh"
@@ -44,8 +45,8 @@ std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::s
                         break;
                 }
                 if (seq.has_value()) {
-                    const auto messages = normalize_name(*seq);
-                    seq->sequence = normalize_sequence(sequence_ref.sequence, options);
+                    auto messages = normalize_name(*seq);
+                    seq->sequence = normalize_sequence(sequence_ref.sequence, messages, options);
                     if (!seq->sequence.empty())
                         sequences_per_file[f_no].push_back({*seq, messages, std::string(filename), file_input.name_line_no});
                 }
@@ -191,7 +192,7 @@ static const std::regex re_empty_annotations_if_just{"^[\\(\\)_\\-\\s,\\.]+$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
+acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
 {
     // std::cout << source.name << '\n';
     // return source;
@@ -231,12 +232,36 @@ std::vector<acmacs::virus::v2::parse_result_t::message_t> acmacs::seqdb::v3::fas
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence, const scan_options_t& options)
+static inline std::vector<std::pair<char, size_t>> is_nuc_sequence(std::string_view seq)
+{
+    const std::string_view nucs{"ACGTUWSMKRYBDHVNX-"}; // https://en.wikipedia.org/wiki/Nucleotide
+    std::array<size_t, 256> symbols_found;
+    std::fill(std::begin(symbols_found), std::end(symbols_found), 0UL);
+    bool not_nuc = false;
+    for (auto cc : seq) {
+        ++symbols_found[static_cast<unsigned char>(cc)];
+        if (nucs.find(cc) == std::string_view::npos)
+            not_nuc = true;
+    }
+    std::vector<std::pair<char, size_t>> counts;
+    if (not_nuc) {
+        for (size_t ord = 0; ord < symbols_found.size(); ++ord)
+            if (const auto count = symbols_found[ord]; count)
+                counts.emplace_back(ord, count);
+        std::sort(std::begin(counts), std::end(counts), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
+    }
+    return counts;
+}
+
+std::string acmacs::seqdb::v3::fasta::normalize_sequence(std::string_view raw_sequence, messages_t& messages, const scan_options_t& options)
 {
     std::string sequence(raw_sequence);
     sequence.erase(std::remove_if(std::begin(sequence), std::end(sequence), [](char c) { return c == '\n' || c == '\r'; }), sequence.end());
-    //$ return empty if too short
+    if (sequence.size() < options.remove_too_short_nucs) // return empty if too short
+        return {};
     std::transform(std::begin(sequence), std::end(sequence), std::begin(sequence), [](char c) { return std::toupper(c); });
+    if (const auto letters = is_nuc_sequence(sequence); !letters.empty())
+        messages.emplace_back("not-nucs", acmacs::to_string(letters));
     return sequence;
 
 } // acmacs::seqdb::v3::fasta::normalize_sequence

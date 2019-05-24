@@ -22,7 +22,7 @@ namespace acmacs::seqdb
 
             struct scan_options_t
             {
-                size_t remove_too_short_nucs{0}; // remove nuc sequences shorter than this (if value 1000, sequence of length 1000 is kept
+                size_t remove_too_short_nucs{100}; // remove nuc sequences shorter than this (if value 1000, sequence of length 1000 is kept)
             };
 
             struct scan_input_t
@@ -84,10 +84,12 @@ namespace acmacs::seqdb
             std::optional<sequence_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
             std::optional<sequence_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
-            // returns error and warning messages
-            std::vector<acmacs::virus::v2::parse_result_t::message_t> normalize_name(sequence_t& source);
+            using messages_t = std::vector<acmacs::virus::v2::parse_result_t::message_t>;
 
-            std::string normalize_sequence(std::string_view raw_sequence, const scan_options_t& options);
+            // returns error and warning messages
+            messages_t normalize_name(sequence_t& source);
+
+            std::string normalize_sequence(std::string_view raw_sequence, messages_t& messages, const scan_options_t& options);
 
         } // namespace fasta
 

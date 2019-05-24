@@ -56,9 +56,9 @@ static inline bool our_subtype(std::string_view type_subtype)
     return type_subtype == "B" || type_subtype == "A(H1N1)" || type_subtype == "A(H3N2)";
 }
 
-static inline std::vector<std::pair<std::string, size_t>> sorted_by_count(const std::map<std::string, size_t>& source)
+template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted_by_count(const std::map<Key, size_t>& source)
 {
-    std::vector<std::pair<std::string, size_t>> result(std::begin(source), std::end(source));
+    std::vector<std::pair<Key, size_t>> result(std::begin(source), std::end(source));
     std::sort(result.begin(), result.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
     return result;
 }
@@ -71,6 +71,7 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
     std::map<std::string, size_t> unrecognized_passage;
     std::map<std::string, size_t> labs;
     std::map<std::string, size_t> subtypes;
+    std::map<std::string, std::map<size_t, size_t>> subtypes_sequence_length;
     std::map<std::string, size_t> lineages;
     int errors = 0;
 
@@ -82,9 +83,14 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
     for (const auto& entry : sequences) {
         // if (!entry.seq.lab.empty())
         update(labs, entry.seq.lab);
+
         update(subtypes, entry.seq.type_subtype);
         if (entry.seq.type_subtype.empty())
             fmt::print(stderr, "{}:{}: No subtype for {}\n", entry.filename, entry.line_no, *entry.seq.name);
+        update(subtypes_sequence_length.emplace(entry.seq.type_subtype, std::map<size_t, size_t>{}).first->second, entry.seq.sequence.size());
+        // if (auto [iter, inserted] = subtypes_sequence_length.emplace(source, std::map<size_t,size_t>{}).first.emplace(entry.seq.sequence.size(), 1UL); !inserted)
+        //     ++iter->second;
+
         if (!entry.seq.lineage.empty())
             update(lineages, entry.seq.lineage);
 
@@ -127,6 +133,26 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
     report_by_count(subtypes, "SUBTYPES");
     report_by_count(lineages, "LINEAGES");
     report_by_count(labs, "LABS");
+
+    fmt::print(stderr, "SUBTYPES and sequence lengths (count:seq-length)\n");
+    for (const auto& [subtype, entry] : subtypes_sequence_length) {
+        if (subtypes.find(subtype)->second > 1000) {
+            fmt::print(stderr, "  {:<10s}", subtype);
+            size_t cnt = 0;
+            for (const auto& entry : sorted_by_count(entry)) {
+                if (entry.second < 100)
+                    break;
+                if (cnt > 14) {
+                    fmt::print(stderr, "\n            ");
+                    cnt = 0;
+                }
+                fmt::print(stderr, " {:6d}:{:4d}", entry.second, entry.first);
+                ++cnt;
+            }
+            fmt::print(stderr, "\n");
+        }
+    }
+    fmt::print(stderr, "\n");
 
     return errors;
 
