@@ -51,9 +51,16 @@ static inline bool whocc_lab(std::string_view lab)
     return lab == "CDC" || lab == "Crick" || lab == "NIID" || lab == "VIDRL"; // || lab == "CNIC"
 }
 
-static inline bool our_subtype(std::string_view subtype)
+static inline bool our_subtype(std::string_view type_subtype)
 {
-    return subtype.empty() || subtype == "H1N1" || subtype == "H3N2";
+    return type_subtype == "B" || type_subtype == "A(H1N1)" || type_subtype == "A(H3N2)";
+}
+
+static inline std::vector<std::pair<std::string, size_t>> sorted_by_count(const std::map<std::string, size_t>& source)
+{
+    std::vector<std::pair<std::string, size_t>> result(std::begin(source), std::end(source));
+    std::sort(result.begin(), result.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
+    return result;
 }
 
 // ----------------------------------------------------------------------
@@ -63,25 +70,33 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
     std::map<std::string, size_t> location_not_found;
     std::map<std::string, size_t> unrecognized_passage;
     std::map<std::string, size_t> labs;
+    std::map<std::string, size_t> subtypes;
+    std::map<std::string, size_t> lineages;
     int errors = 0;
 
+    const auto update = [](auto& counter, const auto& source) {
+        if (auto [iter, inserted] = counter.emplace(source, 1UL); !inserted)
+            ++iter->second;
+    };
+
     for (const auto& entry : sequences) {
-        if (!entry.seq.lab.empty()) {
-            if (auto [iter, inserted] = labs.emplace(entry.seq.lab, 1UL); !inserted)
-                ++iter->second;
-        }
-        if ((opt.all_lab_messages || whocc_lab(entry.seq.lab)) && (opt.all_subtypes_messages || our_subtype(entry.seq.a_subtype))) {
+        // if (!entry.seq.lab.empty())
+        update(labs, entry.seq.lab);
+        update(subtypes, entry.seq.type_subtype);
+        if (entry.seq.type_subtype.empty())
+            fmt::print(stderr, "{}:{}: No subtype for {}\n", entry.filename, entry.line_no, *entry.seq.name);
+        if (!entry.seq.lineage.empty())
+            update(lineages, entry.seq.lineage);
+
+        if ((opt.all_lab_messages || whocc_lab(entry.seq.lab)) && (opt.all_subtypes_messages || our_subtype(entry.seq.type_subtype))) {
             for (const auto& msg : entry.messages) {
                 if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
                     if (msg.value == "CRIE")
                         fmt::print(stderr, "{}:{}: [CRIE] {}\n", entry.filename, entry.line_no, msg);
-                    if (auto [iter, inserted] = location_not_found.emplace(msg.value, 1UL); !inserted)
-                        ++iter->second;
+                    update(location_not_found, msg.value);
                 }
-                else if (msg == acmacs::virus::parse_result_t::message_t::unrecognized_passage) {
-                    if (auto [iter, inserted] = unrecognized_passage.emplace(msg.value, 1UL); !inserted)
-                        ++iter->second;
-                }
+                else if (msg == acmacs::virus::parse_result_t::message_t::unrecognized_passage)
+                    update(unrecognized_passage, msg.value);
                 else {
                     fmt::print(stderr, "{}:{}: {} --> {}\n", entry.filename, entry.line_no, msg, *entry.seq.name);
                     ++errors;
@@ -90,27 +105,28 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
         }
     }
 
+    const auto report_by_count = [](const std::map<std::string, size_t>& source, const char* title) {
+        fmt::print(stderr, "{}: {}\n", title, source.size());
+        for (const auto& entry : sorted_by_count(source))
+            fmt::print(stderr, "{:6d} {}\n", entry.second, entry.first);
+        fmt::print(stderr, "\n");
+    };
+
     if (!unrecognized_passage.empty()) {
-        fmt::print(stderr, "Unrecognized PASSAGE {}\n", unrecognized_passage.size());
-        for (const auto& entry : unrecognized_passage)
-            fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
+        report_by_count(unrecognized_passage, "Unrecognized PASSAGE");
         ++errors;
     }
 
     if (!location_not_found.empty()) {
-        fmt::print(stderr, "LOCATION NOT FOUND {}\n", location_not_found.size());
-        for (const auto& entry : location_not_found)
-            fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
+        report_by_count(location_not_found, "Not found LOCATION");
         ++errors;
     }
 
-    fmt::print(stderr, "\nTOTAL {}\n", sequences.size());
-
-    fmt::print(stderr, "\nLABS {}\n", labs.size());
-    std::vector<std::pair<std::string, size_t>> labs_entries(std::begin(labs), std::end(labs));
-    std::sort(labs_entries.begin(), labs_entries.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
-    for (const auto& entry : labs_entries)
-        fmt::print(stderr, "  {:3d} {}\n", entry.second, entry.first);
+    fmt::print(stderr, "======================================================================\n\n");
+    fmt::print(stderr, "TOTAL: {}\n\n", sequences.size());
+    report_by_count(subtypes, "SUBTYPES");
+    report_by_count(lineages, "LINEAGES");
+    report_by_count(labs, "LABS");
 
     return errors;
 

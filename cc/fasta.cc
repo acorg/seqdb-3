@@ -12,7 +12,7 @@
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
-static std::string_view parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
+static std::string parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_lineage(std::string_view source, std::string_view filename, size_t line_no);
 static acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename);
 
@@ -116,9 +116,14 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 {
     // name | date | passage | lab_id | lab | subtype | lineage
 
-    const auto fields = acmacs::string::split(name, " | ");
+    auto fields = acmacs::string::split(name, " | ");
     if (fields.size() < 2)
         return std::nullopt;
+    if (auto& last_field = fields.back(); last_field.back() == '|') {
+        last_field.remove_suffix(1);
+        while (!last_field.empty() && last_field.back() == ' ')
+            last_field.remove_suffix(1);
+    }
 
     acmacs::seqdb::v3::fasta::sequence_t result;
     result.raw_name = fields[0];
@@ -130,7 +135,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
     if (fields.size() > 4)
         result.lab = parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no);
     if (fields.size() > 5)
-        result.a_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
+        result.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
     if (fields.size() > 6)
         result.lineage = parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no);
     result.fasta_name = name;
@@ -159,7 +164,7 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
     result.raw_name = name;
     result.fasta_name = result.raw_name;
     result.lab = hints.lab;
-    result.a_subtype = hints.subtype;
+    result.type_subtype = hints.subtype;
     result.lineage = hints.lineage;
     return std::move(result);
 
@@ -288,10 +293,14 @@ std::string_view parse_lab(std::string_view source, std::string_view /*filename*
 
 // ----------------------------------------------------------------------
 
-std::string_view parse_subtype(std::string_view source, std::string_view /*filename*/, size_t /*line_no*/)
+std::string parse_subtype(std::string_view source, std::string_view filename, size_t line_no)
 {
+    if (source.empty())
+        fmt::print(stderr, "WARNING: {}:{}: no subtype\n", filename, line_no, source);
     if (source.size() >= 8 && source[0] == 'A')
-        return source.substr(4);
+        return fmt::format("A({})", source.substr(4));
+    else if (!source.empty() && source[0] == 'B')
+        return "B";
     return {};
 
 } // parse_subtype
@@ -312,19 +321,21 @@ acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename)
     const auto fields = acmacs::string::split(stem, "-");
     acmacs::seqdb::fasta::hint_t hints;
     hints.lab = ::string::upper(fields[0]);
-    if (fields[1] == "h1pdm" || fields[1] == "h1")
-        hints.subtype = "H1N1";
+    if (fields[1] == "h1pdm" || fields[1] == "h1seas" || fields[1] == "h1")
+        hints.subtype = "A(H1N1)";
     else if (fields[1] == "h3")
-        hints.subtype = "H3N2";
-    else if (fields[1] == "b" && fields[0] == "niid" && fields.size() == 4) {
-        if (fields[3] == "vic")
-            hints.lineage = "VICTOIRA";
-        else if (fields[3] == "yam")
-            hints.lineage = "YAMAGATA";
+        hints.subtype = "A(H3N2)";
+    else if (fields[1] == "b" && fields[0] == "niid") {
+        hints.subtype = "B";
+        if (fields.size() >= 4) {
+            if (fields[3] == "vic")
+                hints.lineage = "VICTORIA";
+            else if (fields[3] == "yam")
+                hints.lineage = "YAMAGATA";
+        }
     }
     return hints;
 }
-
 
 // ----------------------------------------------------------------------
 /// Local Variables:

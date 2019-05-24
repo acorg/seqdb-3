@@ -51,7 +51,7 @@ namespace acmacs::seqdb
                 std::string annotations;
                 std::string lab_id;
                 std::string lab;
-                std::string a_subtype;
+                std::string type_subtype;
                 std::string lineage;
                 std::string sequence;
             };
