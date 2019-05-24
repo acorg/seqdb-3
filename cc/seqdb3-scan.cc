@@ -40,6 +40,11 @@ int main(int argc, char* const argv[])
             entry.seq.sequence.translate();
         }
 
+        for (const auto& seq_e : all_sequences) {
+            if (seq_e.seq.type_subtype == "A(H3N2)" && !seq_e.seq.sequence.aa().empty())
+                fmt::print(stderr, "{}\n", seq_e.seq.sequence.aa());
+        }
+
         const auto errors = report(all_sequences, opt);
 
         return errors;

@@ -21,7 +21,7 @@ namespace acmacs::seqdb
           private:
             std::string aa_;
             std::string nuc_;
-            size_t nu_translation_offset_{0};
+            size_t nuc_translation_offset_{0};
 
             void import(std::string_view source);
         };
