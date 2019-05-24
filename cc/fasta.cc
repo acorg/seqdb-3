@@ -234,7 +234,7 @@ acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(ac
 
 static inline std::vector<std::pair<char, size_t>> is_nuc_sequence(std::string_view seq)
 {
-    const std::string_view nucs{"ACGTUWSMKRYBDHVNX-"}; // https://en.wikipedia.org/wiki/Nucleotide
+    const std::string_view nucs{"ACGTUWSMKRYBDHVN-"}; // https://en.wikipedia.org/wiki/Nucleotide
     std::array<size_t, 256> symbols_found;
     std::fill(std::begin(symbols_found), std::end(symbols_found), 0UL);
     bool not_nuc = false;
