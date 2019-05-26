@@ -38,12 +38,18 @@ int main(int argc, char* const argv[])
         for (size_t e_no = 0; e_no < all_sequences.size(); ++e_no) {
             auto& entry = all_sequences[e_no];
             entry.seq.sequence.translate();
+            entry.aligned = entry.seq.sequence.align(entry.seq.type_subtype, entry.seq.fasta_name);
         }
 
-        for (const auto& seq_e : all_sequences) {
-            if (seq_e.seq.type_subtype == "A(H3N2)" && !seq_e.seq.sequence.aa().empty() && seq_e.seq.sequence.aa().find("ATLCLG") > 50 && seq_e.seq.sequence.aa().find("AMLCLG") > 50)
-                fmt::print(stderr, "{}:{}: {}\n    {}\n  {}\n", seq_e.filename, seq_e.line_no, seq_e.seq.fasta_name, seq_e.seq.sequence.nuc(), seq_e.seq.sequence.aa());
-        }
+        // for (const auto& seq_e : all_sequences) {
+        //     if (seq_e.seq.type_subtype == "A(H3N2)" && !seq_e.seq.sequence.aa().empty()
+        //         // && seq_e.seq.sequence.aa().find("ATLCLG") > 50 && seq_e.seq.sequence.aa().find("AMLCLG") > 50
+        //         && seq_e.seq.name->find("SINGAPORE/INFIMH-16-0019") != std::string::npos
+        //         ) {
+        //         // fmt::print(stderr, "{}:{}: {}\n    {}\n  {}\n", seq_e.filename, seq_e.line_no, seq_e.seq.fasta_name, seq_e.seq.sequence.nuc(), seq_e.seq.sequence.aa());
+        //         fmt::print(stderr, "{}:{}: {}\n {}\n", seq_e.filename, seq_e.line_no, seq_e.seq.fasta_name, seq_e.seq.sequence.aa());
+        //     }
+        // }
 
         const auto errors = report(all_sequences, opt);
 

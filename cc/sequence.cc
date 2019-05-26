@@ -5,7 +5,7 @@
 
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/range-v3.hh"
-#include "acmacs-base/to-string.hh"
+#include "acmacs-base/string.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/range.hh"
 #include "acmacs-base/algorithm.hh"
@@ -15,6 +15,19 @@
 
 static std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq);
 static std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset);
+
+// ----------------------------------------------------------------------
+
+bool acmacs::seqdb::v3::sequence_t::align(std::string_view type_subtype_hint, std::string_view debug_name)
+{
+    if (aa_.empty())
+        return false;
+    if (type_subtype_hint == "A(H3N2)")
+        return align_h3n2(debug_name) || align_any(debug_name, type_subtype_hint);
+    else
+        return align_any(debug_name, type_subtype_hint);
+
+} // acmacs::seqdb::v3::sequence_t::align
 
 // ----------------------------------------------------------------------
 
@@ -133,6 +146,36 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
     return result;
 
 } // symbol_frequences
+
+// ----------------------------------------------------------------------
+
+const char* const sH3N2_align_1 = "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC";
+
+bool acmacs::seqdb::v3::sequence_t::align_h3n2(std::string_view debug_name)
+{
+    const std::string_view pattern_1{sH3N2_align_1};
+    const auto aa_start = aa_.find(pattern_1.substr(0, 2));
+    if (aa_start == std::string::npos) {
+        // fmt::print(stderr, "NOT H3? {}\n{}\n", debug_name, std::string_view(aa_.data(), 100));
+        return false;
+    }
+    const auto hamd = ::string::hamming_distance(pattern_1, std::string_view(aa_.data() + aa_start, pattern_1.size()));
+    if (hamd > 10)
+        fmt::print(stderr, "hamm {} {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 120));
+
+    return false;
+
+} // acmacs::seqdb::v3::sequence_t::align_h3n2
+
+// ----------------------------------------------------------------------
+
+bool acmacs::seqdb::v3::sequence_t::align_any(std::string_view debug_name, std::string_view except)
+{
+    // if (except != "A(H3N2)" && align_h3n2(debug_name))
+    //     return true;
+    return false;
+
+} // acmacs::seqdb::v3::sequence_t::align_any
 
 // ----------------------------------------------------------------------
 

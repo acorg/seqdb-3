@@ -47,7 +47,7 @@ std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::s
                     auto messages = normalize_name(*seq);
                     if (const auto seq_opt = import_sequence(sequence_ref.sequence, options); seq_opt.has_value()) {
                         seq->sequence = *seq_opt;
-                        sequences_per_file[f_no].push_back({*seq, messages, std::string(filename), file_input.name_line_no});
+                        sequences_per_file[f_no].push_back({*seq, false, messages, std::string(filename), file_input.name_line_no});
                     }
                 }
                 else

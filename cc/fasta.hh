@@ -60,6 +60,7 @@ namespace acmacs::seqdb
             struct scan_result_t
             {
                 sequence_t seq;
+                bool aligned{false};
                 std::vector<acmacs::virus::v2::parse_result_t::message_t> messages;
                 std::string filename;
                 size_t line_no; // of the sequence name in filename
