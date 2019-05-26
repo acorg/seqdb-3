@@ -4,6 +4,7 @@
 #include <array>
 
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/range-v3.hh"
 #include "acmacs-base/to-string.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/range.hh"
@@ -94,7 +95,8 @@ void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
     std::transform(std::begin(source), std::end(source), std::begin(nuc_), [](char c) { return std::toupper(c); });
 
     auto freq = symbol_frequences(nuc_);
-    std::sort(freq.begin(), freq.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
+    ranges::sort(freq, [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
+    // std::sort(freq.begin(), freq.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
 
     const auto most_freq_are_acgnt = [](const auto& frq) {
         const auto most_frequent_symbols_size = std::min(5UL, frq.size());
