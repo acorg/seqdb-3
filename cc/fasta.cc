@@ -6,6 +6,7 @@
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/read-file.hh"
+#include "acmacs-base/range-v3.hh"
 #include "locationdb/locdb.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
@@ -338,6 +339,20 @@ acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename)
     }
     return hints;
 }
+
+// ----------------------------------------------------------------------
+
+std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> acmacs::seqdb::v3::fasta::aligned(std::vector<scan_result_t>& source)
+{
+    std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> result;
+    std::copy_if(std::begin(source), std::end(source), std::back_inserter(result), [](const auto& entry) -> bool { return entry.aligned; });
+    return result;
+
+
+} // acmacs::seqdb::v3::fasta::aligned
+
+// ----------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------
 /// Local Variables:

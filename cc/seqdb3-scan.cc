@@ -10,6 +10,8 @@
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/string-split.hh"
+#include "acmacs-base/counter.hh"
+#include "seqdb-3/hamming-distance.hh"
 #include "seqdb-3/fasta.hh"
 
 // ----------------------------------------------------------------------
@@ -66,62 +68,86 @@ int main(int argc, char* const argv[])
 
             // ----------------------------------------------------------------------
 
-
         const auto if_aligned = [](const auto& entry) -> bool { return entry.aligned; };
-        fmt::print(stderr, "ALIGNED: {}\n", ranges::count_if(all_sequences, if_aligned));
+
+        std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> aligned, not_aligned;
+        ranges::copy(ranges::view::filter(all_sequences, [](const auto& entry) { return entry.aligned; }), ranges::back_inserter(aligned));
+        ranges::copy(ranges::view::filter(all_sequences, [](const auto& entry) { return !entry.aligned; }), ranges::back_inserter(not_aligned));
+        fmt::print(stderr, "ALIGNED: {}  not aligned: {}\n", aligned.size(), not_aligned.size());
 
         // ----------------------------------------------------------------------
 
-        const auto update = [](auto& counter, auto&& source) {
-            if (auto [iter, inserted] = counter.emplace(source, 1UL); !inserted)
-                ++iter->second;
-        };
+        // const auto update = [](auto& counter, auto&& source) {
+        //     if (auto [iter, inserted] = counter.emplace(source, 1UL); !inserted)
+        //         ++iter->second;
+        // };
 
-        size_t num_aligned = 0;
-        std::vector<std::map<char, size_t>> occurences_per_pos(550);
-        for (const auto& seq_e : all_sequences) {
-            if (if_aligned(seq_e)) {
-                const auto seq = seq_e.seq.sequence.aa_aligned();
-                for (size_t pos = 0; pos < std::min(seq.size(), occurences_per_pos.size()); ++pos) {
-                    if (seq[pos] != 'X' && seq[pos] != '-')
-                        update(occurences_per_pos[pos], seq[pos]);
-                }
-                ++num_aligned;
+        std::vector<acmacs::CounterChar> occurences_per_pos(550);
+        ranges::for_each(aligned, [&occurences_per_pos](const auto& entry) {
+            const auto seq = entry.get().seq.sequence.aa_aligned();
+            for (size_t pos = 0; pos < std::min(seq.size(), occurences_per_pos.size()); ++pos) {
+                if (seq[pos] != 'X' && seq[pos] != '-')
+                    occurences_per_pos[pos].count(seq[pos]);
             }
-        }
+        });
 
         std::string common(occurences_per_pos.size(), '.');
         for (size_t pos = 0; pos < occurences_per_pos.size(); ++pos) {
-            const auto& best = *ranges::max_element(occurences_per_pos[pos], [](const auto& e1, const auto& e2) { return e1.second < e2.second; });
-            // fmt::print(stderr, "{:3d} <{:.2f}> {}\n", pos + 1, double(best.second) / num_aligned, occurences_per_pos[pos]);
-            if ((double(best.second) / num_aligned) > 0.9)
-                common[pos] = best.first;
+            const auto [aa, count] = occurences_per_pos[pos].max();
+            if ((double(count) / aligned.size()) > 0.99)
+                common[pos] = aa;
         }
         fmt::print(stderr, "{}\n", common);
-        std::vector<std::pair<std::string_view, size_t>> chunk_offset;
-        const auto split_data = acmacs::string::split(common, ".", acmacs::string::Split::RemoveEmpty);
-        for (const auto& chunk : split_data) {
-            if (chunk.size() > 5) {
-                chunk_offset.emplace_back(chunk, static_cast<size_t>(chunk.data() - common.data()));
-                // fmt::print(stderr, "{:3d} {}\n", chunk.data() - common.data(), chunk);
+
+        acmacs::Counter<size_t> hamming_distance_counter;
+        for (auto& entry : not_aligned) {
+            const auto aa = entry.get().seq.sequence.aa();
+            std::vector<std::pair<size_t, size_t>> pos_hamdist;
+            for (auto pos = aa.find(common[0]); pos != std::string::npos; pos = aa.find(common[0], pos + 1)) {
+                pos_hamdist.emplace_back(pos, acmacs::seqdb::hamming_distance_not_considering(aa.substr(pos), common, '.'));
+            }
+            if (const auto me = std::min_element(std::begin(pos_hamdist), std::end(pos_hamdist), [](const auto& e1, const auto& e2) { return e1.second < e2.second; }); me != std::end(pos_hamdist)) {
+                hamming_distance_counter.count(me->second);
+                if (me->second < 10) {
+                    entry.get().aligned = true;
+                    // fmt::print(stderr, "ham dist {} {}   {}\n{}\n", me->second, me->first, entry.get().seq.fasta_name, aa);
+                }
+                else if (me->second < 100) {
+                    fmt::print(stderr, "ham dist {} {}   {}\n{}\n", me->second, me->first, entry.get().seq.fasta_name, aa);
+                }
             }
         }
 
-        for (auto& seq_e : all_sequences) {
-            if (! if_aligned(seq_e)) {
-                std::vector<std::string_view::size_type> offsets(chunk_offset.size(), std::string_view::npos);
-                size_t good_offsets = 0;
-                for (size_t no = 0; no < chunk_offset.size(); ++no) {
-                    offsets[no] = seq_e.seq.sequence.aa().find(chunk_offset[no].first);
-                    if (offsets[no] != std::string_view::npos && (no == 0 || offsets[no] > offsets[no-1]))
-                        ++good_offsets;
-                }
-                if (offsets[0] != std::string_view::npos && good_offsets > (chunk_offset.size() * 0.8)) {
-                    seq_e.seq.sequence.set_shift_aa(static_cast<int>(offsets[0]) - static_cast<int>(chunk_offset[0].second));
-                    seq_e.aligned = true;
-                }
-            }
-        }
+        std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> aligned_2;
+        ranges::copy(ranges::view::filter(all_sequences, [](const auto& entry) { return entry.aligned; }), ranges::back_inserter(aligned_2));
+        fmt::print(stderr, "ALIGNED2: {}\n", aligned_2.size());
+
+        fmt::print(stderr, "hamming_distance_counter {}\n", hamming_distance_counter.counter());
+
+        // std::vector<std::pair<std::string_view, size_t>> chunk_offset;
+        // const auto split_data = acmacs::string::split(common, ".", acmacs::string::Split::RemoveEmpty);
+        // for (const auto& chunk : split_data) {
+        //     if (chunk.size() > 5) {
+        //         chunk_offset.emplace_back(chunk, static_cast<size_t>(chunk.data() - common.data()));
+        //         // fmt::print(stderr, "{:3d} {}\n", chunk.data() - common.data(), chunk);
+        //     }
+        // }
+
+        // for (auto& seq_e : all_sequences) {
+        //     if (! if_aligned(seq_e)) {
+        //         std::vector<std::string_view::size_type> offsets(chunk_offset.size(), std::string_view::npos);
+        //         size_t good_offsets = 0;
+        //         for (size_t no = 0; no < chunk_offset.size(); ++no) {
+        //             offsets[no] = seq_e.seq.sequence.aa().find(chunk_offset[no].first);
+        //             if (offsets[no] != std::string_view::npos && (no == 0 || offsets[no] > offsets[no-1]))
+        //                 ++good_offsets;
+        //         }
+        //         if (offsets[0] != std::string_view::npos && good_offsets > (chunk_offset.size() * 0.8)) {
+        //             seq_e.seq.sequence.set_shift_aa(static_cast<int>(offsets[0]) - static_cast<int>(chunk_offset[0].second));
+        //             seq_e.aligned = true;
+        //         }
+        //     }
+        // }
 
         fmt::print(stderr, "ALIGNED: {}\n", ranges::count_if(all_sequences, if_aligned));
         fmt::print(stderr, "H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return entry.seq.type_subtype == "A(H3N2)"; }));

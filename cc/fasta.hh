@@ -77,6 +77,7 @@ namespace acmacs::seqdb
             // ----------------------------------------------------------------------
 
             std::vector<scan_result_t> scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
+            std::vector<std::reference_wrapper<scan_result_t>> aligned(std::vector<scan_result_t>& source);
 
             // ----------------------------------------------------------------------
             // details
