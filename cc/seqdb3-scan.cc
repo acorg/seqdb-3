@@ -90,11 +90,13 @@ int main(int argc, char* const argv[])
                     occurences_per_pos[pos].count(seq[pos]);
             }
         });
+        const auto occurences_threshold = occurences_per_pos[0].max().second;
+        fmt::print(stderr, "occurences_threshold {} {}\n", occurences_threshold, double(occurences_threshold) / aligned.size());
 
         std::string common(occurences_per_pos.size(), '.');
         for (size_t pos = 0; pos < occurences_per_pos.size(); ++pos) {
             const auto [aa, count] = occurences_per_pos[pos].max();
-            if ((double(count) / aligned.size()) > 0.99)
+            if (count >= occurences_threshold)
                 common[pos] = aa;
         }
         fmt::print(stderr, "{}\n", common);
@@ -108,12 +110,12 @@ int main(int argc, char* const argv[])
             }
             if (const auto me = std::min_element(std::begin(pos_hamdist), std::end(pos_hamdist), [](const auto& e1, const auto& e2) { return e1.second < e2.second; }); me != std::end(pos_hamdist)) {
                 hamming_distance_counter.count(me->second);
-                if (me->second < 10) {
+                if (me->second < 30) {
                     entry.get().aligned = true;
                     // fmt::print(stderr, "ham dist {} {}   {}\n{}\n", me->second, me->first, entry.get().seq.fasta_name, aa);
                 }
-                else if (me->second < 100) {
-                    fmt::print(stderr, "ham dist {} {}   {}\n{}\n", me->second, me->first, entry.get().seq.fasta_name, aa);
+                else if (me->second < 200) {
+                    fmt::print(stderr, "ham dist {} {}   {}\n{}\n", me->second, me->first, entry.get().seq.fasta_name, aa.substr(0, 150));
                 }
             }
         }
@@ -151,13 +153,19 @@ int main(int argc, char* const argv[])
 
         fmt::print(stderr, "ALIGNED: {}\n", ranges::count_if(all_sequences, if_aligned));
         fmt::print(stderr, "H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return entry.seq.type_subtype == "A(H3N2)"; }));
-        fmt::print(stderr, "Aligned not H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return entry.aligned && entry.seq.type_subtype.substr(0, 4) != "A(H3" && entry.seq.type_subtype != "A(H0N0)"; }));
 
+        fmt::print(stderr, "\nAligned not H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return entry.aligned && entry.seq.type_subtype.substr(0, 4) != "A(H3" && entry.seq.type_subtype != "A(H0N0)"; }));
         for (auto& seq_e : all_sequences) {
-            if (if_aligned(seq_e) && seq_e.seq.type_subtype.substr(0, 4) != "A(H3" && seq_e.seq.type_subtype != "A(H0N0)") {
+            if (if_aligned(seq_e) && seq_e.seq.type_subtype.substr(0, 4) != "A(H3" && seq_e.seq.type_subtype != "A(H0N0)")
                 fmt::print(stderr, "{}\n{}\n", seq_e.seq.fasta_name, seq_e.seq.sequence.aa_aligned());
-            }
         }
+
+        fmt::print(stderr, "\nNot Aligned H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return !entry.aligned && !entry.seq.sequence.aa().empty() && entry.seq.type_subtype.substr(0, 4) == "A(H3"; }));
+        for (auto& seq_e : all_sequences) {
+            if (!seq_e.aligned && !seq_e.seq.sequence.aa().empty() && seq_e.seq.type_subtype.substr(0, 4) == "A(H3")
+                fmt::print(stderr, "{}\n{}\n", seq_e.seq.fasta_name, seq_e.seq.sequence.aa().substr(0, 200));
+        }
+
 
         // ----------------------------------------------------------------------
 
