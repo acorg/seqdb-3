@@ -11,6 +11,7 @@
 #include "acmacs-base/algorithm.hh"
 #include "acmacs-base/named-type.hh"
 #include "seqdb-3/sequence.hh"
+#include "seqdb-3/hamming-distance.hh"
 
 // ----------------------------------------------------------------------
 
@@ -196,7 +197,7 @@ bool acmacs::seqdb::v3::sequence_t::align_h3n2(std::string_view debug_name)
     for (const auto& pattern : sH3patterns) {
         const std::string_view look_for = pattern.pattern.substr(0, 2);
         for (auto p1_start = data.find(look_for); p1_start < *pattern.max_offset; p1_start = data.find(look_for, p1_start + look_for.size())) {
-            if (const auto hamd = ::string::hamming_distance(pattern.pattern, data.substr(p1_start, pattern.pattern.size())); hamd < *pattern.hamming_distance_threshold) {
+            if (const auto hamd = hamming_distance(pattern.pattern, data.substr(p1_start, pattern.pattern.size())); hamd < *pattern.hamming_distance_threshold) {
                 if (pattern.shift == shift_is_pattern_size)
                     set_shift_aa(p1_start + pattern.pattern.size());
                 else

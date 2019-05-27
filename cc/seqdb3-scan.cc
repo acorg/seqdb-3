@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <map>
+#include <set>
 #include <vector>
 #include <algorithm>
 
@@ -51,6 +52,20 @@ int main(int argc, char* const argv[])
             entry.seq.sequence.translate();
             entry.aligned = entry.seq.sequence.align(entry.seq.type_subtype, entry.seq.fasta_name);
         }
+
+        // ----------------------------------------------------------------------
+
+        // std::set<char> all_aa;
+        // for (const auto& seq_e : all_sequences) {
+        //     for (char aa : seq_e.seq.sequence.aa())
+        //         all_aa.insert(aa);
+        // }
+        // std::string all_aa_s(std::begin(all_aa), std::end(all_aa));
+        // ranges::sort(all_aa_s);
+        // fmt::print(stderr, "ALL AA: [{}]\n", all_aa_s);
+
+            // ----------------------------------------------------------------------
+
 
         const auto if_aligned = [](const auto& entry) -> bool { return entry.aligned; };
         fmt::print(stderr, "ALIGNED: {}\n", ranges::count_if(all_sequences, if_aligned));
