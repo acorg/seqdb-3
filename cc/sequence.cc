@@ -156,6 +156,8 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
 
 // ----------------------------------------------------------------------
 
+// http://signalpeptide.com
+
 #pragma GCC diagnostic push
 #ifdef __clang__
 #pragma GCC diagnostic ignored "-Wglobal-constructors"
@@ -176,11 +178,12 @@ struct pat_t
 };
 
 static const std::array sH3patterns{
+    //pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Aichi/2/1968
     pat_t{"MKTIIALSYILCLVFA",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-    pat_t{"MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-    pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
-    pat_t{"QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
-    pat_t{"QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
+    // pat_t{"MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
+    // pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
+    // pat_t{"QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
+    // pat_t{"QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
 };
 
 #pragma GCC diagnostic pop
@@ -195,10 +198,9 @@ bool acmacs::seqdb::v3::sequence_t::align_h3n2(std::string_view debug_name)
         for (auto p1_start = data.find(look_for); p1_start < *pattern.max_offset; p1_start = data.find(look_for, p1_start + look_for.size())) {
             if (const auto hamd = ::string::hamming_distance(pattern.pattern, data.substr(p1_start, pattern.pattern.size())); hamd < *pattern.hamming_distance_threshold) {
                 if (pattern.shift == shift_is_pattern_size)
-                    shift_aa_ = p1_start + pattern.pattern.size();
+                    set_shift_aa(p1_start + pattern.pattern.size());
                 else
-                    shift_aa_ = p1_start + *pattern.shift;
-                shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
+                    set_shift_aa(p1_start + *pattern.shift);
                 type_subtype_ = "A(H3N2)";
                 // fmt::print(stderr, "H3 ({}) {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 200));
                 return true;

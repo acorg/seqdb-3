@@ -1,9 +1,11 @@
+#include <cstdio>
 #include <map>
 #include <vector>
 #include <algorithm>
 
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/range-v3.hh"
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/string-split.hh"
@@ -50,21 +52,108 @@ int main(int argc, char* const argv[])
             entry.aligned = entry.seq.sequence.align(entry.seq.type_subtype, entry.seq.fasta_name);
         }
 
-        size_t aligned = 0, potential = 0;
+        const auto if_aligned = [](const auto& entry) -> bool { return entry.aligned; };
+        fmt::print(stderr, "ALIGNED: {}\n", ranges::count_if(all_sequences, if_aligned));
+
+        // ----------------------------------------------------------------------
+
+        const auto update = [](auto& counter, auto&& source) {
+            if (auto [iter, inserted] = counter.emplace(source, 1UL); !inserted)
+                ++iter->second;
+        };
+
+        size_t num_aligned = 0;
+        std::vector<std::map<char, size_t>> occurences_per_pos(550);
         for (const auto& seq_e : all_sequences) {
-            if (seq_e.seq.type_subtype == "A(H3N2)") {
-                if (seq_e.aligned)
-                    ++aligned;
-                else if (seq_e.seq.host->empty() && !seq_e.seq.sequence.aa().empty()) {
-                    ++potential;
-                    if (whocc_lab(seq_e.seq.lab))
-                        fmt::print(stderr, "!! {} NOT H3? {}\n{}\n", seq_e.seq.lab, seq_e.seq.fasta_name, std::string_view(seq_e.seq.sequence.aa().data(), 200));
-                    else
-                        fmt::print(stderr, "NOT H3? {}\n{}\n", seq_e.seq.fasta_name, std::string_view(seq_e.seq.sequence.aa().data(), 200));
+            if (if_aligned(seq_e)) {
+                const auto seq = seq_e.seq.sequence.aa_aligned();
+                for (size_t pos = 0; pos < std::min(seq.size(), occurences_per_pos.size()); ++pos) {
+                    if (seq[pos] != 'X' && seq[pos] != '-')
+                        update(occurences_per_pos[pos], seq[pos]);
+                }
+                ++num_aligned;
+            }
+        }
+
+        std::string common(occurences_per_pos.size(), '.');
+        for (size_t pos = 0; pos < occurences_per_pos.size(); ++pos) {
+            const auto& best = *ranges::max_element(occurences_per_pos[pos], [](const auto& e1, const auto& e2) { return e1.second < e2.second; });
+            // fmt::print(stderr, "{:3d} <{:.2f}> {}\n", pos + 1, double(best.second) / num_aligned, occurences_per_pos[pos]);
+            if ((double(best.second) / num_aligned) > 0.9)
+                common[pos] = best.first;
+        }
+        fmt::print(stderr, "{}\n", common);
+        std::vector<std::pair<std::string_view, size_t>> chunk_offset;
+        const auto split_data = acmacs::string::split(common, ".", acmacs::string::Split::RemoveEmpty);
+        for (const auto& chunk : split_data) {
+            if (chunk.size() > 5) {
+                chunk_offset.emplace_back(chunk, static_cast<size_t>(chunk.data() - common.data()));
+                // fmt::print(stderr, "{:3d} {}\n", chunk.data() - common.data(), chunk);
+            }
+        }
+
+        for (auto& seq_e : all_sequences) {
+            if (! if_aligned(seq_e)) {
+                std::vector<std::string_view::size_type> offsets(chunk_offset.size(), std::string_view::npos);
+                size_t good_offsets = 0;
+                for (size_t no = 0; no < chunk_offset.size(); ++no) {
+                    offsets[no] = seq_e.seq.sequence.aa().find(chunk_offset[no].first);
+                    if (offsets[no] != std::string_view::npos && (no == 0 || offsets[no] > offsets[no-1]))
+                        ++good_offsets;
+                }
+                if (offsets[0] != std::string_view::npos && good_offsets > (chunk_offset.size() * 0.8)) {
+                    seq_e.seq.sequence.set_shift_aa(static_cast<int>(offsets[0]) - static_cast<int>(chunk_offset[0].second));
+                    seq_e.aligned = true;
                 }
             }
         }
-        fmt::print(stderr, "ALIGNED: {}  Potential: {}\n", aligned, potential);
+
+        fmt::print(stderr, "ALIGNED: {}\n", ranges::count_if(all_sequences, if_aligned));
+        fmt::print(stderr, "H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return entry.seq.type_subtype == "A(H3N2)"; }));
+        fmt::print(stderr, "Aligned not H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return entry.aligned && entry.seq.type_subtype.substr(0, 4) != "A(H3" && entry.seq.type_subtype != "A(H0N0)"; }));
+
+        for (auto& seq_e : all_sequences) {
+            if (if_aligned(seq_e) && seq_e.seq.type_subtype.substr(0, 4) != "A(H3" && seq_e.seq.type_subtype != "A(H0N0)") {
+                fmt::print(stderr, "{}\n{}\n", seq_e.seq.fasta_name, seq_e.seq.sequence.aa_aligned());
+            }
+        }
+
+        // ----------------------------------------------------------------------
+
+        // std::vector<std::string_view> aligned;
+        // const auto aligned = ranges::view::all(all_sequences) | ranges::view::filter(if_aligned) | ranges::view::transform([](const auto& entry) { return entry.seq.sequence.aa_aligned(); });
+        // // | ranges::view::for_each([](std::string entry) { return 7.0; });
+        // // aligned | ranges::view::for_each([](std::string entry) { return 7.0; });
+        // for (const auto& seq : aligned) {
+        // }
+        // }
+
+        // FILE* h3_seq_fd = std::fopen("/d/h3.fas", "w");
+        // ranges::for_each(ranges::view::all(all_sequences) | ranges::view::filter(if_aligned), [&h3_seq_fd](const auto& entry) { fmt::print(h3_seq_fd, "{}\n{}\n", *entry.seq.name,
+        // entry.seq.sequence.aa_aligned()); }); std::fclose(h3_seq_fd);
+
+        // FILE* h3_seq_fd = std::fopen("/d/h3.fas", "w");
+
+        // size_t aligned = 0, potential = 0;
+        // for (const auto& seq_e : all_sequences) {
+        //     if (seq_e.seq.type_subtype == "A(H3N2)") {
+        //         if (seq_e.aligned) {
+        //             ++aligned;
+        //             if (const auto yr = acmacs::virus::year(seq_e.seq.name); yr.has_value() && *yr > 2017)
+        //                 fmt::print(h3_seq_fd, "{}\n{}\n", *seq_e.seq.name, seq_e.seq.sequence.aa_aligned());
+        //         }
+        //         else if (seq_e.seq.host->empty() && !seq_e.seq.sequence.aa().empty()) {
+        //             ++potential;
+        //             if (whocc_lab(seq_e.seq.lab))
+        //                 fmt::print(stderr, "!! {} NOT H3? {}\n{}\n", seq_e.seq.lab, seq_e.seq.fasta_name, std::string_view(seq_e.seq.sequence.aa().data(), 200));
+        //             else
+        //                 fmt::print(stderr, "NOT H3? {}\n{}\n", seq_e.seq.fasta_name, std::string_view(seq_e.seq.sequence.aa().data(), 200));
+        //         }
+        //     }
+        // }
+        // std::fclose(h3_seq_fd);
+
+        // fmt::print(stderr, "ALIGNED: {}  Potential: {}\n", aligned, potential);
 
         const auto errors = report(all_sequences, opt);
 
