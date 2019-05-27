@@ -199,6 +199,7 @@ acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(ac
 
     auto result = acmacs::virus::parse_name(source.raw_name);
     source.name = result.name;
+    source.host = result.host;
     source.reassortant = result.reassortant;
     source.annotations = result.extra;
 

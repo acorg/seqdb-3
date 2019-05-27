@@ -11,6 +11,15 @@
 
 // ----------------------------------------------------------------------
 
+static inline bool whocc_lab(std::string_view lab)
+{
+    return lab == "CDC" || lab == "Crick" || lab == "NIID" || lab == "VIDRL"; // || lab == "CNIC"
+}
+
+static inline bool our_subtype(std::string_view type_subtype)
+{
+    return type_subtype == "B" || type_subtype == "A(H1N1)" || type_subtype == "A(H3N2)";
+}
 
 // ----------------------------------------------------------------------
 
@@ -41,15 +50,21 @@ int main(int argc, char* const argv[])
             entry.aligned = entry.seq.sequence.align(entry.seq.type_subtype, entry.seq.fasta_name);
         }
 
-        // for (const auto& seq_e : all_sequences) {
-        //     if (seq_e.seq.type_subtype == "A(H3N2)" && !seq_e.seq.sequence.aa().empty()
-        //         // && seq_e.seq.sequence.aa().find("ATLCLG") > 50 && seq_e.seq.sequence.aa().find("AMLCLG") > 50
-        //         && seq_e.seq.name->find("SINGAPORE/INFIMH-16-0019") != std::string::npos
-        //         ) {
-        //         // fmt::print(stderr, "{}:{}: {}\n    {}\n  {}\n", seq_e.filename, seq_e.line_no, seq_e.seq.fasta_name, seq_e.seq.sequence.nuc(), seq_e.seq.sequence.aa());
-        //         fmt::print(stderr, "{}:{}: {}\n {}\n", seq_e.filename, seq_e.line_no, seq_e.seq.fasta_name, seq_e.seq.sequence.aa());
-        //     }
-        // }
+        size_t aligned = 0, potential = 0;
+        for (const auto& seq_e : all_sequences) {
+            if (seq_e.seq.type_subtype == "A(H3N2)") {
+                if (seq_e.aligned)
+                    ++aligned;
+                else if (seq_e.seq.host->empty() && !seq_e.seq.sequence.aa().empty()) {
+                    ++potential;
+                    if (whocc_lab(seq_e.seq.lab))
+                        fmt::print(stderr, "!! {} NOT H3? {}\n{}\n", seq_e.seq.lab, seq_e.seq.fasta_name, std::string_view(seq_e.seq.sequence.aa().data(), 200));
+                    else
+                        fmt::print(stderr, "NOT H3? {}\n{}\n", seq_e.seq.fasta_name, std::string_view(seq_e.seq.sequence.aa().data(), 200));
+                }
+            }
+        }
+        fmt::print(stderr, "ALIGNED: {}  Potential: {}\n", aligned, potential);
 
         const auto errors = report(all_sequences, opt);
 
@@ -62,16 +77,6 @@ int main(int argc, char* const argv[])
 }
 
 // ----------------------------------------------------------------------
-
-static inline bool whocc_lab(std::string_view lab)
-{
-    return lab == "CDC" || lab == "Crick" || lab == "NIID" || lab == "VIDRL"; // || lab == "CNIC"
-}
-
-static inline bool our_subtype(std::string_view type_subtype)
-{
-    return type_subtype == "B" || type_subtype == "A(H1N1)" || type_subtype == "A(H3N2)";
-}
 
 template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted_by_count(const std::map<Key, size_t>& source)
 {

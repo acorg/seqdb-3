@@ -46,6 +46,7 @@ namespace acmacs::seqdb
                 std::string fasta_name;
                 std::string raw_name;
                 acmacs::virus::virus_name_t name;
+                acmacs::virus::host_t host;
                 Date date;
                 acmacs::virus::Reassortant reassortant;
                 acmacs::virus::Passage passage;

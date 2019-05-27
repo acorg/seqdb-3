@@ -9,6 +9,7 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/range.hh"
 #include "acmacs-base/algorithm.hh"
+#include "acmacs-base/named-type.hh"
 #include "seqdb-3/sequence.hh"
 
 // ----------------------------------------------------------------------
@@ -65,7 +66,12 @@ void acmacs::seqdb::v3::sequence_t::translate()
 
 // ----------------------------------------------------------------------
 
-#include "acmacs-base/global-constructors-push.hh"
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wglobal-constructors"
+#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#endif
+
 static const std::map<std::string_view, char> CODON_TO_PROTEIN = {
     {"UGC", 'C'}, {"GTA", 'V'}, {"GTG", 'V'}, {"CCT", 'P'}, {"CUG", 'L'}, {"AGG", 'R'}, {"CTT", 'L'}, {"CUU", 'L'},
     {"CTG", 'L'}, {"GCU", 'A'}, {"CCG", 'P'}, {"AUG", 'M'}, {"GGC", 'G'}, {"UUA", 'L'}, {"GAG", 'E'}, {"UGG", 'W'},
@@ -81,7 +87,8 @@ static const std::map<std::string_view, char> CODON_TO_PROTEIN = {
     {"ATG", 'M'}, {"AAA", 'K'}, {"TGG", 'W'}, {"CGG", 'R'}, {"AAU", 'N'}, {"CTC", 'L'}, {"ATC", 'I'},
     {"TAA", '*'}, {"UAA", '*'}, {"TAG", '*'}, {"UAG", '*'}, {"TGA", '*'}, {"UGA", '*'}, {"TAR", '*'}, {"TRA", '*'}, {"UAR", '*'}, {"URA", '*'},
 };
-#include "acmacs-base/diagnostics-pop.hh"
+
+#pragma GCC diagnostic pop
 
 std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset)
 {
@@ -149,21 +156,87 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
 
 // ----------------------------------------------------------------------
 
-const char* const sH3N2_align_1 = "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC";
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wglobal-constructors"
+#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#endif
+
+using max_offset_t = acmacs::named_size_t<struct max_offset_t_tag>;
+using hdth_t = acmacs::named_size_t<struct hdth_t_tag>; // hamming_distance_threshold
+using shift_t = acmacs::named_size_t<struct shift_t_tag>;
+constexpr const shift_t shift_is_pattern_size{-1};
+
+struct pat_t
+{
+    std::string_view pattern;
+    max_offset_t max_offset;
+    hdth_t hamming_distance_threshold;
+    shift_t shift;
+};
+
+static const std::array sH3patterns{
+    pat_t{"MKTIIALSYILCLVFA",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
+    pat_t{"MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
+    pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
+    pat_t{"QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
+    pat_t{"QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
+};
+
+#pragma GCC diagnostic pop
 
 bool acmacs::seqdb::v3::sequence_t::align_h3n2(std::string_view debug_name)
 {
-    const std::string_view pattern_1{sH3N2_align_1};
-    const auto aa_start = aa_.find(pattern_1.substr(0, 2));
-    if (aa_start == std::string::npos) {
-        // fmt::print(stderr, "NOT H3? {}\n{}\n", debug_name, std::string_view(aa_.data(), 100));
-        return false;
-    }
-    const auto hamd = ::string::hamming_distance(pattern_1, std::string_view(aa_.data() + aa_start, pattern_1.size()));
-    if (hamd > 10)
-        fmt::print(stderr, "hamm {} {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 120));
+    const std::string_view data{aa_};
+    std::vector<size_t> hamds;
 
+    for (const auto& pattern : sH3patterns) {
+        const std::string_view look_for = pattern.pattern.substr(0, 2);
+        for (auto p1_start = data.find(look_for); p1_start < *pattern.max_offset; p1_start = data.find(look_for, p1_start + look_for.size())) {
+            if (const auto hamd = ::string::hamming_distance(pattern.pattern, data.substr(p1_start, pattern.pattern.size())); hamd < *pattern.hamming_distance_threshold) {
+                if (pattern.shift == shift_is_pattern_size)
+                    shift_aa_ = p1_start + pattern.pattern.size();
+                else
+                    shift_aa_ = p1_start + *pattern.shift;
+                shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
+                type_subtype_ = "A(H3N2)";
+                // fmt::print(stderr, "H3 ({}) {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 200));
+                return true;
+            }
+            else
+                hamds.push_back(hamd);
+        }
+    }
+
+    // if (!hamds.empty())
+    //     fmt::print(stderr, "NOT H3? ({}) {}\n{}\n", hamds, debug_name, std::string_view(aa_.data(), 200));
     return false;
+
+    // const std::string_view pattern_1{sH3N2_align_1};
+
+    // const std::string_view look_for = pattern_1.substr(0, 2);
+    // std::vector<size_t> hamds;
+    // for (auto p1_start = data.find(look_for); p1_start < (data.size() - pattern_1.size()); p1_start = data.find(look_for, p1_start + look_for.size())) {
+    //     if (const auto hamd = ::string::hamming_distance(pattern_1, data.substr(p1_start, pattern_1.size())); hamd < 6) {
+    //         shift_aa_ = p1_start;
+    //         shift_nuc_ = nuc_translation_offset_ + p1_start * 3;
+    //         return true;
+    //     }
+    //     else
+    //         hamds.push_back(hamd);
+    // }
+
+    // fmt::print(stderr, "NOT H3? ({}) {}\n{}\n", hamds, debug_name, aa_); // std::string_view(aa_.data(), 100));
+    // return false;
+
+    // if (aa_start == std::string::npos) {
+    //     // fmt::print(stderr, "NOT H3? {}\n{}\n", debug_name, std::string_view(aa_.data(), 100));
+    //     return false;
+    // }
+    // const auto hamd = ::string::hamming_distance(pattern_1, std::string_view(aa_.data() + aa_start, pattern_1.size()));
+    // if (hamd > 10)
+    //     fmt::print(stderr, "hamm {} {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 120));
+
 
 } // acmacs::seqdb::v3::sequence_t::align_h3n2
 
