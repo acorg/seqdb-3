@@ -54,6 +54,11 @@ int main(int argc, char* const argv[])
             entry.seq.sequence.translate();
             entry.aligned = entry.seq.sequence.align(entry.seq.type_subtype, entry.seq.fasta_name);
         }
+        fmt::print(stderr, "TOTAL sequences: {}\n", all_sequences.size());
+
+        fmt::print(stderr, "removing not translated to aa\n");
+        all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& entry) { return entry.seq.sequence.aa().empty(); }), std::end(all_sequences));
+        fmt::print(stderr, "TOTAL sequences: {}\n", all_sequences.size());
 
         // ----------------------------------------------------------------------
 
@@ -162,7 +167,7 @@ int main(int argc, char* const argv[])
 
         fmt::print(stderr, "\nNot Aligned H3: {}\n", ranges::count_if(all_sequences, [](const auto& entry) -> bool { return !entry.aligned && !entry.seq.sequence.aa().empty() && entry.seq.type_subtype.substr(0, 4) == "A(H3"; }));
         for (auto& seq_e : all_sequences) {
-            if (!seq_e.aligned && !seq_e.seq.sequence.aa().empty() && seq_e.seq.type_subtype.substr(0, 4) == "A(H3")
+            if (!seq_e.aligned && seq_e.seq.type_subtype.substr(0, 4) == "A(H3")
                 fmt::print(stderr, "{}\n{}\n", seq_e.seq.fasta_name, seq_e.seq.sequence.aa().substr(0, 200));
         }
 
