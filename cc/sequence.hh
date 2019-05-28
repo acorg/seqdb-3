@@ -38,12 +38,15 @@ namespace acmacs::seqdb
                     return std::string(static_cast<size_t>(- shift_aa_), 'X') + aa_;
             }
 
+            // returned shift is non-negative
+            // if it is 0, aligned sequence is returned
+            // if it is negative, sequence must be prepended with shift 'X's
             std::tuple<std::string_view, shift_t> aa_shifted() const
             {
                 if (shift_aa_ >= 0)
                     return {std::string_view(aa_).substr(static_cast<size_t>(shift_aa_)), 0};
                 else
-                    return {std::string_view(aa_), - shift_aa_};
+                    return {std::string_view(aa_), shift_aa_};
             }
 
             std::string nuc_aligned() const

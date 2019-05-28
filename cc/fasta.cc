@@ -367,6 +367,10 @@ void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& seque
        sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
 
        Aligner aligner;
+       for (const auto& entry : sequences | ranges::view::filter(is_aligned)) {
+           const auto [aa, shift] = entry.sequence.aa_shifted();
+           aligner.update(aa, shift, entry.sequence.type_subtype());
+       }
 
 } // acmacs::seqdb::v3::fasta::translate_align
 

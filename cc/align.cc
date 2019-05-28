@@ -1,4 +1,3 @@
-#include "acmacs-base/range-v3.hh"
 #include "acmacs-base/named-type.hh"
 #include "seqdb-3/align.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -48,13 +47,16 @@ namespace align_detail
 
 } // namespace align_detail
 
-std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name)
+std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view /*debug_name*/)
 {
     const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
-    const auto make_type_subtype = [hint, type_subtype_hint](const auto& pattern) -> std::string_view { if (hint == pattern.type_subtype_prefix) return type_subtype_hint; else return pattern.type_subtype; };
-    const auto suitable_subtype = [hint](const auto& pattern) -> bool {
-        return pattern.type_subtype_prefix == hint || hint.empty() || hint == "A(H0N";
+    const auto make_type_subtype = [hint, type_subtype_hint](const auto& pattern) -> std::string_view {
+        if (hint == pattern.type_subtype_prefix)
+            return type_subtype_hint;
+        else
+            return pattern.type_subtype;
     };
+    const auto suitable_subtype = [hint](const auto& pattern) -> bool { return pattern.type_subtype_prefix == hint || hint.empty() || hint == "A(H0N"; };
 
     for (const auto& pattern : align_detail::patterns | ranges::view::filter(suitable_subtype)) {
         for (auto p_start = amino_acids.find(pattern.pattern[0]); p_start < *pattern.max_offset; p_start = amino_acids.find(pattern.pattern[0], p_start + 1)) {
@@ -74,6 +76,8 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
 
 void acmacs::seqdb::v3::Aligner::update(std::string_view amino_acids, int shift, std::string_view type_subtype)
 {
+    const std::string hint{align_detail::type_subtype_hint(type_subtype)};
+    tables_.try_emplace(hint).first->second.update(amino_acids, shift);
 
 } // acmacs::seqdb::v3::Aligner::update
 
@@ -81,8 +85,21 @@ void acmacs::seqdb::v3::Aligner::update(std::string_view amino_acids, int shift,
 
 std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::Aligner::align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name) const
 {
+    const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
 
 } // acmacs::seqdb::v3::Aligner::align
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::Aligner::table_t::update(std::string_view amino_acids, int shift)
+{
+    auto offset = static_cast<size_t>(-shift);
+    for (char aa : amino_acids) {
+        data[number_of_symbols * offset + static_cast<size_t>(aa)] = 0;
+        ++offset;
+    }
+
+} // acmacs::seqdb::v3::Aligner::table_t::update
 
 // ----------------------------------------------------------------------
 
