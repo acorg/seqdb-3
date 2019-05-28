@@ -1,4 +1,6 @@
 #include "acmacs-base/named-type.hh"
+#include "acmacs-base/range-v3.hh"
+#include "acmacs-base/fmt.hh"
 #include "seqdb-3/align.hh"
 #include "seqdb-3/hamming-distance.hh"
 
@@ -91,15 +93,96 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::Aligner::ali
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::Aligner::report() const
+{
+    fmt::print(stderr, "Aligner {}\n", tables_.size());
+    for (const auto& [type_subtype, table] : tables_)
+        table.report(fmt::format(" {:<8s} ", type_subtype));
+    fmt::print(stderr, "\n");
+
+} // acmacs::seqdb::v3::Aligner::report
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::Aligner::table_t::table_t()
+{
+    ranges::fill(data, 1);
+
+    // X and - do not contribute at any position
+    for (auto pos : ranges::view::iota(0UL, max_sequence_length)) {
+        data[number_of_symbols * pos + static_cast<size_t>('X')] = 0;
+        data[number_of_symbols * pos + static_cast<size_t>('-')] = 0;
+    }
+
+} // acmacs::seqdb::v3::Aligner::table_t::table_t
+
+// ----------------------------------------------------------------------
+
 void acmacs::seqdb::v3::Aligner::table_t::update(std::string_view amino_acids, int shift)
 {
-    auto offset = static_cast<size_t>(-shift);
+    auto pos = static_cast<size_t>(-shift);
     for (char aa : amino_acids) {
-        data[number_of_symbols * offset + static_cast<size_t>(aa)] = 0;
-        ++offset;
+        data[number_of_symbols * pos + static_cast<size_t>(aa)] = 0;
+        ++pos;
     }
 
 } // acmacs::seqdb::v3::Aligner::table_t::update
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::Aligner::table_t::report(std::string prefix) const
+{
+    using iter_t = decltype(data.begin());
+    const auto increment = [](iter_t first, iter_t last, iter_t value) -> iter_t {
+        while (value != last) {
+            ++value;
+            if (*value == 0 && (value - first) != static_cast<ssize_t>('X') && (value - first) != static_cast<ssize_t>('-'))
+                break;
+        }
+        return value;
+    };
+    const auto begin = [this](size_t pos) -> iter_t { return data.begin() + number_of_symbols * pos; };
+    const auto end = [begin](size_t pos) -> iter_t { return begin(pos) + static_cast<ssize_t>('Z' + 1); };
+
+    constexpr const auto first_aa = static_cast<ssize_t>('A');
+    // constexpr const auto last_aa = static_cast<ssize_t>('Z' + 1);
+
+    std::array<iter_t, max_sequence_length> iters;
+    std::array<bool, max_sequence_length> completed;
+    size_t last_pos = 0;
+    for (auto pos : ranges::view::iota(0UL, max_sequence_length)) {
+        iters[pos] = increment(begin(pos), end(pos), begin(pos) + first_aa - 1);
+        if (iters[pos] == end(pos)) {
+            completed[pos] = true;
+        }
+        else {
+            completed[pos] = false;
+            last_pos = pos + 1;
+        }
+    }
+
+    const auto print_line = [&iters, &completed, increment, begin, end, last_pos]() {
+        for (auto pos : ranges::view::iota(0UL, last_pos)) {
+            if (iters[pos] != end(pos)) {
+                fmt::print(stderr, "{}", static_cast<char>(iters[pos] - begin(pos)));
+                iters[pos] = increment(begin(pos), end(pos), iters[pos]);
+                completed[pos] = iters[pos] == end(pos);
+            }
+            else
+                fmt::print(stderr, " ");
+        }
+        fmt::print(stderr, "\n");
+    };
+
+    fmt::print(stderr, "{}", prefix);
+    const std::string prefix_space(prefix.size(), ' ');
+    print_line();
+    while (!ranges::all_of(completed, [](auto val) { return val; })) {
+    fmt::print(stderr, "{}", prefix_space);
+        print_line();
+    }
+
+} // acmacs::seqdb::v3::Aligner::table_t::report
 
 // ----------------------------------------------------------------------
 

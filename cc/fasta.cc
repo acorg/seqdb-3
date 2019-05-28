@@ -371,6 +371,7 @@ void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& seque
            const auto [aa, shift] = entry.sequence.aa_shifted();
            aligner.update(aa, shift, entry.sequence.type_subtype());
        }
+       aligner.report();
 
 } // acmacs::seqdb::v3::fasta::translate_align
 

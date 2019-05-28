@@ -6,8 +6,6 @@
 #include <optional>
 #include <string_view>
 
-#include "acmacs-base/range-v3.hh"
-
 // ----------------------------------------------------------------------
 
 namespace acmacs::seqdb
@@ -24,6 +22,8 @@ namespace acmacs::seqdb
             void update(std::string_view amino_acids, int shift, std::string_view type_subtype);
             std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name) const;
 
+            void report() const;
+
           private:
             constexpr static size_t max_sequence_length{1000};
             constexpr static size_t number_of_symbols{128};
@@ -31,10 +31,11 @@ namespace acmacs::seqdb
 
             struct table_t
             {
-                table_t() { ranges::fill(data, 1); }
+                table_t();
 
                 // shift is non-positive!
                 void update(std::string_view amino_acids, int shift);
+                void report(std::string prefix) const;
 
                 std::array<int, table_size> data;
             };
