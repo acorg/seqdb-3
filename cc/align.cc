@@ -136,7 +136,7 @@ void acmacs::seqdb::v3::Aligner::table_t::report(std::string prefix) const
     const auto increment = [](iter_t first, iter_t last, iter_t value) -> iter_t {
         while (value != last) {
             ++value;
-            if (*value == 0 && (value - first) != static_cast<ssize_t>('X') && (value - first) != static_cast<ssize_t>('-'))
+            if (*value == 0 && (value - first) != static_cast<ssize_t>('X') /* && (value - first) != static_cast<ssize_t>('-') */)
                 break;
         }
         return value;
@@ -144,14 +144,11 @@ void acmacs::seqdb::v3::Aligner::table_t::report(std::string prefix) const
     const auto begin = [this](size_t pos) -> iter_t { return data.begin() + number_of_symbols * pos; };
     const auto end = [begin](size_t pos) -> iter_t { return begin(pos) + static_cast<ssize_t>('Z' + 1); };
 
-    constexpr const auto first_aa = static_cast<ssize_t>('A');
-    // constexpr const auto last_aa = static_cast<ssize_t>('Z' + 1);
-
     std::array<iter_t, max_sequence_length> iters;
     std::array<bool, max_sequence_length> completed;
     size_t last_pos = 0;
     for (auto pos : ranges::view::iota(0UL, max_sequence_length)) {
-        iters[pos] = increment(begin(pos), end(pos), begin(pos) + first_aa - 1);
+        iters[pos] = increment(begin(pos), end(pos), begin(pos) + static_cast<ssize_t>('A') - 1);
         if (iters[pos] == end(pos)) {
             completed[pos] = true;
         }
@@ -175,10 +172,10 @@ void acmacs::seqdb::v3::Aligner::table_t::report(std::string prefix) const
     };
 
     fmt::print(stderr, "{}", prefix);
-    const std::string prefix_space(prefix.size(), ' ');
     print_line();
+    const std::string prefix_space(prefix.size(), ' ');
     while (!ranges::all_of(completed, [](auto val) { return val; })) {
-    fmt::print(stderr, "{}", prefix_space);
+        fmt::print(stderr, "{}", prefix_space);
         print_line();
     }
 
