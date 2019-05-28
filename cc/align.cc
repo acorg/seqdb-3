@@ -39,6 +39,7 @@ namespace align_detail
 
     static const std::array patterns{
         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size},
+                //                      MKTIIAFSCILCQIFA
         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Aichi/2/1968
         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
@@ -155,7 +156,19 @@ void acmacs::seqdb::v3::Aligner::table_t::update(std::string_view amino_acids, i
 
 std::optional<int> acmacs::seqdb::v3::Aligner::table_t::align(char start_aa, std::string_view amino_acids, std::string_view debug_name) const
 {
-    // fmt::print(stderr, "Aligner::table_t::align {}\n", debug_name);
+    // fmt::print(stderr, "Aligner::table_t::align {}\n{}\n", debug_name, amino_acids);
+    for (auto p_start = amino_acids.find(start_aa); p_start < (amino_acids.size() / 2); p_start = amino_acids.find(start_aa, p_start + 1)) {
+        const auto all_pos = ranges::view::iota(0UL, std::min(max_sequence_length, amino_acids.size() - p_start));
+        if (const auto failed_pos = ranges::find_if(all_pos, [this,amino_acids,p_start](size_t pos) -> bool { return data[number_of_symbols * pos + static_cast<size_t>(amino_acids[p_start + pos])]; }); failed_pos != ranges::end(all_pos)) {
+            if (*failed_pos > 10)
+                fmt::print(stderr, "Aligner::table_t::align FAILED: shift:{} {}:{} -- {} -- {}\n", p_start, *failed_pos, amino_acids[p_start + *failed_pos], debug_name, amino_acids.substr(0, p_start + *failed_pos + 5));
+        }
+        else {
+            // fmt::print(stderr, "Aligner::table_t::align good shift:{}\n", p_start);
+            return static_cast<int>(p_start);
+        }
+    }
+
     return std::nullopt;
 
 } // acmacs::seqdb::v3::Aligner::table_t::align

@@ -31,6 +31,8 @@ namespace acmacs::seqdb
 
             struct table_t
             {
+                using contribution_t = int;
+
                 table_t();
 
                 // shift is non-positive!
@@ -38,7 +40,7 @@ namespace acmacs::seqdb
                 std::optional<int> align(char start_aa, std::string_view amino_acids, std::string_view debug_name) const;
                 void report(std::string prefix) const;
 
-                std::array<int, table_size> data;
+                std::array<contribution_t, table_size> data;
             };
 
             std::map<std::string, table_t, std::less<>> tables_;
