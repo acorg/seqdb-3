@@ -68,10 +68,12 @@ namespace acmacs::seqdb
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
 
-            void set_shift(int shift_aa)
+            void set_shift(int shift_aa, std::optional<std::string_view> type_subtype = std::nullopt)
             {
                 shift_aa_ = shift_aa;
                 shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
+                if (type_subtype.has_value())
+                    type_subtype_ = *type_subtype;
             }
 
             void date(const Date& a_date) { date_ = a_date; }

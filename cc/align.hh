@@ -35,12 +35,13 @@ namespace acmacs::seqdb
 
                 // shift is non-positive!
                 void update(std::string_view amino_acids, int shift);
+                std::optional<int> align(char start_aa, std::string_view amino_acids, std::string_view debug_name) const;
                 void report(std::string prefix) const;
 
                 std::array<int, table_size> data;
             };
 
-            std::map<std::string, table_t> tables_;
+            std::map<std::string, table_t, std::less<>> tables_;
         };
 
     } // namespace v3

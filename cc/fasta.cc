@@ -357,21 +357,35 @@ acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename)
 void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& sequences)
 {
 #pragma omp parallel for default(shared) schedule(static, 256)
-       for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
-           auto& entry = sequences[e_no];
-           entry.sequence.translate();
-           entry.sequence.align(entry.fasta.type_subtype, entry.fasta.entry_name);
-       }
+    for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
+        auto& entry = sequences[e_no];
+        entry.sequence.translate();
+        entry.sequence.align(entry.fasta.type_subtype, entry.fasta.entry_name);
+    }
 
-       // remove not translated
-       sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
+    // remove not translated
+    sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
 
-       Aligner aligner;
-       for (const auto& entry : sequences | ranges::view::filter(is_aligned)) {
-           const auto [aa, shift] = entry.sequence.aa_shifted();
-           aligner.update(aa, shift, entry.sequence.type_subtype());
-       }
-       aligner.report();
+    fmt::print(stderr, "translate_align aligned 1: {}\n", ranges::count_if(sequences, is_aligned));
+
+    Aligner aligner;
+    for (const auto& entry : sequences | ranges::view::filter(is_aligned)) {
+        const auto [aa, shift] = entry.sequence.aa_shifted();
+        aligner.update(aa, shift, entry.sequence.type_subtype());
+    }
+    aligner.report();
+
+    for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
+        auto& entry = sequences[e_no];
+        if (!entry.sequence.aligned()) {
+            if (const auto align_data = aligner.align(entry.sequence.aa(), entry.fasta.type_subtype, *entry.sequence.name()); align_data.has_value()) {
+                const auto [shift, type_subtype] = *align_data;
+                entry.sequence.set_shift(shift, type_subtype);
+            }
+        }
+    }
+
+    fmt::print(stderr, "translate_align aligned 2: {}\n", ranges::count_if(sequences, is_aligned));
 
 } // acmacs::seqdb::v3::fasta::translate_align
 

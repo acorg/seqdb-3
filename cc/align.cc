@@ -19,6 +19,7 @@ namespace align_detail
     {
         std::string_view type_subtype_prefix;
         std::string_view type_subtype;
+        char start_aa;
         std::string_view pattern;
         max_offset_t max_offset;
         hdth_t hamming_distance_threshold;
@@ -37,15 +38,24 @@ namespace align_detail
 #endif
 
     static const std::array patterns{
-        pat_t{"A(H3N", "A(H3N2)", "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size},
-        // pat_t{"A(H3N", "A(H3N2)", "MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Aichi/2/1968
-        // pat_t{"A(H3N", "A(H3N2)", "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-        // pat_t{"A(H3N", "A(H3N2)", "MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
-        // pat_t{"A(H3N", "A(H3N2)", "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
-        // pat_t{"A(H3N", "A(H3N2)", "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
+        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size},
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Aichi/2/1968
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
     };
 
 #pragma GCC diagnostic pop
+
+    inline char start_aa(std::string_view type_subtype)
+    {
+        for (const auto& pattern : patterns) {
+            if (pattern.type_subtype_prefix == type_subtype || pattern.type_subtype == type_subtype)
+                return pattern.start_aa;
+        }
+        throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", type_subtype));
+    }
 
 } // namespace align_detail
 
@@ -88,6 +98,19 @@ void acmacs::seqdb::v3::Aligner::update(std::string_view amino_acids, int shift,
 std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::Aligner::align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name) const
 {
     const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
+    if (const auto found = tables_.find(hint); found != tables_.end()) {
+        if (const auto res = found->second.align(align_detail::start_aa(hint), amino_acids, debug_name); res.has_value())
+            return std::tuple(*res, type_subtype_hint);
+    }
+
+    // for (const auto& [ts, table] : tables_) {
+    //     if (ts != hint) {
+    //         if (const auto res = found->second.align(align_detail::start_aa(ts), amino_acids, debug_name); res.has_value())
+    //             return std::tuple(*res, ts);
+    //     }
+    // }
+
+    return std::nullopt;
 
 } // acmacs::seqdb::v3::Aligner::align
 
@@ -127,6 +150,15 @@ void acmacs::seqdb::v3::Aligner::table_t::update(std::string_view amino_acids, i
     }
 
 } // acmacs::seqdb::v3::Aligner::table_t::update
+
+// ----------------------------------------------------------------------
+
+std::optional<int> acmacs::seqdb::v3::Aligner::table_t::align(char start_aa, std::string_view amino_acids, std::string_view debug_name) const
+{
+    // fmt::print(stderr, "Aligner::table_t::align {}\n", debug_name);
+    return std::nullopt;
+
+} // acmacs::seqdb::v3::Aligner::table_t::align
 
 // ----------------------------------------------------------------------
 
