@@ -4,8 +4,6 @@
 #include <optional>
 #include <vector>
 
-#include "acmacs-base/date.hh"
-#include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/sequence.hh"
 
 // ----------------------------------------------------------------------
@@ -41,30 +39,22 @@ namespace acmacs::seqdb
                 std::string_view sequence;
             };
 
-            struct sequence_t
+            struct data_t
             {
-                std::string fasta_name;
-                std::string raw_name;
-                acmacs::virus::virus_name_t name;
-                acmacs::virus::host_t host;
-                Date date;
-                acmacs::virus::Reassortant reassortant;
-                acmacs::virus::Passage passage;
-                std::string annotations;
-                std::string lab_id;
-                std::string lab;
+                std::string entry_name;
+                std::string name;
                 std::string type_subtype;
                 std::string lineage;
-                seqdb::sequence_t sequence;
+                std::string passage;
+                std::string filename;
+                size_t line_no; // of the sequence name in filename
+                std::vector<acmacs::virus::parse_result_t::message_t> messages;
             };
 
             struct scan_result_t
             {
-                sequence_t seq;
-                bool aligned{false};
-                std::vector<acmacs::virus::v2::parse_result_t::message_t> messages;
-                std::string filename;
-                size_t line_no; // of the sequence name in filename
+                data_t fasta;
+                seqdb::sequence_t sequence;
             };
 
             struct hint_t
@@ -77,23 +67,23 @@ namespace acmacs::seqdb
             // ----------------------------------------------------------------------
 
             std::vector<scan_result_t> scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
-            std::vector<std::reference_wrapper<scan_result_t>> aligned(std::vector<scan_result_t>& source);
+            // std::vector<std::reference_wrapper<scan_result_t>> aligned(std::vector<scan_result_t>& source);
 
             // ----------------------------------------------------------------------
             // details
 
             std::tuple<scan_input_t, scan_output_t> scan(scan_input_t input);
 
-            std::optional<sequence_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
-            std::optional<sequence_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
-            std::optional<sequence_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
+            std::optional<scan_result_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
+            std::optional<scan_result_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
+            std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
             using messages_t = std::vector<acmacs::virus::v2::parse_result_t::message_t>;
 
             // returns error and warning messages
-            messages_t normalize_name(sequence_t& source);
+            messages_t normalize_name(scan_result_t& source);
 
-            std::optional<acmacs::seqdb::sequence_t> import_sequence(std::string_view raw_sequence, const scan_options_t& options);
+            bool import_sequence(std::string_view raw_sequence, seqdb::sequence_t& sequence_data, const scan_options_t& options);
 
         } // namespace fasta
 

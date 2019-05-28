@@ -38,18 +38,16 @@ std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::s
                 scan_output_t sequence_ref;
                 std::tie(file_input, sequence_ref) = scan(file_input);
 
-                std::optional<sequence_t> seq;
+                std::optional<scan_result_t> scan_result;
                 for (auto parser : {&name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
-                    seq = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
-                    if (seq.has_value())
+                    scan_result = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
+                    if (scan_result.has_value())
                         break;
                 }
-                if (seq.has_value()) {
-                    auto messages = normalize_name(*seq);
-                    if (const auto seq_opt = import_sequence(sequence_ref.sequence, options); seq_opt.has_value()) {
-                        seq->sequence = *seq_opt;
-                        sequences_per_file[f_no].push_back({*seq, false, messages, std::string(filename), file_input.name_line_no});
-                    }
+                if (scan_result.has_value()) {
+                    auto messages = normalize_name(*scan_result);
+                    if (import_sequence(sequence_ref.sequence, scan_result->sequence, options))
+                        sequences_per_file[f_no].push_back(std::move(*scan_result));
                 }
                 else
                     fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
@@ -114,7 +112,7 @@ std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::sca
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::name_gisaid_spaces(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
 {
     // name | date | passage | lab_id | lab | subtype | lineage
 
@@ -127,27 +125,29 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
             last_field.remove_suffix(1);
     }
 
-    acmacs::seqdb::v3::fasta::sequence_t result;
-    result.raw_name = fields[0];
-    result.date = parse_date(::string::upper(::string::strip(fields[1])), filename, line_no);
+    acmacs::seqdb::v3::fasta::scan_result_t result;
+    result.fasta.entry_name = name;
+    result.fasta.name = fields[0];
+    result.fasta.filename = filename;
+    result.fasta.line_no = line_no;
+    result.sequence.date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no));
     if (fields.size() > 2)
-        result.passage = acmacs::virus::Passage{::string::upper(::string::strip(fields[2]))};
+        result.fasta.passage = ::string::upper(::string::strip(fields[2]));
     if (fields.size() > 3)
-        result.lab_id = ::string::upper(::string::strip(fields[3]));
+        result.sequence.lab_id(::string::upper(::string::strip(fields[3])));
     if (fields.size() > 4)
-        result.lab = parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no);
+        result.sequence.lab(parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no));
     if (fields.size() > 5)
-        result.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
+        result.fasta.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
     if (fields.size() > 6)
-        result.lineage = parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no);
-    result.fasta_name = name;
+        result.fasta.lineage = parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no);
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_spaces
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no)
 {
     const auto fields = acmacs::string::split(name, "_|_");
     if (fields.size() < 2)
@@ -160,14 +160,13 @@ std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::na
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::fasta::sequence_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, const hint_t& hints, std::string_view /*filename*/, size_t /*line_no*/)
+std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::name_plain(std::string_view name, const hint_t& hints, std::string_view /*filename*/, size_t /*line_no*/)
 {
-    acmacs::seqdb::v3::fasta::sequence_t result;
-    result.raw_name = name;
-    result.fasta_name = result.raw_name;
-    result.lab = hints.lab;
-    result.type_subtype = hints.subtype;
-    result.lineage = hints.lineage;
+    acmacs::seqdb::v3::fasta::scan_result_t result;
+    result.fasta.entry_name = result.fasta.name = name;
+    result.sequence.lab(hints.lab);
+    result.fasta.type_subtype = hints.subtype;
+    result.fasta.lineage = hints.lineage;
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_plain
@@ -193,26 +192,27 @@ static const std::regex re_empty_annotations_if_just{"^[\\(\\)_\\-\\s,\\.]+$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::sequence_t& source)
+acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(acmacs::seqdb::v3::fasta::scan_result_t& source)
 {
     // std::cout << source.name << '\n';
     // return source;
 
-    auto result = acmacs::virus::parse_name(source.raw_name);
-    source.name = result.name;
-    source.host = result.host;
-    source.reassortant = result.reassortant;
-    source.annotations = result.extra;
+    auto result = acmacs::virus::parse_name(source.fasta.name);
+    source.sequence.name(std::move(result.name));
+    source.sequence.host(std::move(result.host));
+    source.sequence.reassortant(result.reassortant);
+    source.sequence.annotations(std::move(result.extra));
 
-    std::string passage_extra;
-    std::tie(source.passage, passage_extra) = acmacs::virus::parse_passage(*source.passage, acmacs::virus::passage_only::yes);
+    const auto [passage, passage_extra] = acmacs::virus::parse_passage(source.fasta.passage, acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
-        if (source.passage.empty()) {
+        if (passage.empty()) {
             result.messages.emplace_back(acmacs::virus::parse_result_t::message_t::unrecognized_passage, passage_extra);
-            source.passage = acmacs::virus::Passage{passage_extra};
+            source.sequence.passage(acmacs::virus::Passage{passage_extra});
         }
-        else
-            source.annotations = ::string::join(" ", {source.annotations, passage_extra});
+        else {
+            source.sequence.passage(acmacs::virus::Passage{passage});
+            source.sequence.annotations(::string::join(" ", {source.sequence.annotations(), passage_extra}));
+        }
     }
 
     // adjust subtype
@@ -221,12 +221,11 @@ acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(ac
     // if (!result.passage.empty())
     //     result.messages.emplace_back("name field contains passage", result.passage);
 
-    if (!source.annotations.empty() && std::regex_match(source.annotations, re_empty_annotations_if_just))
-        source.annotations.clear();
-
-    if (!source.annotations.empty()) {
-        if (!std::regex_match(source.annotations, re_valid_annotations))
-            result.messages.emplace_back("fasta name contains annotations", source.annotations);
+    if (const auto annotations = source.sequence.annotations(); !annotations.empty()) {
+        if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
+            source.sequence.remove_annotations();
+        else if (!std::regex_match(std::begin(annotations), std::end(annotations), re_valid_annotations))
+            result.messages.emplace_back("fasta name contains annotations", annotations);
     }
     return result.messages;
 
@@ -234,13 +233,14 @@ acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(ac
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::sequence_t> acmacs::seqdb::v3::fasta::import_sequence(std::string_view raw_sequence, const scan_options_t& options)
+bool acmacs::seqdb::v3::fasta::import_sequence(std::string_view raw_sequence, seqdb::sequence_t& sequence_data, const scan_options_t& options)
 {
     std::string sequence(raw_sequence);
     sequence.erase(std::remove_if(std::begin(sequence), std::end(sequence), [](char c) { return c == '\n' || c == '\r'; }), sequence.end());
-    if (sequence.size() < options.remove_too_short_nucs) // return empty if too short
-        return std::nullopt;
-    return acmacs::seqdb::sequence_t{sequence};
+    if (sequence.size() < options.remove_too_short_nucs)
+        return false;
+    sequence_data.import(sequence);
+    return true;
 
 } // acmacs::seqdb::v3::fasta::import_sequence
 
@@ -342,14 +342,14 @@ acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename)
 
 // ----------------------------------------------------------------------
 
-std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> acmacs::seqdb::v3::fasta::aligned(std::vector<scan_result_t>& source)
-{
-    std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> result;
-    std::copy_if(std::begin(source), std::end(source), std::back_inserter(result), [](const auto& entry) -> bool { return entry.aligned; });
-    return result;
+// std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> acmacs::seqdb::v3::fasta::aligned(std::vector<scan_result_t>& source)
+// {
+//     std::vector<std::reference_wrapper<acmacs::seqdb::v3::fasta::scan_result_t>> result;
+//     std::copy_if(std::begin(source), std::end(source), std::back_inserter(result), [](const auto& entry) -> bool { return entry.aligned; });
+//     return result;
 
 
-} // acmacs::seqdb::v3::fasta::aligned
+// } // acmacs::seqdb::v3::fasta::aligned
 
 // ----------------------------------------------------------------------
 
