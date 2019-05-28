@@ -38,6 +38,14 @@ namespace acmacs::seqdb
                     return std::string(static_cast<size_t>(- shift_aa_), 'X') + aa_;
             }
 
+            std::tuple<std::string_view, shift_t> aa_shifted() const
+            {
+                if (shift_aa_ >= 0)
+                    return {std::string_view(aa_).substr(static_cast<size_t>(shift_aa_)), 0};
+                else
+                    return {std::string_view(aa_), - shift_aa_};
+            }
+
             std::string nuc_aligned() const
             {
                 if (shift_nuc_ > 0)
@@ -57,9 +65,9 @@ namespace acmacs::seqdb
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
 
-            template <typename Int> void set_shift_aa(Int shift_aa)
+            void set_shift(int shift_aa)
             {
-                shift_aa_ = static_cast<decltype(shift_aa_)>(shift_aa);
+                shift_aa_ = shift_aa;
                 shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
             }
 
@@ -91,9 +99,6 @@ namespace acmacs::seqdb
             shift_t shift_aa_{not_aligned};
             std::string type_subtype_; // by alignment
             std::string lineage_;      // by deletion detection
-
-            bool align_h3n2(std::string_view debug_name);
-            bool align_any(std::string_view debug_name, std::string_view except = {});
         };
 
     } // namespace v3

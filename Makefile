@@ -7,7 +7,7 @@ TARGETS = \
   $(DIST)/seqdb3-scan \
   $(DIST)/seqdb3-names
 
-SEQDB_SOURCES = fasta.cc sequence.cc
+SEQDB_SOURCES = fasta.cc sequence.cc align.cc
 
 SEQDB_LIB_MAJOR = 3
 SEQDB_LIB_MINOR = 0

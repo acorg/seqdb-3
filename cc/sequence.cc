@@ -7,11 +7,9 @@
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/string.hh"
 #include "acmacs-base/string-split.hh"
-#include "acmacs-base/range.hh"
 #include "acmacs-base/algorithm.hh"
-#include "acmacs-base/named-type.hh"
 #include "seqdb-3/sequence.hh"
-#include "seqdb-3/hamming-distance.hh"
+#include "seqdb-3/align.hh"
 
 // ----------------------------------------------------------------------
 
@@ -43,7 +41,7 @@ void acmacs::seqdb::v3::sequence_t::translate()
         };
 
         std::array<translated_t, 3> translated;
-        std::transform(acmacs::index_iterator(0UL), acmacs::index_iterator(translated.size()), std::begin(translated), transformation);
+        ranges::transform(ranges::view::iota(0UL, translated.size()), std::begin(translated), transformation);
         const auto longest_translated = std::max_element(std::begin(translated), std::end(translated), [](const auto& e1, const auto& e2) { return std::get<std::string>(e1).size() < std::get<std::string>(e2).size(); });
         if (std::get<std::string>(*longest_translated).size() >= MINIMUM_SEQUENCE_AA_LENGTH) {
             std::tie(aa_, nuc_translation_offset_) = *longest_translated;
@@ -146,115 +144,15 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
 
 bool acmacs::seqdb::v3::sequence_t::align(std::string_view type_subtype_hint, std::string_view debug_name)
 {
-    if (aa_.empty())
-        return false;
-    if (type_subtype_hint == "A(H3N2)")
-        return align_h3n2(debug_name) || align_any(debug_name, type_subtype_hint);
-    else
-        return align_any(debug_name, type_subtype_hint);
-
-} // acmacs::seqdb::v3::sequence_t::align
-
-// ----------------------------------------------------------------------
-
-// http://signalpeptide.com
-
-#pragma GCC diagnostic push
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wglobal-constructors"
-#pragma GCC diagnostic ignored "-Wexit-time-destructors"
-#endif
-
-using max_offset_t = acmacs::named_size_t<struct max_offset_t_tag>;
-using hdth_t = acmacs::named_size_t<struct hdth_t_tag>; // hamming_distance_threshold
-using shift_t = acmacs::named_size_t<struct shift_t_tag>;
-constexpr const shift_t shift_is_pattern_size{-1};
-
-struct pat_t
-{
-    std::string_view pattern;
-    max_offset_t max_offset;
-    hdth_t hamming_distance_threshold;
-    shift_t shift;
-};
-
-static const std::array sH3patterns{
-    //pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Aichi/2/1968
-    pat_t{"MKTIIALSYILCLVFA",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-    // pat_t{"MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-    // pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
-    // pat_t{"QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
-    // pat_t{"QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
-};
-
-#pragma GCC diagnostic pop
-
-bool acmacs::seqdb::v3::sequence_t::align_h3n2(std::string_view debug_name)
-{
-    const std::string_view data{aa_};
-    std::vector<size_t> hamds;
-
-    for (const auto& pattern : sH3patterns) {
-        const std::string_view look_for = pattern.pattern.substr(0, 2);
-        for (auto p1_start = data.find(look_for); p1_start < *pattern.max_offset; p1_start = data.find(look_for, p1_start + look_for.size())) {
-            if (const auto hamd = hamming_distance(pattern.pattern, data.substr(p1_start, pattern.pattern.size())); hamd < *pattern.hamming_distance_threshold) {
-                if (pattern.shift == shift_is_pattern_size)
-                    set_shift_aa(p1_start + pattern.pattern.size());
-                else
-                    set_shift_aa(p1_start + *pattern.shift);
-                type_subtype_ = "A(H3N2)";
-                // fmt::print(stderr, "H3 ({}) {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 200));
-                return true;
-            }
-            else
-                hamds.push_back(hamd);
-        }
+    if (const auto shift_type = acmacs::seqdb::v3::align(aa_, type_subtype_hint, debug_name); shift_type.has_value()) {
+        const auto [shift, type_subtype] = *shift_type;
+        set_shift(shift);
+        type_subtype_ = type_subtype;
+        return true;
     }
-
-    // if (!hamds.empty())
-    //     fmt::print(stderr, "NOT H3? ({}) {}\n{}\n", hamds, debug_name, std::string_view(aa_.data(), 200));
-    return false;
-
-    // const std::string_view pattern_1{sH3N2_align_1};
-
-    // const std::string_view look_for = pattern_1.substr(0, 2);
-    // std::vector<size_t> hamds;
-    // for (auto p1_start = data.find(look_for); p1_start < (data.size() - pattern_1.size()); p1_start = data.find(look_for, p1_start + look_for.size())) {
-    //     if (const auto hamd = ::string::hamming_distance(pattern_1, data.substr(p1_start, pattern_1.size())); hamd < 6) {
-    //         shift_aa_ = p1_start;
-    //         shift_nuc_ = nuc_translation_offset_ + p1_start * 3;
-    //         return true;
-    //     }
-    //     else
-    //         hamds.push_back(hamd);
-    // }
-
-    // fmt::print(stderr, "NOT H3? ({}) {}\n{}\n", hamds, debug_name, aa_); // std::string_view(aa_.data(), 100));
-    // return false;
-
-    // if (aa_start == std::string::npos) {
-    //     // fmt::print(stderr, "NOT H3? {}\n{}\n", debug_name, std::string_view(aa_.data(), 100));
-    //     return false;
-    // }
-    // const auto hamd = ::string::hamming_distance(pattern_1, std::string_view(aa_.data() + aa_start, pattern_1.size()));
-    // if (hamd > 10)
-    //     fmt::print(stderr, "hamm {} {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 120));
-
-
-} // acmacs::seqdb::v3::sequence_t::align_h3n2
-
-// ----------------------------------------------------------------------
-
-bool acmacs::seqdb::v3::sequence_t::align_any(std::string_view debug_name, std::string_view except)
-{
-    // if (except != "A(H3N2)" && align_h3n2(debug_name))
-    //     return true;
-    return false;
-
-} // acmacs::seqdb::v3::sequence_t::align_any
-
-// ----------------------------------------------------------------------
-
+    else
+        return false;
+}
 
 // ----------------------------------------------------------------------
 /// Local Variables:

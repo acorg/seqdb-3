@@ -10,6 +10,7 @@
 #include "locationdb/locdb.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
+#include "seqdb-3/align.hh"
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
@@ -364,6 +365,8 @@ void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& seque
 
        // remove not translated
        sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
+
+       Aligner aligner;
 
 } // acmacs::seqdb::v3::fasta::translate_align
 
