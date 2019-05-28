@@ -39,39 +39,38 @@ namespace align_detail
 
     static const std::array patterns{
         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCLIFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/NEW JERSEY/53/2015 (CDC)
-
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIVLSCFFCLAFC", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/blue-winged teal/Ohio/31/1999
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYVFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N6)/duck/Nanchang/8-174/2000
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Duck/Hong Kong/7/1975, A(H3N8)/duck/Chabarovsk/1610/1972
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Hong Kong/1-1-MA-12/1968 + 63 other results
+        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCLIFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/NEW JERSEY/53/2015 (CDC) [fixes 1547]
+        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIVLSCFFCLAFC", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/blue-winged teal/Ohio/31/1999 [fixes 1234]
+        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Duck/Hong Kong/7/1975, A(H3N8)/duck/Chabarovsk/1610/1972 [fixes 119]
+        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYVFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N6)/duck/Nanchang/8-174/2000 [fixes 32]
+        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Hong Kong/1-1-MA-12/1968 + 63 other results [fixes 889]
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIILILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/equine/Idaho/37875/1991 + 70 other results
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTVIALSYILCLTFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Duck/Ukraine/1/1963
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIVLILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Equine/Kentucky/1/1987
 
         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0083/2013
         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0180/2012
 
-        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Swine/Ukkel/1/1984
-        // pat_t{"A(H3N", "A(H3N2)", 'Q', "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
-        // pat_t{"A(H3N", "A(H3N2)", 'Q', "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
+        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com
+        // A(H3N2)/Swine/Ukkel/1/1984 pat_t{"A(H3N", "A(H3N2)", 'Q', "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}}, pat_t{"A(H3N",
+        // "A(H3N2)", 'Q', "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
     };
 
-// signalpeptide H3
-// MKTIIALCYILCLVFA
-// MKTIIALSHIFCLVLG
-// MKTIIALSYIFCLAFA
-// MKTIIALSYIFCLAFS
-// MKTIIALSYIFCLVFA
-// MKTIIALSYIFCLVLG
-// MKTIIALSYIFCQVFA
-// MKTIIALSYIFCQVLA
-// MKTIIALSYILCLVFA
-// MKTIIALSYISCLVFA
-// MKTIIVLSCFFCLAFS
-// MKTIIVLSYFFCLALS
-// MKTTIILILLIHWVHS
-// MKTTIILILLTHWVYS
-// MKTTIVLILLTHWVYS
-// MKTTTILILLTHWVHS
-// MKTVIALSYILCLTFG
+    // signalpeptide H3
+    // MKTIIALCYILCLVFA
+    // MKTIIALSHIFCLVLG
+    // MKTIIALSYIFCLAFA
+    // MKTIIALSYIFCLAFS
+    // MKTIIALSYIFCLVFA
+    // MKTIIALSYIFCLVLG
+    // MKTIIALSYIFCQVFA
+    // MKTIIALSYIFCQVLA
+    // MKTIIALSYILCLVFA
+    // MKTIIALSYISCLVFA
+    // MKTIIVLSCFFCLAFS
+    // MKTIIVLSYFFCLALS
+    // MKTTIILILLIHWVHS
+    // MKTTTILILLTHWVHS
 
 #pragma GCC diagnostic pop
 
