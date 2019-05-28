@@ -20,19 +20,6 @@ static std::string translate_nucleotides_to_amino_acids(std::string_view nucleot
 
 // ----------------------------------------------------------------------
 
-bool acmacs::seqdb::v3::sequence_t::align(std::string_view type_subtype_hint, std::string_view debug_name)
-{
-    if (aa_.empty())
-        return false;
-    if (type_subtype_hint == "A(H3N2)")
-        return align_h3n2(debug_name) || align_any(debug_name, type_subtype_hint);
-    else
-        return align_any(debug_name, type_subtype_hint);
-
-} // acmacs::seqdb::v3::sequence_t::align
-
-// ----------------------------------------------------------------------
-
 // Some sequences from CNIC (and perhaps from other labs) have initial
 // part of nucleotides with stop codons inside. To figure out correct
 // translation we have first to translate with all possible offsets
@@ -154,6 +141,19 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
     return result;
 
 } // symbol_frequences
+
+// ----------------------------------------------------------------------
+
+bool acmacs::seqdb::v3::sequence_t::align(std::string_view type_subtype_hint, std::string_view debug_name)
+{
+    if (aa_.empty())
+        return false;
+    if (type_subtype_hint == "A(H3N2)")
+        return align_h3n2(debug_name) || align_any(debug_name, type_subtype_hint);
+    else
+        return align_any(debug_name, type_subtype_hint);
+
+} // acmacs::seqdb::v3::sequence_t::align
 
 // ----------------------------------------------------------------------
 

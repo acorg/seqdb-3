@@ -24,14 +24,32 @@ namespace acmacs::seqdb
             bool align(std::string_view type_subtype_hint, std::string_view debug_name); // returns if aligining succeeded
 
             std::string_view aa() const { return aa_; }
-            std::string_view aa_aligned() const { return {aa_.data() + shift_aa_}; }
             std::string_view nuc() const { return nuc_; }
-            std::string_view nuc_aligned() const { return {nuc_.data() + shift_nuc_}; }
             std::string_view type_subtype() const { return type_subtype_; }
             std::string_view lineage() const { return lineage_; }
 
+            std::string aa_aligned() const
+            {
+                if (shift_aa_ > 0)
+                    return aa_.substr(static_cast<size_t>(shift_aa_));
+                else if (shift_aa_ == 0)
+                    return aa_;
+                else
+                    return std::string(static_cast<size_t>(- shift_aa_), 'X') + aa_;
+            }
+
+            std::string nuc_aligned() const
+            {
+                if (shift_nuc_ > 0)
+                    return nuc_.substr(static_cast<size_t>(shift_nuc_));
+                else if (shift_nuc_ == 0)
+                    return nuc_;
+                else
+                    return std::string(static_cast<size_t>(- shift_nuc_), '-') + nuc_;
+            }
+
             const acmacs::virus::virus_name_t& name() const { return name_; }
-            const acmacs::virus::host_t& host() const { return host_; }
+            // const acmacs::virus::host_t& host() const { return host_; }
             std::string_view annotations() const { return annotations_; }
             std::string_view lab_id() const { return lab_id_; }
             std::string_view lab() const { return lab_; }
@@ -52,14 +70,14 @@ namespace acmacs::seqdb
             void lab_id(const std::string& a_lab_id) { lab_id_ = a_lab_id; }
             void lab(std::string_view a_lab) { lab_ = a_lab; }
             void name(acmacs::virus::virus_name_t&& a_name) { name_ = std::move(a_name); }
-            void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
+            // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
             void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
             void remove_annotations() { annotations_.clear(); }
             // void (const & a_) { _ = a_; }
 
           private:
             acmacs::virus::virus_name_t name_;
-            acmacs::virus::host_t host_;
+            // acmacs::virus::host_t host_;
             Date date_;
             acmacs::virus::Reassortant reassortant_;
             acmacs::virus::Passage passage_;

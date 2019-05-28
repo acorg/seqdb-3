@@ -199,7 +199,7 @@ acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(ac
 
     auto result = acmacs::virus::parse_name(source.fasta.name);
     source.sequence.name(std::move(result.name));
-    source.sequence.host(std::move(result.host));
+    // source.sequence.host(std::move(result.host));
     source.sequence.reassortant(result.reassortant);
     source.sequence.annotations(std::move(result.extra));
 
