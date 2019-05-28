@@ -353,6 +353,22 @@ acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename)
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& sequences)
+{
+#pragma omp parallel for default(shared) schedule(static, 256)
+       for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
+           auto& entry = sequences[e_no];
+           entry.sequence.translate();
+           entry.sequence.align(entry.fasta.type_subtype, entry.fasta.entry_name);
+       }
+
+       // remove not translated
+       sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
+
+} // acmacs::seqdb::v3::fasta::translate_align
+
+// ----------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------
 /// Local Variables:

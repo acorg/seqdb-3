@@ -47,19 +47,11 @@ int main(int argc, char* const argv[])
         Options opt(argc, argv);
 
         auto all_sequences = acmacs::seqdb::fasta::scan(opt.filenames, {});
+        fmt::print(stderr, "TOTAL sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
-//#pragma omp parallel for default(shared) schedule(static, 256)
-//        for (size_t e_no = 0; e_no < all_sequences.size(); ++e_no) {
-//            auto& entry = all_sequences[e_no];
-//            entry.seq.sequence.translate();
-//            entry.aligned = entry.seq.sequence.align(entry.seq.type_subtype, entry.seq.fasta_name);
-//        }
-//        fmt::print(stderr, "TOTAL sequences: {}\n", all_sequences.size());
-//
-//        fmt::print(stderr, "removing not translated to aa\n");
-//        all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& entry) { return entry.seq.sequence.aa().empty(); }), std::end(all_sequences));
-//        fmt::print(stderr, "TOTAL sequences: {}\n", all_sequences.size());
-//
+        acmacs::seqdb::fasta::translate_align(all_sequences);
+        fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
+
 //        // ----------------------------------------------------------------------
 //
 //        // std::set<char> all_aa;

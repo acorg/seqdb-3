@@ -13,6 +13,9 @@ namespace acmacs::seqdb
     {
         class sequence_t
         {
+            using shift_t = int;
+            constexpr static const shift_t not_aligned = -99999;
+
           public:
             sequence_t() = default;
 
@@ -33,7 +36,7 @@ namespace acmacs::seqdb
             std::string_view lab_id() const { return lab_id_; }
             std::string_view lab() const { return lab_; }
 
-            bool aligned() const;
+            constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
 
             template <typename Int> void set_shift_aa(Int shift_aa)
@@ -66,15 +69,15 @@ namespace acmacs::seqdb
             std::string aa_;
             std::string nuc_;
             int nuc_translation_offset_{0};
-            int shift_nuc_{0};
-            int shift_aa_{0};
+            shift_t shift_nuc_{not_aligned};
+            shift_t shift_aa_{not_aligned};
             std::string type_subtype_; // by alignment
             std::string lineage_;      // by deletion detection
-
 
             bool align_h3n2(std::string_view debug_name);
             bool align_any(std::string_view debug_name, std::string_view except = {});
         };
+
     } // namespace v3
 } // namespace acmacs::seqdb
 

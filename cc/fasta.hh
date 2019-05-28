@@ -14,6 +14,29 @@ namespace acmacs::seqdb
     {
         namespace fasta
         {
+            struct data_t
+            {
+                std::string entry_name;
+                std::string name;
+                std::string type_subtype;
+                std::string lineage;
+                std::string passage;
+                std::string filename;
+                size_t line_no; // of the sequence name in filename
+                std::vector<acmacs::virus::parse_result_t::message_t> messages;
+            };
+
+            struct scan_result_t
+            {
+                data_t fasta;
+                seqdb::sequence_t sequence;
+            };
+
+            constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
+            constexpr const auto isnot_aligned = [](const scan_result_t& sc) { return !sc.sequence.aligned(); };
+
+            // ----------------------------------------------------------------------
+
             struct scan_error : public std::runtime_error
             {
                 using std::runtime_error::runtime_error;
@@ -39,24 +62,6 @@ namespace acmacs::seqdb
                 std::string_view sequence;
             };
 
-            struct data_t
-            {
-                std::string entry_name;
-                std::string name;
-                std::string type_subtype;
-                std::string lineage;
-                std::string passage;
-                std::string filename;
-                size_t line_no; // of the sequence name in filename
-                std::vector<acmacs::virus::parse_result_t::message_t> messages;
-            };
-
-            struct scan_result_t
-            {
-                data_t fasta;
-                seqdb::sequence_t sequence;
-            };
-
             struct hint_t
             {
                 std::string lab;
@@ -67,6 +72,10 @@ namespace acmacs::seqdb
             // ----------------------------------------------------------------------
 
             std::vector<scan_result_t> scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
+
+            // removes not translated
+            void translate_align(std::vector<scan_result_t>& sequences);
+
             // std::vector<std::reference_wrapper<scan_result_t>> aligned(std::vector<scan_result_t>& source);
 
             // ----------------------------------------------------------------------
