@@ -23,6 +23,7 @@ namespace align_detail
 
     static constexpr const std::array start_aa_table{
         start_aa_t{"A(H3N", 'Q'},
+        start_aa_t{"A(H4N", 'Q'},
     };
 
     inline char start_aa(std::string_view hint)
@@ -31,6 +32,15 @@ namespace align_detail
             return found->start_aa;
         throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", hint));
     }
+
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wglobal-constructors"
+#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#endif
+
+#pragma GCC diagnostic pop
+
 }
 
 // ----------------------------------------------------------------------
@@ -44,9 +54,23 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
             return detected_type_subtype;
     };
 
+    // --------------------------------------------------
+    // first stage
+
     // H3
-    if (const auto pos = amino_acids.find("MKTII"); pos < 50 && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
-        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H3)")};
+    if (const auto pos_1 = amino_acids.find("MKTII"); pos_1 < 50 && (amino_acids[pos_1 + 16] == 'Q' || amino_acids[pos_1 + 15] == 'A')) // amino_acids.substr(pos_1 + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+        return std::tuple{static_cast<int>(pos_1 + 16), make_type_subtype("A(H3)")};
+
+    // H4
+    if (const auto pos_2 = amino_acids.find("QNYT"); pos_2 < 100 && amino_acids.substr(pos_2 + 11, 4) == "GHHA")
+        return std::tuple{static_cast<int>(pos_2), make_type_subtype("A(H4)")};
+
+    // --------------------------------------------------
+    // second stage
+
+    // H3
+    if (const auto pos_2 = amino_acids.find("GHHA"); pos_2 < 100 && (pos_2 < 16 || amino_acids[pos_2 - 16] == 'Q') && amino_acids[pos_2 + 5] == 'P' && amino_acids[pos_2 + 7] == 'G' && amino_acids[pos_2 + 15] == 'D')
+        return std::tuple{static_cast<int>(pos_2) - 16, make_type_subtype("A(H3)")};
 
     return std::nullopt;
 

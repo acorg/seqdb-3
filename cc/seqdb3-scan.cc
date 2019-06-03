@@ -28,6 +28,32 @@ static inline bool our_subtype(std::string_view type_subtype)
 
 // ----------------------------------------------------------------------
 
+static inline std::string infer_regex(const std::vector<std::string>& sources)
+{
+    std::vector<std::string> letters(128);
+    for (const auto& src : sources) {
+        for (size_t pos = 0; pos < src.size(); ++pos) {
+            if (ranges::find(letters[pos], src[pos]) == ranges::end(letters[pos]))
+                letters[pos].append(1, src[pos]);
+        }
+    }
+    std::string res;
+    for (const auto& let : letters) {
+        if (let.empty())
+            break;
+        if (let.size() == 1)
+            res.append(let);
+        else {
+            res.append(1, '[');
+            res.append(let);
+            res.append(1, ']');
+        }
+    }
+    return res;
+}
+
+// ----------------------------------------------------------------------
+
 using namespace acmacs::argv;
 struct Options : public argv
 {
@@ -49,9 +75,9 @@ int main(int argc, char* const argv[])
         auto all_sequences = acmacs::seqdb::fasta::scan(opt.filenames, {});
         fmt::print(stderr, "TOTAL sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
-        // keep just A(H3
-        all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }), std::end(all_sequences));
-        fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
+        // // keep just A(H3
+        // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }), std::end(all_sequences));
+        // fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
 
         acmacs::seqdb::fasta::translate_align(all_sequences);
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
@@ -59,8 +85,19 @@ int main(int argc, char* const argv[])
 
         if (const auto false_positive = acmacs::seqdb::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
-        if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, 200); !not_aligned.empty())
-            fmt::print(stderr, "NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
+        // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, 200); !not_aligned.empty())
+        //     fmt::print(stderr, "NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
+
+
+        // std::vector<std::string> qk;
+        // for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::isnot_aligned)) {
+        //     if (const auto pos = sc.sequence.aa().find("QK"); pos < 50 && sc.sequence.aa().substr(pos + 16, 2) == "HH")
+        //         qk.emplace_back(sc.sequence.aa().substr(pos, 32));
+        // }
+        // fmt::print(stderr, "QK: {}\n", infer_regex(qk));
+
+        // ranges::sort(qk);
+        // fmt::print(stderr, "QK {}\n{}\n", qk.size(), string::join("\n", qk));
 
         // acmacs::Counter<std::string> mktii; // type_subtype counter for MKTII
         // acmacs::Counter<std::string> qkip;
