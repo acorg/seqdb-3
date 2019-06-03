@@ -21,7 +21,7 @@ namespace acmacs::seqdb
 
             void import(std::string_view source);
             void translate();
-            bool align(std::string_view type_subtype_hint, std::string_view debug_name); // returns if aligining succeeded
+            bool align(std::string_view type_subtype_hint); // returns if aligining succeeded
 
             std::string_view aa() const { return aa_; }
             std::string_view nuc() const { return nuc_; }

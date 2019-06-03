@@ -360,7 +360,7 @@ void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& seque
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
         auto& entry = sequences[e_no];
         entry.sequence.translate();
-        entry.sequence.align(entry.fasta.type_subtype, entry.fasta.entry_name);
+        entry.sequence.align(entry.fasta.type_subtype);
     }
 
     // remove not translated
@@ -378,7 +378,7 @@ void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& seque
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
         auto& entry = sequences[e_no];
         if (!entry.sequence.aligned()) {
-            if (const auto align_data = aligner.align(entry.sequence.aa(), entry.fasta.type_subtype, *entry.sequence.name()); align_data.has_value()) {
+            if (const auto align_data = aligner.align(entry.sequence.aa(), entry.fasta.type_subtype); align_data.has_value()) {
                 const auto [shift, type_subtype] = *align_data;
                 entry.sequence.set_shift(shift, type_subtype);
             }
@@ -388,6 +388,28 @@ void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& seque
     fmt::print(stderr, "translate_align aligned 2: {}\n", ranges::count_if(sequences, is_aligned));
 
 } // acmacs::seqdb::v3::fasta::translate_align
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::fasta::report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
+{
+    fmt::memory_buffer out;
+    for (const auto& sc : sequences | ranges::view::filter(is_aligned) | ranges::view::filter(is_different_type_subtype_ignore_h0))
+        fmt::format_to(out, "detected:{} | fasta:{} | {}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::fasta::report_false_positive
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
+{
+    fmt::memory_buffer out;
+    for (const auto& sc : sequences | ranges::view::filter(isnot_aligned))
+        fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::fasta::report_not_aligned
 
 // ----------------------------------------------------------------------
 

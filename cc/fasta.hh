@@ -35,6 +35,8 @@ namespace acmacs::seqdb
             constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
             constexpr const auto isnot_aligned = [](const scan_result_t& sc) { return !sc.sequence.aligned(); };
             constexpr const auto is_translated = [](const scan_result_t& sc) { return sc.sequence.translated(); };
+            constexpr const auto is_different_type_subtype = [](const scan_result_t& sc) { return sc.fasta.type_subtype != sc.sequence.type_subtype(); };
+            constexpr const auto is_different_type_subtype_ignore_h0 = [](const scan_result_t& sc) { return sc.fasta.type_subtype != sc.sequence.type_subtype() && (sc.fasta.type_subtype.substr(0, 4) != "A(H0" || sc.sequence.type_subtype()[0] != 'A'); };
 
             // ----------------------------------------------------------------------
 
@@ -76,6 +78,9 @@ namespace acmacs::seqdb
 
             // removes not translated
             void translate_align(std::vector<scan_result_t>& sequences);
+
+            std::string report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos); // report aligned having type_subtype that differs from provided with fasta
+            std::string report_not_aligned(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos);
 
             // std::vector<std::reference_wrapper<scan_result_t>> aligned(std::vector<scan_result_t>& source);
 

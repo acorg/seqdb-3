@@ -10,107 +10,44 @@
 
 namespace align_detail
 {
-    using max_offset_t = acmacs::named_size_t<struct max_offset_t_tag>;
-    using hdth_t = acmacs::named_size_t<struct hdth_t_tag>; // hamming_distance_threshold
-    using shift_t = acmacs::named_size_t<struct shift_t_tag>;
-    constexpr const shift_t shift_is_pattern_size{-1};
-
-    struct pat_t
-    {
-        std::string_view type_subtype_prefix;
-        std::string_view type_subtype;
-        char start_aa;
-        std::string_view pattern;
-        max_offset_t max_offset;
-        hdth_t hamming_distance_threshold;
-        shift_t shift;
-    };
-
     inline std::string_view type_subtype_hint(std::string_view type_subtype)
     {
         return type_subtype.size() > 5 && type_subtype[0] == 'A' ? type_subtype.substr(0, 5) : type_subtype;
     }
 
-#pragma GCC diagnostic push
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wglobal-constructors"
-#pragma GCC diagnostic ignored "-Wexit-time-destructors"
-#endif
-
-    static const std::array patterns{
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com [50k]
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSCILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/47/2003(H3N2) [2.2k]
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCLIFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/NEW JERSEY/53/2015 (CDC) [1.1k]
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSHILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/440/2000(H3N2) [745]
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCMVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/152/2000(H3N2) [692]
-
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIVLSCFFCLAFC", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/blue-winged teal/Ohio/31/1999
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Duck/Hong Kong/7/1975, A(H3N8)/duck/Chabarovsk/1610/1972
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYVFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N6)/duck/Nanchang/8-174/2000
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Hong Kong/1-1-MA-12/1968 + 63 other results
-
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIILILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/equine/Idaho/37875/1991 + 70 other results
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTVIALSYILCLTFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Duck/Ukraine/1/1963
-        pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIVLILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Equine/Kentucky/1/1987
-
-        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0083/2013
-        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0180/2012
-
-        // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com
-        // A(H3N2)/Swine/Ukkel/1/1984 pat_t{"A(H3N", "A(H3N2)", 'Q', "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}}, pat_t{"A(H3N",
-        // "A(H3N2)", 'Q', "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
+    struct start_aa_t
+    {
+        const char* type_subtype_hint;
+        char start_aa;
     };
 
-    // signalpeptide H3
-    // MKTIIALCYILCLVFA
-    // MKTIIALSHIFCLVLG
-    // MKTIIALSYIFCLAFA
-    // MKTIIALSYIFCLAFS
-    // MKTIIALSYIFCLVFA
-    // MKTIIALSYIFCLVLG
-    // MKTIIALSYIFCQVFA
-    // MKTIIALSYIFCQVLA
-    // MKTIIALSYILCLVFA
-    // MKTIIALSYISCLVFA
-    // MKTIIVLSCFFCLAFS
-    // MKTIIVLSYFFCLALS
-    // MKTTIILILLIHWVHS
-    // MKTTTILILLTHWVHS
+    static constexpr const std::array start_aa_table{
+        start_aa_t{"A(H3N", 'Q'},
+    };
 
-#pragma GCC diagnostic pop
-
-    inline char start_aa(std::string_view type_subtype)
+    inline char start_aa(std::string_view hint)
     {
-        for (const auto& pattern : patterns) {
-            if (pattern.type_subtype_prefix == type_subtype || pattern.type_subtype == type_subtype)
-                return pattern.start_aa;
-        }
-        throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", type_subtype));
+        if (const auto found = ranges::find_if(start_aa_table, [hint](const auto& entry) { return entry.type_subtype_hint == hint; }); found != ranges::end(start_aa_table))
+            return found->start_aa;
+        throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", hint));
     }
+}
 
-} // namespace align_detail
+// ----------------------------------------------------------------------
 
-std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view /*debug_name*/)
+std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint)
 {
-    const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
-    const auto make_type_subtype = [hint, type_subtype_hint](const auto& pattern) -> std::string_view {
-        if (hint == pattern.type_subtype_prefix)
+    const auto make_type_subtype = [type_subtype_hint](std::string_view detected_type_subtype) -> std::string_view {
+        if (type_subtype_hint.substr(0, 4) == detected_type_subtype.substr(0, 4))
             return type_subtype_hint;
         else
-            return pattern.type_subtype;
+            return detected_type_subtype;
     };
-    const auto suitable_subtype = [hint](const auto& pattern) -> bool { return pattern.type_subtype_prefix == hint || hint.empty() || hint == "A(H0N"; };
 
-    for (const auto& pattern : align_detail::patterns | ranges::view::filter(suitable_subtype)) {
-        for (auto p_start = amino_acids.find(pattern.pattern[0]); p_start < *pattern.max_offset; p_start = amino_acids.find(pattern.pattern[0], p_start + 1)) {
-            if (hamming_distance(pattern.pattern, amino_acids.substr(p_start, pattern.pattern.size())) < *pattern.hamming_distance_threshold) {
-                if (pattern.shift == align_detail::shift_is_pattern_size)
-                    return std::tuple{static_cast<int>(p_start + pattern.pattern.size()), make_type_subtype(pattern)};
-                else
-                    return std::tuple{static_cast<int>(p_start + *pattern.shift), make_type_subtype(pattern)};
-            }
-        }
-    }
+    // H3
+    if (const auto pos = amino_acids.find("MKTII"); pos < 50 && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H3)")};
+
     return std::nullopt;
 
 } // acmacs::seqdb::v3::align
@@ -126,11 +63,11 @@ void acmacs::seqdb::v3::Aligner::update(std::string_view amino_acids, int shift,
 
 // ----------------------------------------------------------------------
 
-std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::Aligner::align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name) const
+std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::Aligner::align(std::string_view amino_acids, std::string_view type_subtype_hint) const
 {
     const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
     if (const auto found = tables_.find(hint); found != tables_.end()) {
-        if (const auto res = found->second.align(align_detail::start_aa(hint), amino_acids, debug_name); res.has_value())
+        if (const auto res = found->second.align(align_detail::start_aa(hint), amino_acids); res.has_value())
             return std::tuple(*res, type_subtype_hint);
     }
 
@@ -184,7 +121,7 @@ void acmacs::seqdb::v3::Aligner::table_t::update(std::string_view amino_acids, i
 
 // ----------------------------------------------------------------------
 
-std::optional<int> acmacs::seqdb::v3::Aligner::table_t::align(char start_aa, std::string_view amino_acids, std::string_view debug_name) const
+std::optional<int> acmacs::seqdb::v3::Aligner::table_t::align(char start_aa, std::string_view amino_acids) const
 {
     // fmt::print(stderr, "Aligner::table_t::align {}\n{}\n", debug_name, amino_acids);
     for (auto p_start = amino_acids.find(start_aa); p_start < (amino_acids.size() / 2); p_start = amino_acids.find(start_aa, p_start + 1)) {
@@ -257,6 +194,112 @@ void acmacs::seqdb::v3::Aligner::table_t::report(std::string prefix) const
 } // acmacs::seqdb::v3::Aligner::table_t::report
 
 // ----------------------------------------------------------------------
+
+// ****************************************************************************************************
+
+// namespace align_detail
+// {
+//     using max_offset_t = acmacs::named_size_t<struct max_offset_t_tag>;
+//     using hdth_t = acmacs::named_size_t<struct hdth_t_tag>; // hamming_distance_threshold
+//     using shift_t = acmacs::named_size_t<struct shift_t_tag>;
+//     constexpr const shift_t shift_is_pattern_size{-1};
+
+//     struct pat_t
+//     {
+//         std::string_view type_subtype_prefix;
+//         std::string_view type_subtype;
+//         char start_aa;
+//         std::string_view pattern;
+//         max_offset_t max_offset;
+//         hdth_t hamming_distance_threshold;
+//         shift_t shift;
+//     };
+
+// #pragma GCC diagnostic push
+// #ifdef __clang__
+// #pragma GCC diagnostic ignored "-Wglobal-constructors"
+// #pragma GCC diagnostic ignored "-Wexit-time-destructors"
+// #endif
+
+//     static const std::array patterns{
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com [50k]
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSCILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/47/2003(H3N2) [2.2k]
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCLIFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/NEW JERSEY/53/2015 (CDC) [1.1k]
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSHILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/440/2000(H3N2) [745]
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCMVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/152/2000(H3N2) [692]
+
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIVLSCFFCLAFC", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/blue-winged teal/Ohio/31/1999
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Duck/Hong Kong/7/1975, A(H3N8)/duck/Chabarovsk/1610/1972
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYVFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N6)/duck/Nanchang/8-174/2000
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Hong Kong/1-1-MA-12/1968 + 63 other results
+
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIILILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/equine/Idaho/37875/1991 + 70 other results
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTVIALSYILCLTFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Duck/Ukraine/1/1963
+//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIVLILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Equine/Kentucky/1/1987
+
+//         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0083/2013
+//         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0180/2012
+
+//         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com
+//         // A(H3N2)/Swine/Ukkel/1/1984 pat_t{"A(H3N", "A(H3N2)", 'Q', "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}}, pat_t{"A(H3N",
+//         // "A(H3N2)", 'Q', "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
+//     };
+
+//     // signalpeptide H3
+//     // MKTIIALCYILCLVFA
+//     // MKTIIALSHIFCLVLG
+//     // MKTIIALSYIFCLAFA
+//     // MKTIIALSYIFCLAFS
+//     // MKTIIALSYIFCLVFA
+//     // MKTIIALSYIFCLVLG
+//     // MKTIIALSYIFCQVFA
+//     // MKTIIALSYIFCQVLA
+//     // MKTIIALSYILCLVFA
+//     // MKTIIALSYISCLVFA
+//     // MKTIIVLSCFFCLAFS
+//     // MKTIIVLSYFFCLALS
+//     // MKTTIILILLIHWVHS
+//     // MKTTTILILLTHWVHS
+
+// #pragma GCC diagnostic pop
+
+//     inline char start_aa(std::string_view type_subtype)
+//     {
+//         for (const auto& pattern : patterns) {
+//             if (pattern.type_subtype_prefix == type_subtype || pattern.type_subtype == type_subtype)
+//                 return pattern.start_aa;
+//         }
+//         throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", type_subtype));
+//     }
+
+// } // namespace align_detail
+
+// std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint)
+// {
+//     const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
+//     const auto make_type_subtype = [hint, type_subtype_hint](const auto& pattern) -> std::string_view {
+//         if (hint == pattern.type_subtype_prefix)
+//             return type_subtype_hint;
+//         else
+//             return pattern.type_subtype;
+//     };
+//     const auto suitable_subtype = [hint](const auto& pattern) -> bool { return pattern.type_subtype_prefix == hint || hint.empty() || hint == "A(H0N"; };
+
+//     for (const auto& pattern : align_detail::patterns | ranges::view::filter(suitable_subtype)) {
+//         for (auto p_start = amino_acids.find(pattern.pattern[0]); p_start < *pattern.max_offset; p_start = amino_acids.find(pattern.pattern[0], p_start + 1)) {
+//             if (hamming_distance(pattern.pattern, amino_acids.substr(p_start, pattern.pattern.size())) < *pattern.hamming_distance_threshold) {
+//                 if (pattern.shift == align_detail::shift_is_pattern_size)
+//                     return std::tuple{static_cast<int>(p_start + pattern.pattern.size()), make_type_subtype(pattern)};
+//                 else
+//                     return std::tuple{static_cast<int>(p_start + *pattern.shift), make_type_subtype(pattern)};
+//             }
+//         }
+//     }
+//     return std::nullopt;
+
+// } // acmacs::seqdb::v3::align
+
+// ****************************************************************************************************
 
 //     // if (aa_.empty())
 //     //     return false;

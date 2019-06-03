@@ -12,7 +12,7 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name);
+        std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint);
 
         class Aligner
         {
@@ -20,7 +20,7 @@ namespace acmacs::seqdb
             Aligner() = default;
 
             void update(std::string_view amino_acids, int shift, std::string_view type_subtype);
-            std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint, std::string_view debug_name) const;
+            std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint) const;
 
             void report() const;
 
@@ -37,7 +37,7 @@ namespace acmacs::seqdb
 
                 // shift is non-positive!
                 void update(std::string_view amino_acids, int shift);
-                std::optional<int> align(char start_aa, std::string_view amino_acids, std::string_view debug_name) const;
+                std::optional<int> align(char start_aa, std::string_view amino_acids) const;
                 void report(std::string prefix) const;
 
                 std::array<contribution_t, table_size> data;

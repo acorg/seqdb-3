@@ -49,31 +49,37 @@ int main(int argc, char* const argv[])
         auto all_sequences = acmacs::seqdb::fasta::scan(opt.filenames, {});
         fmt::print(stderr, "TOTAL sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
-        // // keep just A(H3
-        // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }), std::end(all_sequences));
-        // fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
+        // keep just A(H3
+        all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }), std::end(all_sequences));
+        fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
 
         acmacs::seqdb::fasta::translate_align(all_sequences);
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
         fmt::print(stderr, "\n");
 
-        acmacs::Counter<std::string> mktii; // type_subtype counter for MKTII
-        acmacs::Counter<std::string> qkip;
-        std::vector<std::pair<std::string,std::string>> mktii_not_h3;
-        for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated)) {
-            if (const auto pos = seq.sequence.aa().find("MKTII"); pos < 50 && seq.sequence.aa().substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
-                mktii.count(seq.fasta.type_subtype);
-                qkip.count(seq.sequence.aa().substr(pos + 16, 4));
-                if (seq.fasta.type_subtype.substr(0, 4) != "A(H3" && seq.fasta.type_subtype.substr(0, 4) != "A(H0")
-                    mktii_not_h3.emplace_back(fmt::format("{} {}", seq.fasta.type_subtype, seq.fasta.entry_name), seq.sequence.aa().substr(0, 200));
-            }
-        }
-        mktii.report_sorted_max_first("MKTII\n", "\n");
-        qkip.report_sorted_max_first("QKIP\n", "\n");
+        if (const auto false_positive = acmacs::seqdb::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
+            fmt::print(stderr, "FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
+        if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, 200); !not_aligned.empty())
+            fmt::print(stderr, "NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
 
-        for (const auto& e2 : mktii_not_h3)
-            fmt::print(stderr, "{}\n{}\n", e2.first, e2.second);
-        fmt::print(stderr, "\n");
+        // acmacs::Counter<std::string> mktii; // type_subtype counter for MKTII
+        // acmacs::Counter<std::string> qkip;
+        // std::vector<std::pair<std::string,std::string>> mktii_not_h3;
+        // for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated)) {
+        //     const auto aa = seq.sequence.aa();
+        //     if (const auto pos = aa.find("MKTII"); pos < 50 && (aa[pos + 16] == 'Q' || aa[pos + 15] == 'A')) { // aa.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+        //         mktii.count(seq.fasta.type_subtype);
+        //         qkip.count(aa.substr(pos + 15, 2));
+        //         if (seq.fasta.type_subtype.substr(0, 4) != "A(H3" && seq.fasta.type_subtype.substr(0, 4) != "A(H0")
+        //             mktii_not_h3.emplace_back(fmt::format("{} {}", seq.fasta.type_subtype, seq.fasta.entry_name), aa.substr(0, 200));
+        //     }
+        // }
+        // mktii.report_sorted_max_first("MKTII\n", "\n");
+        // qkip.report_sorted_max_first("QKIP\n", "\n");
+
+        // for (const auto& e2 : mktii_not_h3)
+        //     fmt::print(stderr, "{}\n{}\n", e2.first, e2.second);
+        // fmt::print(stderr, "\n");
 
         // acmacs::Counter<std::string> mkt; // type_subtype counter for MKT
         // fmt::print(stderr, "MKT\n");
