@@ -22,8 +22,21 @@ namespace align_detail
     };
 
     static constexpr const std::array start_aa_table{
+        start_aa_t{"A(H1N", 'D'},
+        start_aa_t{"A(H2N", 'D'},
         start_aa_t{"A(H3N", 'Q'},
         start_aa_t{"A(H4N", 'Q'},
+        start_aa_t{"A(H5N", 'D'},
+        start_aa_t{"A(H6N", 'D'},
+        start_aa_t{"A(H7N", 'D'},
+        start_aa_t{"A(H8N", 'D'}, // DRIC
+        start_aa_t{"A(H9N", 'D'}, // DKIC
+        start_aa_t{"A(H10", 'D'}, // DRIC
+        start_aa_t{"A(H11", 'D'}, // DEIC
+        start_aa_t{"A(H12", 'D'}, // DKIC
+        start_aa_t{"A(H13", 'D'}, // DRIC
+        start_aa_t{"A(H14", 'Q'}, // QITN
+        start_aa_t{"B",     'D'}, // DRIC
     };
 
     inline char start_aa(std::string_view hint)
@@ -57,33 +70,77 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // --------------------------------------------------
     // first stage
 
+    // H2
+    if (const auto pos = amino_acids.find("MTI"); pos < 50)
+        return std::tuple{static_cast<int>(pos + 15), make_type_subtype("A(H3)")};
+
     // H3
-    if (const auto pos_1 = amino_acids.find("MKTII"); pos_1 < 50 && (amino_acids[pos_1 + 16] == 'Q' || amino_acids[pos_1 + 15] == 'A')) // amino_acids.substr(pos_1 + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
-        return std::tuple{static_cast<int>(pos_1 + 16), make_type_subtype("A(H3)")};
+    if (const auto pos = amino_acids.find("MKTII"); pos < 50 && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H3)")};
 
     // H4
-    // if (const auto pos_2 = amino_acids.find("MLSI"); pos_2 < 100 && (amino_acids[pos_2 + 16] == 'Q' || amino_acids[pos_2 + 16] == 'R'))
-    //     return std::tuple{static_cast<int>(pos_2 + 16), make_type_subtype("A(H4)")};
-    // if (const auto pos_2 = amino_acids.find("MLSITIL"); pos_2 < 100)
-    //     return std::tuple{static_cast<int>(pos_2 + 16), make_type_subtype("A(H4)")};
-    if (const auto pos_2 = amino_acids.find("MLS"); pos_2 < 100)
-        return std::tuple{static_cast<int>(pos_2 + 16), make_type_subtype("A(H4)")};
+    // if (const auto pos = amino_acids.find("MLSI"); pos < 100 && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 16] == 'R'))
+    //     return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H4)")};
+    // if (const auto pos = amino_acids.find("MLSITIL"); pos < 100)
+    //     return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H4)")};
+    if (const auto pos = amino_acids.find("MLS"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H4)")};
+
+    // H5
+    if (const auto pos = amino_acids.find("MEKIV"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H5)")};
+
+    // H6
+    if (const auto pos = amino_acids.find("MIAIIV"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H6)")};
+
+    // H7
+    if (const auto pos = amino_acids.find("MNIQ"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H7)")};
+
+    // H8
+    if (const auto pos = amino_acids.find("MEKFIA"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H8)")};
+
+    // // H9
+    // if (const auto pos = amino_acids.find("MET"); pos < 20)
+    //     return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H9)")};
+
+    // H10
+    if (const auto pos = amino_acids.find("MYK"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 17), make_type_subtype("A(H10)")};
+
+    // // H11
+    // if (const auto pos = amino_acids.find("MEK"); pos < 20)
+    //     return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H11)")};
+
+    // H12
+    if (const auto pos = amino_acids.find("MEK"); pos < 20 && amino_acids.substr(pos + 15, 7) == "AYDKIC")
+        return std::tuple{static_cast<int>(pos + 17), make_type_subtype("A(H12)")};
+
+    // H13
+    if (const auto pos = amino_acids.find("MDI"); pos < 20)
+        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H13)")};
+
+    // H14
+    if (const auto pos = amino_acids.find("MIA"); pos < 20 && amino_acids.substr(pos + 14, 7) == "AYSQITN")
+        return std::tuple{static_cast<int>(pos + 17), make_type_subtype("A(H14)")};
 
     // --------------------------------------------------
     // second stage
 
     // H4
-    if (const auto pos_2 = amino_acids.find("QNYT"); pos_2 < 100 && amino_acids.substr(pos_2 + 11, 4) == "GHHA")
-        return std::tuple{static_cast<int>(pos_2), make_type_subtype("A(H4)")};
+    if (const auto pos = amino_acids.find("QNYT"); pos < 100 && amino_acids.substr(pos + 11, 4) == "GHHA")
+        return std::tuple{static_cast<int>(pos), make_type_subtype("A(H4)")};
 
     // --------------------------------------------------
     // third stage
 
     // H3
-    if (const auto pos_2 = amino_acids.find("GHHA"); pos_2 < 100 &&
-        // (pos_2 < 16 || amino_acids[pos_2 - 16] == 'Q') &&
-        amino_acids[pos_2 + 5] == 'P' && amino_acids[pos_2 + 7] == 'G') //  && amino_acids[pos_2 + 15] == 'D')
-        return std::tuple{static_cast<int>(pos_2) - 16, make_type_subtype("A(H3)")};
+    if (const auto pos = amino_acids.find("GHHA"); pos < 100 &&
+        // (pos < 16 || amino_acids[pos - 16] == 'Q') &&
+        amino_acids[pos + 5] == 'P' && amino_acids[pos + 7] == 'G') //  && amino_acids[pos + 15] == 'D')
+        return std::tuple{static_cast<int>(pos) - 16, make_type_subtype("A(H3)")};
 
     return std::nullopt;
 
