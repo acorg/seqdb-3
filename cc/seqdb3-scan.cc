@@ -49,8 +49,63 @@ int main(int argc, char* const argv[])
         auto all_sequences = acmacs::seqdb::fasta::scan(opt.filenames, {});
         fmt::print(stderr, "TOTAL sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
+        // // keep just A(H3
+        // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }), std::end(all_sequences));
+        // fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
+
         acmacs::seqdb::fasta::translate_align(all_sequences);
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
+        fmt::print(stderr, "\n");
+
+        acmacs::Counter<std::string> mktii; // type_subtype counter for MKTII
+        acmacs::Counter<std::string> qkip;
+        std::vector<std::pair<std::string,std::string>> mktii_not_h3;
+        for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated)) {
+            if (const auto pos = seq.sequence.aa().find("MKTII"); pos < 50 && seq.sequence.aa().substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+                mktii.count(seq.fasta.type_subtype);
+                qkip.count(seq.sequence.aa().substr(pos + 16, 4));
+                if (seq.fasta.type_subtype.substr(0, 4) != "A(H3" && seq.fasta.type_subtype.substr(0, 4) != "A(H0")
+                    mktii_not_h3.emplace_back(fmt::format("{} {}", seq.fasta.type_subtype, seq.fasta.entry_name), seq.sequence.aa().substr(0, 200));
+            }
+        }
+        mktii.report_sorted_max_first("MKTII\n", "\n");
+        qkip.report_sorted_max_first("QKIP\n", "\n");
+
+        for (const auto& e2 : mktii_not_h3)
+            fmt::print(stderr, "{}\n{}\n", e2.first, e2.second);
+        fmt::print(stderr, "\n");
+
+        // acmacs::Counter<std::string> mkt; // type_subtype counter for MKT
+        // fmt::print(stderr, "MKT\n");
+        // for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated)) {
+        //     if (const auto pos = seq.sequence.aa().find("MKT"); pos < 50)
+        //         mkt.count(seq.fasta.type_subtype);
+        // }
+        // mkt.report_sorted_max_first();
+        // fmt::print(stderr, "\n");
+
+        // acmacs::Counter<std::string> mkt;
+        // for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated)) {
+        //     if (const auto pos = seq.sequence.aa().find("MKT"); pos < 100)
+        //         mkt.count(seq.sequence.aa().substr(pos, 16));
+        //     else if (const auto pos2 = seq.sequence.aa().find("MK"); pos2 < 100)
+        //         mkt.count(seq.sequence.aa().substr(pos2, 16));
+        // }
+        // mkt.report_sorted_max_first();
+
+        // for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::isnot_aligned)) {
+        //     fmt::print(stderr, "{}\n", seq.sequence.aa().substr(0, 200));
+        // }
+
+        const auto errors = 0; // report(all_sequences, opt);
+
+       return errors;
+    }
+    catch (std::exception& err) {
+        fmt::print(stderr, "ERROR: {}\n", err);
+        return 1;
+    }
+}
 
 //        // ----------------------------------------------------------------------
 //
@@ -202,15 +257,6 @@ int main(int argc, char* const argv[])
 //
 //        // fmt::print(stderr, "ALIGNED: {}  Potential: {}\n", aligned, potential);
 
-       const auto errors = report(all_sequences, opt);
-
-       return errors;
-    }
-    catch (std::exception& err) {
-        fmt::print(stderr, "ERROR: {}\n", err);
-        return 1;
-    }
-}
 
 // ----------------------------------------------------------------------
 

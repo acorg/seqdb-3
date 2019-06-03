@@ -34,6 +34,7 @@ namespace acmacs::seqdb
 
             constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
             constexpr const auto isnot_aligned = [](const scan_result_t& sc) { return !sc.sequence.aligned(); };
+            constexpr const auto is_translated = [](const scan_result_t& sc) { return sc.sequence.translated(); };
 
             // ----------------------------------------------------------------------
 
