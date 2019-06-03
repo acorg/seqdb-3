@@ -402,10 +402,10 @@ std::string acmacs::seqdb::v3::fasta::report_false_positive(const std::vector<sc
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
+std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter(isnot_aligned))
+    for (const auto& sc : sequences | ranges::view::filter([type_subtype_prefix](const auto& sc) { return sc.fasta.type_subtype.substr(0, type_subtype_prefix.size()) == type_subtype_prefix; }) | ranges::view::filter(isnot_aligned))
         fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 

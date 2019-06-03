@@ -80,7 +80,7 @@ namespace acmacs::seqdb
             void translate_align(std::vector<scan_result_t>& sequences);
 
             std::string report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos); // report aligned having type_subtype that differs from provided with fasta
-            std::string report_not_aligned(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos);
+            std::string report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff = std::string::npos);
 
             // std::vector<std::reference_wrapper<scan_result_t>> aligned(std::vector<scan_result_t>& source);
 

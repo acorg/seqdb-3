@@ -85,8 +85,10 @@ int main(int argc, char* const argv[])
 
         if (const auto false_positive = acmacs::seqdb::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
-        // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, 200); !not_aligned.empty())
-        //     fmt::print(stderr, "NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
+        // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H3N", 200); !not_aligned.empty())
+        //     fmt::print(stderr, "H3 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
+        if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H4N", 200); !not_aligned.empty())
+            fmt::print(stderr, "H4 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
 
 
         // std::vector<std::string> qk;
