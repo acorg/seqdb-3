@@ -100,6 +100,9 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // Only B has DRICT
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"DRICT"}); pos != std::string::npos)
         return std::tuple{static_cast<int>(pos), make_type_subtype("B")};
+    // Only B has MKAIIVL
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"MKAIIVL"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("B")};
     // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKT"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 15, "DRIC"))
     //     return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("B")};
 

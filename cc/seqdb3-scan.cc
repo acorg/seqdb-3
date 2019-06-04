@@ -94,7 +94,7 @@ int main(int argc, char* const argv[])
                                       const auto pos = sc.sequence.aa().find(std::string_view(chunk));
                                       return pos < 100;
                                   }))
-                counter_not_aligned_h.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
+                counter.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
             counter.report_sorted_max_first(fmt::format("Counter for {}\n", chunk), "\n");
         }
 
