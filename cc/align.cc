@@ -97,6 +97,9 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
         // Only H3 (and H0N0) has CTLID in the whole AA sequence
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"CTLID", "CTLMDALL", "CTLVD"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 63, make_type_subtype("A(H3)")};
+        // Only H3 (and H0N0) has PNGTIVKTI in the whole AA sequence
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"PNGTIVKTI"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 20, make_type_subtype("A(H3)")};
     }
     // H1
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKV", "MKA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 17, "DTLC"))
