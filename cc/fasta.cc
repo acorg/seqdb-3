@@ -395,21 +395,32 @@ std::string acmacs::seqdb::v3::fasta::report_false_positive(const std::vector<sc
 {
     fmt::memory_buffer out;
     for (const auto& sc : sequences | ranges::view::filter(is_aligned) | ranges::view::filter(is_different_type_subtype_ignore_h0))
-        fmt::format_to(out, "detected:{} | fasta:{} | {}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
+        fmt::format_to(out, "detected:{} | fasta:{} | {} -- {}:{}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::fasta::report_false_positive
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff)
+std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter([type_subtype_prefix](const auto& sc) { return sc.fasta.type_subtype.substr(0, type_subtype_prefix.size()) == type_subtype_prefix; }) | ranges::view::filter(isnot_aligned))
-        fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
+    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(isnot_aligned))
+        fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::fasta::report_not_aligned
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::fasta::report_aa(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
+{
+    fmt::memory_buffer out;
+    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_translated))
+        fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::fasta::report_aa
 
 // ----------------------------------------------------------------------
 

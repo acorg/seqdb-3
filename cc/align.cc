@@ -87,11 +87,11 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // first stage
 
     // // H1
-    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {""}); pos != std::string::npos)
-    //     return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("A(H1)")};
+    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKV", "MKA"}); pos != std::string::npos)
+    //     return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H1)")};
 
     // H2
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MTI"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "GDQIC"))
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MTIT", "MAII"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "GDQIC"))
         return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("A(H2)")};
 
     // H3
@@ -99,7 +99,7 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
         return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H3)")};
 
     // H4
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MLS"}); pos != std::string::npos)
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MLS"}); pos != std::string::npos && (amino_acids[pos + 16] == 'Q' || align_detail::has_infix(amino_acids, pos + 16, "SQNY")))
         return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H4)")};
 
     // H5
@@ -111,12 +111,12 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
         return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H6)")};
 
     // H7
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MNIQ", "MNNQ", "MNTQ"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 18, "DKIC"))
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MNIQ", "MNNQ", "MNTQ"}); pos != std::string::npos && amino_acids[pos + 17] != 'S' && align_detail::has_infix(amino_acids, pos + 18, "DKIC")) // SDKIC is H15 most probably
         return std::tuple{static_cast<int>(pos) + 18, make_type_subtype("A(H7)")};
 
     // H8
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEKFIA"}); pos != std::string::npos)
-        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H8)")};
+        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H8)")};
 
     // H9
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"METIS", "MEIIS"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 17, "ADKIC"))
@@ -142,9 +142,7 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MIA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "AYSQITN"))
         return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H14)")};
 
-    // H15
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MIA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "AYSQITN"))
-        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H15)")};
+    // H15 - second stage only
 
     // --------------------------------------------------
     // second stage
@@ -153,22 +151,30 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"QNYT"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 11, "GHHA"))
         return std::tuple{static_cast<int>(pos), make_type_subtype("A(H4)")};
 
-    // H15 (before H10!)
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"SDKICLGHHA"}); pos != std::string::npos)
-        return std::tuple{static_cast<int>(pos) + 1, make_type_subtype("A(H15)")};
+    // H10
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"LDKICLGHHA"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 1, make_type_subtype("A(H10)")};
 
-    // // H10
-    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"ICLGHHA"}); pos != std::string::npos)
-    //     return std::tuple{static_cast<int>(pos) - 2, make_type_subtype("A(H10)")};
+    // H15
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"KSDKICLGHHA"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 2, make_type_subtype("A(H15)")};
 
     // --------------------------------------------------
     // third stage
 
-    // H3
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GHHA"}); pos != std::string::npos &&
-        // (pos < 16 || amino_acids[pos - 16] == 'Q') &&
-        amino_acids[pos + 5] == 'P' && amino_acids[pos + 7] == 'G') //  && amino_acids[pos + 15] == 'D')
-        return std::tuple{static_cast<int>(pos) - 16, make_type_subtype("A(H3)")};
+    // H5
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GYHA"}); pos != std::string::npos && pos >= 21 && align_detail::has_infix(amino_acids, pos - 5, "DQ") && amino_acids[pos - 21] == 'M')
+        return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H5)")};
+
+    // H7
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"DKICLGHHAV"}); pos == 0) // sequence start
+        return std::tuple{static_cast<int>(pos), make_type_subtype("A(H7)")};
+
+    // // H3
+    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GHHA"}); pos != std::string::npos &&
+    //     // (pos < 16 || amino_acids[pos - 16] == 'Q') &&
+    //     amino_acids[pos + 5] == 'P' && amino_acids[pos + 7] == 'G') //  && amino_acids[pos + 15] == 'D')
+    //     return std::tuple{static_cast<int>(pos) - 16, make_type_subtype("A(H3)")};
 
     return std::nullopt;
 

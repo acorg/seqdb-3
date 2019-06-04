@@ -62,6 +62,9 @@ struct Options : public argv
     option<bool> all_lab_messages{*this, "all-lab-messages", desc{"otherwise show messages for WHO CCs only"}};
     option<bool> all_subtypes_messages{*this, "all-subtypes-messages", desc{"otherwise show messages for H1, H3, B only"}};
 
+    option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
+    option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
+
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
 
@@ -83,13 +86,28 @@ int main(int argc, char* const argv[])
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
         fmt::print(stderr, "\n");
 
+        // acmacs::Counter<std::string> dqicigyha;
+        // for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter([](const auto& sc) { const auto pos = sc.sequence.aa().find("DQICIGYHA"); return pos >= 16 && pos < 100 && sc.sequence.aa()[pos-16] == 'M'; }))
+        //     dqicigyha.count(sc.fasta.type_subtype.substr(2, 3));
+        // dqicigyha.report_sorted_max_first("DQICIGYHA\n", "\n");
+
         if (const auto false_positive = acmacs::seqdb::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
         // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H3N", 200); !not_aligned.empty())
         //     fmt::print(stderr, "H3 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
-        if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H4N", 200); !not_aligned.empty())
-            fmt::print(stderr, "H4 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
+        // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H4N", 200); !not_aligned.empty())
+        //     fmt::print(stderr, "H4 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
 
+
+        if (!opt.print_aa_for->empty()) {
+            const auto report = acmacs::seqdb::fasta::report_aa(all_sequences, ::string::upper(*opt.print_aa_for), 200);
+            fmt::print(stderr, "{} {}\n{}\n", *opt.print_aa_for, ranges::count(report, '\n') / 2, report);
+        }
+
+        if (!opt.print_not_aligned_for->empty()) {
+            const auto report = acmacs::seqdb::fasta::report_not_aligned(all_sequences, ::string::upper(*opt.print_not_aligned_for), 200);
+            fmt::print(stderr, "NOT ALIGNED {} {}\n{}\n", *opt.print_not_aligned_for, ranges::count(report, '\n') / 2, report);
+        }
 
         // std::vector<std::string> qk;
         // for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::isnot_aligned)) {
