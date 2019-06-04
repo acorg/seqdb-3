@@ -64,6 +64,7 @@ struct Options : public argv
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
+    option<str>  print_counter_for{*this, "print-counter-for", dflt{""}};
 
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
@@ -79,17 +80,23 @@ int main(int argc, char* const argv[])
         fmt::print(stderr, "TOTAL sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
         // // keep just A(H3
-        // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }), std::end(all_sequences));
-        // fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
+        // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }),
+        // std::end(all_sequences)); fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
 
         acmacs::seqdb::fasta::translate_align(all_sequences);
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
         fmt::print(stderr, "\n");
 
-        // acmacs::Counter<std::string> dqicigyha;
-        // for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter([](const auto& sc) { const auto pos = sc.sequence.aa().find("DQICIGYHA"); return pos >= 16 && pos < 100 && sc.sequence.aa()[pos-16] == 'M'; }))
-        //     dqicigyha.count(sc.fasta.type_subtype.substr(2, 3));
-        // dqicigyha.report_sorted_max_first("DQICIGYHA\n", "\n");
+        if (!opt.print_counter_for->empty()) {
+            acmacs::Counter<std::string> counter;
+            const auto chunk = ::string::upper(*opt.print_counter_for);
+            for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter([chunk](const auto& sc) {
+                                      const auto pos = sc.sequence.aa().find(std::string_view(chunk));
+                                      return pos < 100;
+                                  }))
+                counter.count(sc.fasta.type_subtype.substr(2, 3));
+            counter.report_sorted_max_first(fmt::format("Counter for {}\n", chunk), "\n");
+        }
 
         if (const auto false_positive = acmacs::seqdb::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
@@ -97,7 +104,6 @@ int main(int argc, char* const argv[])
         //     fmt::print(stderr, "H3 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
         // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H4N", 200); !not_aligned.empty())
         //     fmt::print(stderr, "H4 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
-
 
         if (!opt.print_aa_for->empty()) {
             const auto report = acmacs::seqdb::fasta::report_aa(all_sequences, ::string::upper(*opt.print_aa_for), 200);
@@ -124,7 +130,8 @@ int main(int argc, char* const argv[])
         // std::vector<std::pair<std::string,std::string>> mktii_not_h3;
         // for (const auto& seq : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated)) {
         //     const auto aa = seq.sequence.aa();
-        //     if (const auto pos = aa.find("MKTII"); pos < 50 && (aa[pos + 16] == 'Q' || aa[pos + 15] == 'A')) { // aa.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+        //     if (const auto pos = aa.find("MKTII"); pos < 50 && (aa[pos + 16] == 'Q' || aa[pos + 15] == 'A')) { // aa.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal
+        //     peptide is 15 aas!)
         //         mktii.count(seq.fasta.type_subtype);
         //         qkip.count(aa.substr(pos + 15, 2));
         //         if (seq.fasta.type_subtype.substr(0, 4) != "A(H3" && seq.fasta.type_subtype.substr(0, 4) != "A(H0")
@@ -162,7 +169,7 @@ int main(int argc, char* const argv[])
 
         const auto errors = 0; // report(all_sequences, opt);
 
-       return errors;
+        return errors;
     }
     catch (std::exception& err) {
         fmt::print(stderr, "ERROR: {}\n", err);

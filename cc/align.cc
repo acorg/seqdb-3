@@ -37,7 +37,7 @@ namespace align_detail
     };
 
     static constexpr const std::array start_aa_table{
-        start_aa_t{"A(H1N", 'D'},
+        start_aa_t{"A(H1N", 'D'}, // DTIC, DTLC
         start_aa_t{"A(H2N", 'D'}, // DQIC
         start_aa_t{"A(H3N", 'Q'},
         start_aa_t{"A(H4N", 'Q'},
@@ -53,7 +53,7 @@ namespace align_detail
         start_aa_t{"A(H14", 'Q'}, // QITN
         start_aa_t{"A(H15", 'D'}, // DKIC
         start_aa_t{"A(H16", 'D'}, // DKIC
-        start_aa_t{"A(H17", 'X'}, //
+        start_aa_t{"A(H17", 'D'}, // DRIC
         start_aa_t{"B",     'D'}, // DRIC
     };
 
@@ -88,9 +88,9 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // --------------------------------------------------
     // first stage
 
-    // // H1
-    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKV", "MKA"}); pos != std::string::npos)
-    //     return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H1)")};
+    // H1
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKV", "MKA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 17, "DTLC"))
+        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H1)")};
 
     // H2
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MTIT", "MAII"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "GDQIC"))
@@ -171,6 +171,10 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
 
     // --------------------------------------------------
     // third stage
+
+    // H1
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"DTLC"}); pos != std::string::npos && pos >= 17 && amino_acids[pos - 17] == 'M')
+        return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H1)")};
 
     // H5
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GYHA"}); pos != std::string::npos && pos >= 21 && align_detail::has_infix(amino_acids, pos - 5, "DQ") && amino_acids[pos - 21] == 'M')
