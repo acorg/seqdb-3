@@ -89,7 +89,9 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // first stage
 
     // H3
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKTII"}); pos != std::string::npos && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKTII"});
+        pos != std::string::npos &&
+        (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
         return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H3)")};
 
     // H1
@@ -97,14 +99,27 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
         return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H1)")};
 
     // B
-    // Only B has DRICT
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"DRICT"}); pos != std::string::npos)
-        return std::tuple{static_cast<int>(pos), make_type_subtype("B")};
-    // Only B has MKAIIVL
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"MKAIIVL"}); pos != std::string::npos)
-        return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("B")};
-    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKT"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 15, "DRIC"))
-    //     return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("B")};
+    {
+        // Only B has CTDL at first 100 AAs
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"CTDL"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 59, make_type_subtype("B")};
+        // Only B has NSPHVV at first 100 AAs
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"NSPHVV"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 10, make_type_subtype("B")};
+        // Only B has CPNATS in whole AA sequence
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 250, {"CPNATS"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 142, make_type_subtype("B")};
+        // --- below are redundant 2019-06-01
+        // Only B has DRICT
+        // if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"DRICT"}); pos != std::string::npos)
+        //     return std::tuple{static_cast<int>(pos), make_type_subtype("B")};
+        // Only B has MKAIIVL at first 100 AAs
+        // if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"MKAIIVL"}); pos != std::string::npos)
+        //     return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("B")};
+        // // Only B has NVTGV at first 100 AAs
+        // if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"NVTGV"}); pos != std::string::npos)
+        //     return std::tuple{static_cast<int>(pos) - 24, make_type_subtype("B")};
+    }
 
     // H2
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MTIT", "MAII"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "GDQIC"))
@@ -123,7 +138,8 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
         return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H6)")};
 
     // H7
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MNIQ", "MNNQ", "MNTQ"}); pos != std::string::npos && amino_acids[pos + 17] != 'S' && align_detail::has_infix(amino_acids, pos + 18, "DKIC")) // SDKIC is H15 most probably
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MNIQ", "MNNQ", "MNTQ"});
+        pos != std::string::npos && amino_acids[pos + 17] != 'S' && align_detail::has_infix(amino_acids, pos + 18, "DKIC")) // SDKIC is H15 most probably
         return std::tuple{static_cast<int>(pos) + 18, make_type_subtype("A(H7)")};
 
     // H8
@@ -187,7 +203,8 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
         return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H1)")};
 
     // H5
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GYHA"}); pos != std::string::npos && pos >= 21 && align_detail::has_infix(amino_acids, pos - 5, "DQ") && amino_acids[pos - 21] == 'M')
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GYHA"});
+        pos != std::string::npos && pos >= 21 && align_detail::has_infix(amino_acids, pos - 5, "DQ") && amino_acids[pos - 21] == 'M')
         return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H5)")};
 
     // H7

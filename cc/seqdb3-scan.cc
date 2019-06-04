@@ -88,14 +88,21 @@ int main(int argc, char* const argv[])
         fmt::print(stderr, "\n");
 
         if (!opt.print_counter_for->empty()) {
-            acmacs::Counter<std::string> counter;
             const auto chunk = ::string::upper(*opt.print_counter_for);
-            for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter([&chunk](const auto& sc) {
-                                      const auto pos = sc.sequence.aa().find(std::string_view(chunk));
-                                      return pos < 100;
-                                  }))
-                counter.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
-            counter.report_sorted_max_first(fmt::format("Counter for {}\n", chunk), "\n");
+            const auto found = [&chunk](size_t limit) { return [&chunk,limit](const auto& sc) { return sc.sequence.aa().find(std::string_view(chunk)) < limit; }; };
+            for (auto limit : {100, 150, 200, 1000}) {
+                acmacs::Counter<std::string> counter;
+                for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(found(static_cast<size_t>(limit))))
+                    counter.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
+                counter.report_sorted_max_first(fmt::format("Counter for {} at first {} positions\n", chunk, limit), "\n");
+            }
+
+            // for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter([&chunk](const auto& sc) {
+            //                           const auto pos = sc.sequence.aa().find(std::string_view(chunk));
+            //                           return pos < 150;
+            //                       }))
+            //     counter.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
+            // counter.report_sorted_max_first(fmt::format("Counter for {}\n", chunk), "\n");
         }
 
         if (const auto false_positive = acmacs::seqdb::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
