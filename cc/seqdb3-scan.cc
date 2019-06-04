@@ -120,7 +120,7 @@ int main(int argc, char* const argv[])
                 counter_not_aligned_h.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
             }
             counter_not_aligned_h.report_sorted_max_first("NOT ALIGNED\n", "\n");
-            counter_not_aligned.report_sorted_max_first("NOT ALIGNED\n", "\n");
+            // counter_not_aligned.report_sorted_max_first("NOT ALIGNED\n", "\n");
         }
 
         if (!opt.print_aa_for->empty()) {
