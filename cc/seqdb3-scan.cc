@@ -94,10 +94,7 @@ int main(int argc, char* const argv[])
                                       const auto pos = sc.sequence.aa().find(std::string_view(chunk));
                                       return pos < 100;
                                   }))
-                if (sc.fasta.type_subtype.size() > 4)
-                    counter.count(sc.fasta.type_subtype.substr(2, 3));
-                else
-                    counter.count(sc.fasta.type_subtype); // .substr(2, 3));
+                counter_not_aligned_h.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
             counter.report_sorted_max_first(fmt::format("Counter for {}\n", chunk), "\n");
         }
 
@@ -108,9 +105,12 @@ int main(int argc, char* const argv[])
         // if (const auto not_aligned = acmacs::seqdb::fasta::report_not_aligned(all_sequences, "A(H4N", 200); !not_aligned.empty())
         //     fmt::print(stderr, "H4 NOT ALIGNED {}\n{}\n", ranges::count(not_aligned, '\n') / 2, not_aligned);
 
-        acmacs::Counter<std::string> counter_not_aligned;
-        for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(acmacs::seqdb::fasta::isnot_aligned))
+        acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
+        for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(acmacs::seqdb::fasta::isnot_aligned)) {
             counter_not_aligned.count(sc.fasta.type_subtype); // .substr(2, 3));
+            counter_not_aligned_h.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
+        }
+        counter_not_aligned_h.report_sorted_max_first("NOT ALIGNED\n", "\n");
         counter_not_aligned.report_sorted_max_first("NOT ALIGNED\n", "\n");
 
         if (!opt.print_aa_for->empty()) {
