@@ -101,7 +101,7 @@ int main(int argc, char* const argv[])
 
         if (!opt.print_aa_for->empty()) {
             const auto report = acmacs::seqdb::fasta::report_aa(all_sequences, ::string::upper(*opt.print_aa_for), 200);
-            fmt::print(stderr, "{} {}\n{}\n", *opt.print_aa_for, ranges::count(report, '\n') / 2, report);
+            fmt::print("{} {}\n{}\n", *opt.print_aa_for, ranges::count(report, '\n') / 2, report);
         }
 
         if (!opt.print_not_aligned_for->empty()) {
