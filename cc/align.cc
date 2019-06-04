@@ -89,11 +89,15 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // first stage
 
     // H3
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKTII"});
-        pos != std::string::npos &&
-        (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
-        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H3)")};
-
+    {
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKTII"});
+            pos != std::string::npos &&
+            (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+            return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H3)")};
+        // Only H3 (and H0N0) has CTLID in the whole AA sequence
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"CTLID", "CTLMDALL", "CTLVD"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 63, make_type_subtype("A(H3)")};
+    }
     // H1
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKV", "MKA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 17, "DTLC"))
         return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H1)")};

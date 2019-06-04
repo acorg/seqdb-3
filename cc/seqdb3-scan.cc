@@ -91,7 +91,7 @@ int main(int argc, char* const argv[])
         if (!opt.print_counter_for->empty()) {
             const auto chunk = ::string::upper(*opt.print_counter_for);
             const auto found = [&chunk](size_t limit) { return [&chunk,limit](const auto& sc) { return sc.sequence.aa().find(std::string_view(chunk)) < limit; }; };
-            for (auto limit : {100, 150, 200, 1000}) {
+            for (auto limit : {50, 100, 150, 200, 1000}) {
                 acmacs::Counter<std::string> counter;
                 for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(found(static_cast<size_t>(limit))))
                     counter.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
