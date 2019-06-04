@@ -20,6 +20,16 @@ namespace align_detail
         return source.substr(pos, match.size()) == match;
     }
 
+    inline std::string::size_type find_in_sequence(std::string_view sequence, size_t limit, std::initializer_list<const char*> look_for)
+    {
+        const auto source = sequence.substr(0, limit);
+        for (const char* str : look_for) {
+            if (const auto pos = source.find(str); pos != std::string::npos)
+                return pos;
+        }
+        return std::string::npos;
+    }
+
     struct start_aa_t
     {
         const char* type_subtype_hint;
@@ -41,6 +51,7 @@ namespace align_detail
         start_aa_t{"A(H12", 'D'}, // DKIC
         start_aa_t{"A(H13", 'D'}, // DRIC
         start_aa_t{"A(H14", 'Q'}, // QITN
+        start_aa_t{"A(H15", 'D'}, // DKIC
         start_aa_t{"B",     'D'}, // DRIC
     };
 
@@ -76,83 +87,85 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
     // first stage
 
     // // H1
-    // if (const auto pos = amino_acids.find(""); pos < 20)
-    //     return std::tuple{static_cast<int>(pos + 15), make_type_subtype("A(H1)")};
+    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {""}); pos != std::string::npos)
+    //     return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("A(H1)")};
 
     // H2
-    if (const auto pos = amino_acids.find("MTI"); pos < 20 && align_detail::has_infix(amino_acids, pos + 14, "GDQIC"))
-        return std::tuple{static_cast<int>(pos + 15), make_type_subtype("A(H2)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MTI"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "GDQIC"))
+        return std::tuple{static_cast<int>(pos) + 15, make_type_subtype("A(H2)")};
 
     // H3
-    if (const auto pos = amino_acids.find("MKTII"); pos < 20 && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
-        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H3)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MKTII"}); pos != std::string::npos && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 15] == 'A')) // amino_acids.substr(pos + 15, 2) != "DR") { // DR[ISV]C - start of the B sequence (signal peptide is 15 aas!)
+        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H3)")};
 
     // H4
-    // if (const auto pos = amino_acids.find("MLSI"); pos < 100 && (amino_acids[pos + 16] == 'Q' || amino_acids[pos + 16] == 'R'))
-    //     return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H4)")};
-    // if (const auto pos = amino_acids.find("MLSITIL"); pos < 100)
-    //     return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H4)")};
-    if (const auto pos = amino_acids.find("MLS"); pos < 20)
-        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H4)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MLS"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H4)")};
 
     // H5
-    if (const auto pos = amino_acids.find("MEKIV"); pos < 20)
-        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H5)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEKIV"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H5)")};
 
     // H6
-    if (const auto pos = amino_acids.find("MIAIIV"); pos < 20)
-        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H6)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MIAIIV"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H6)")};
 
     // H7
-    if (const auto pos = amino_acids.find("MNIQ"); pos < 20 && align_detail::has_infix(amino_acids, pos + 18, "DKIC"))
-        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H7)")};
-    if (const auto pos = amino_acids.find("MNNQ"); pos < 20 && align_detail::has_infix(amino_acids, pos + 18, "DKIC"))
-        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H7)")};
-    if (const auto pos = amino_acids.find("MNTQ"); pos < 20 && align_detail::has_infix(amino_acids, pos + 18, "DKIC"))
-        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H7)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MNIQ", "MNNQ", "MNTQ"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 18, "DKIC"))
+        return std::tuple{static_cast<int>(pos) + 18, make_type_subtype("A(H7)")};
 
     // H8
-    if (const auto pos = amino_acids.find("MEKFIA"); pos < 20)
-        return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H8)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEKFIA"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H8)")};
 
     // H9
-    if (const auto pos = amino_acids.find("METIS"); pos < 20 && align_detail::has_infix(amino_acids, pos + 17, "ADKIC"))
-        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H9)")};
-    if (const auto pos = amino_acids.find("MEIIS"); pos < 20 && align_detail::has_infix(amino_acids, pos + 17, "ADKIC"))
-        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H9)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"METIS", "MEIIS"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 17, "ADKIC"))
+        return std::tuple{static_cast<int>(pos) + 18, make_type_subtype("A(H9)")};
 
     // H10
-    if (const auto pos = amino_acids.find("MYK"); pos < 20)
-        return std::tuple{static_cast<int>(pos + 17), make_type_subtype("A(H10)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MYK"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H10)")};
 
     // // H11
-    // if (const auto pos = amino_acids.find("MEK"); pos < 20)
-    //     return std::tuple{static_cast<int>(pos + 16), make_type_subtype("A(H11)")};
+    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEK"}); pos != std::string::npos)
+    //     return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H11)")};
 
     // H12
-    if (const auto pos = amino_acids.find("MEK"); pos < 20 && align_detail::has_infix(amino_acids, pos + 15, "AYDKIC"))
-        return std::tuple{static_cast<int>(pos + 17), make_type_subtype("A(H12)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEK"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 15, "AYDKIC"))
+        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H12)")};
 
     // H13
-    if (const auto pos = amino_acids.find("MDI"); pos < 20)
-        return std::tuple{static_cast<int>(pos + 18), make_type_subtype("A(H13)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MDI"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 18, make_type_subtype("A(H13)")};
 
     // H14
-    if (const auto pos = amino_acids.find("MIA"); pos < 20 && align_detail::has_infix(amino_acids, pos + 14, "AYSQITN"))
-        return std::tuple{static_cast<int>(pos + 17), make_type_subtype("A(H14)")};
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MIA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "AYSQITN"))
+        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H14)")};
+
+    // H15
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MIA"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 14, "AYSQITN"))
+        return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H15)")};
 
     // --------------------------------------------------
     // second stage
 
     // H4
-    if (const auto pos = amino_acids.find("QNYT"); pos < 100 && align_detail::has_infix(amino_acids, pos + 11, "GHHA"))
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"QNYT"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 11, "GHHA"))
         return std::tuple{static_cast<int>(pos), make_type_subtype("A(H4)")};
+
+    // H15 (before H10!)
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"SDKICLGHHA"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) + 1, make_type_subtype("A(H15)")};
+
+    // // H10
+    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"ICLGHHA"}); pos != std::string::npos)
+    //     return std::tuple{static_cast<int>(pos) - 2, make_type_subtype("A(H10)")};
 
     // --------------------------------------------------
     // third stage
 
     // H3
-    if (const auto pos = amino_acids.find("GHHA"); pos < 100 &&
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GHHA"}); pos != std::string::npos &&
         // (pos < 16 || amino_acids[pos - 16] == 'Q') &&
         amino_acids[pos + 5] == 'P' && amino_acids[pos + 7] == 'G') //  && amino_acids[pos + 15] == 'D')
         return std::tuple{static_cast<int>(pos) - 16, make_type_subtype("A(H3)")};
