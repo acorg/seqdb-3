@@ -65,6 +65,7 @@ struct Options : public argv
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
     option<str>  print_counter_for{*this, "print-counter-for", dflt{""}};
+    option<str>  print_aligned_for{*this, "print-aligned-for", dflt{""}};
 
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
@@ -128,6 +129,11 @@ int main(int argc, char* const argv[])
         if (!opt.print_not_aligned_for->empty()) {
             const auto report = acmacs::seqdb::fasta::report_not_aligned(all_sequences, ::string::upper(*opt.print_not_aligned_for), 200);
             fmt::print(stderr, "NOT ALIGNED {} {}\n{}\n", *opt.print_not_aligned_for, ranges::count(report, '\n') / 2, report);
+        }
+
+        if (!opt.print_aligned_for->empty()) {
+            const auto report = acmacs::seqdb::fasta::report_aligned(all_sequences, ::string::upper(*opt.print_aligned_for));
+            fmt::print("ALIGNED {} {}\n{}\n", *opt.print_aligned_for, ranges::count(report, '\n'), report);
         }
 
         // std::vector<std::string> qk;
