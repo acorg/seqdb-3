@@ -11,6 +11,7 @@
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
 #include "seqdb-3/align.hh"
+#include "seqdb-3/hamming-distance.hh"
 
 static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
 static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
@@ -415,9 +416,23 @@ std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_
 
 std::string acmacs::seqdb::v3::fasta::report_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix)
 {
+    std::string master;
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_aligned))
-        fmt::format_to(out, "{}\n", sc.sequence.aa_aligned());
+    for (const auto& sc :
+         sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_aligned)) {
+        const auto aligned = sc.sequence.aa_aligned();
+        fmt::format_to(out, "{:150s} {}\n", sc.fasta.entry_name, aligned);
+        if (!master.empty()) {
+            if (master.size() >= aligned.size()) {
+                if (const auto hd = hamming_distance_not_considering(master.substr(0, aligned.size()), aligned, '-'); hd > 35)
+                    fmt::print(stderr, "too different from master (hd:{}) {} {}\n", hd, sc.fasta.entry_name, aligned.substr(0, 100));
+            }
+            else if (aligned.back() != 'X')
+                fmt::print(stderr, "too long {} {}\n", sc.fasta.entry_name, aligned);
+        }
+        else
+            master = aligned;
+    }
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::fasta::report_not_aligned
