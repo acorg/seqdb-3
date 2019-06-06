@@ -156,9 +156,9 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MYK"}); pos != std::string::npos)
         return std::tuple{static_cast<int>(pos) + 17, make_type_subtype("A(H10)")};
 
-    // // H11
-    // if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEK"}); pos != std::string::npos)
-    //     return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H11)")};
+    // H11
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MK"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 16, "DEIC"))
+        return std::tuple{static_cast<int>(pos) + 16, make_type_subtype("A(H11)")};
 
     // H12
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"MEK"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 15, "AYDKIC"))
@@ -205,6 +205,10 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     // H10
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"LDKICLGHHA"}); pos != std::string::npos)
         return std::tuple{static_cast<int>(pos) + 1, make_type_subtype("A(H10)")};
+
+    // H11 (DEICIGYL is specific)
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"DEICIGYL"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos), make_type_subtype("A(H11)")};
 
     // H15
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"KSDKICLGHHA"}); pos != std::string::npos)
@@ -264,6 +268,10 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"CDLLLGG", "CDLLLEG"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 66, make_type_subtype("A(H9)")};
     }
+
+    // H11 (SSVEL is specific)
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"SSVEL"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) - 27, make_type_subtype("A(H11)")};
 
     return std::nullopt;
 
