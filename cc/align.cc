@@ -257,12 +257,21 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
 
     // H9
     {
-        // SSYQRIQ is H9 specific
-        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SSYQRIQ"}); pos != std::string::npos)
-            return std::tuple{static_cast<int>(pos) - 108, make_type_subtype("A(H9)")};
+        // QSTN is H9 specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"QSTN"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 7, make_type_subtype("A(H9)")};
         // CDLLLGG, CDLLLEG are H9 specific
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"CDLLLGG", "CDLLLEG"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 66, make_type_subtype("A(H9)")};
+        // LEELRS is H9 specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"LEELRS"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 97, make_type_subtype("A(H9)")};
+        // SARSYQ is H9 specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SARSYQ"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 106, make_type_subtype("A(H9)")};
+        // SSYQRIQ is H9 specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SSYQRIQ"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 108, make_type_subtype("A(H9)")};
     }
 
     // H10
