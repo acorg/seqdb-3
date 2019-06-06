@@ -59,11 +59,14 @@ namespace acmacs::seqdb
                     return std::string(static_cast<size_t>(- shift_nuc_), '-') + nuc_;
             }
 
-            const acmacs::virus::virus_name_t& name() const { return name_; }
+            constexpr const acmacs::virus::virus_name_t& name() const { return name_; }
             // const acmacs::virus::host_t& host() const { return host_; }
+            constexpr const acmacs::virus::Reassortant& reassortant() const { return reassortant_; }
             std::string_view annotations() const { return annotations_; }
+            constexpr const acmacs::virus::Passage& passage() const { return passage_; }
             std::string_view lab_id() const { return lab_id_; }
             std::string_view lab() const { return lab_; }
+            std::string full_name() const;
 
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
