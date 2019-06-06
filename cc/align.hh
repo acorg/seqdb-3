@@ -6,21 +6,23 @@
 #include <optional>
 #include <string_view>
 
+#include "acmacs-virus/virus-name.hh"
+
 // ----------------------------------------------------------------------
 
 namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint);
+        std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint);
 
         class Aligner
         {
           public:
             Aligner() = default;
 
-            void update(std::string_view amino_acids, int shift, std::string_view type_subtype);
-            std::optional<std::tuple<int, std::string_view>> align(std::string_view amino_acids, std::string_view type_subtype_hint) const;
+            void update(std::string_view amino_acids, int shift, const acmacs::virus::type_subtype_t& type_subtype);
+            std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint) const;
 
             void report() const;
 

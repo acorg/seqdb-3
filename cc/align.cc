@@ -10,10 +10,10 @@
 
 namespace align_detail
 {
-    inline std::string_view type_subtype_hint(std::string_view type_subtype)
-    {
-        return type_subtype.size() > 5 && type_subtype[0] == 'A' ? type_subtype.substr(0, 5) : type_subtype;
-    }
+    // inline std::string_view type_subtype_hint(std::string_view type_subtype)
+    // {
+    //     return type_subtype.size() > 5 && type_subtype[0] == 'A' ? type_subtype.substr(0, 5) : type_subtype;
+    // }
 
     inline bool has_infix(std::string_view source, size_t pos, std::string_view match)
     {
@@ -32,34 +32,34 @@ namespace align_detail
 
     struct start_aa_t
     {
-        const char* type_subtype_hint;
+        const char* type_subtype_h_or_b;
         char start_aa;
     };
 
     static constexpr const std::array start_aa_table{
-        start_aa_t{"A(H1N", 'D'}, // DTIC, DTLC
-        start_aa_t{"A(H2N", 'D'}, // DQIC
-        start_aa_t{"A(H3N", 'Q'},
-        start_aa_t{"A(H4N", 'Q'},
-        start_aa_t{"A(H5N", 'D'},
-        start_aa_t{"A(H6N", 'D'},
-        start_aa_t{"A(H7N", 'D'},
-        start_aa_t{"A(H8N", 'D'}, // DRIC
-        start_aa_t{"A(H9N", 'D'}, // DKIC
-        start_aa_t{"A(H10", 'D'}, // DRIC
-        start_aa_t{"A(H11", 'D'}, // DEIC
-        start_aa_t{"A(H12", 'D'}, // DKIC
-        start_aa_t{"A(H13", 'D'}, // DRIC
-        start_aa_t{"A(H14", 'Q'}, // QITN
-        start_aa_t{"A(H15", 'D'}, // DKIC
-        start_aa_t{"A(H16", 'D'}, // DKIC
-        start_aa_t{"A(H17", 'D'}, // DRIC
+        start_aa_t{"H1",  'D'}, // DTIC, DTLC
+        start_aa_t{"H2",  'D'}, // DQIC
+        start_aa_t{"H3",  'Q'},
+        start_aa_t{"H4",  'Q'},
+        start_aa_t{"H5",  'D'},
+        start_aa_t{"H6",  'D'},
+        start_aa_t{"H7",  'D'},
+        start_aa_t{"H8",  'D'}, // DRIC
+        start_aa_t{"H9",  'D'}, // DKIC
+        start_aa_t{"H10", 'D'}, // DRIC
+        start_aa_t{"H11", 'D'}, // DEIC
+        start_aa_t{"H12", 'D'}, // DKIC
+        start_aa_t{"H13", 'D'}, // DRIC
+        start_aa_t{"H14", 'Q'}, // QITN
+        start_aa_t{"H15", 'D'}, // DKIC
+        start_aa_t{"H16", 'D'}, // DKIC
+        start_aa_t{"H17", 'D'}, // DRIC
         start_aa_t{"B",     'D'}, // DRIC
     };
 
-    inline char start_aa(std::string_view hint)
+    inline char start_aa(const acmacs::virus::type_subtype_t& hint)
     {
-        if (const auto found = ranges::find_if(start_aa_table, [hint](const auto& entry) { return entry.type_subtype_hint == hint; }); found != ranges::end(start_aa_table))
+        if (const auto found = ranges::find_if(start_aa_table, [hint](const auto& entry) { return entry.type_subtype_h_or_b == hint.h_or_b(); }); found != ranges::end(start_aa_table))
             return found->start_aa;
         throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", hint));
     }
@@ -76,13 +76,14 @@ namespace align_detail
 
 // ----------------------------------------------------------------------
 
-std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint)
+std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3::align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint)
 {
-    const auto make_type_subtype = [type_subtype_hint](std::string_view detected_type_subtype) -> std::string_view {
-        if (type_subtype_hint.substr(0, 4) == detected_type_subtype.substr(0, 4))
+    const auto make_type_subtype = [&type_subtype_hint](const char* detected_type_subtype) -> acmacs::virus::type_subtype_t {
+        const auto dts = acmacs::virus::type_subtype_t{detected_type_subtype};
+        if (type_subtype_hint.h_or_b() == dts.h_or_b())
             return type_subtype_hint;
         else
-            return detected_type_subtype;
+            return dts;
     };
 
     // --------------------------------------------------
@@ -270,29 +271,20 @@ std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::s
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::Aligner::update(std::string_view amino_acids, int shift, std::string_view type_subtype)
+void acmacs::seqdb::v3::Aligner::update(std::string_view amino_acids, int shift, const acmacs::virus::type_subtype_t& type_subtype)
 {
-    const std::string hint{align_detail::type_subtype_hint(type_subtype)};
-    tables_.try_emplace(hint).first->second.update(amino_acids, shift);
+    tables_.try_emplace(std::string(type_subtype.h_or_b())).first->second.update(amino_acids, shift);
 
 } // acmacs::seqdb::v3::Aligner::update
 
 // ----------------------------------------------------------------------
 
-std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::Aligner::align(std::string_view amino_acids, std::string_view type_subtype_hint) const
+std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3::Aligner::align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint) const
 {
-    const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
-    if (const auto found = tables_.find(hint); found != tables_.end()) {
-        if (const auto res = found->second.align(align_detail::start_aa(hint), amino_acids); res.has_value())
+    if (const auto found = tables_.find(type_subtype_hint.h_or_b()); found != tables_.end()) {
+        if (const auto res = found->second.align(align_detail::start_aa(type_subtype_hint), amino_acids); res.has_value())
             return std::tuple(*res, type_subtype_hint);
     }
-
-    // for (const auto& [ts, table] : tables_) {
-    //     if (ts != hint) {
-    //         if (const auto res = found->second.align(align_detail::start_aa(ts), amino_acids, debug_name); res.has_value())
-    //             return std::tuple(*res, ts);
-    //     }
-    // }
 
     return std::nullopt;
 
@@ -408,220 +400,6 @@ void acmacs::seqdb::v3::Aligner::table_t::report(std::string prefix) const
     }
 
 } // acmacs::seqdb::v3::Aligner::table_t::report
-
-// ----------------------------------------------------------------------
-
-// ****************************************************************************************************
-
-// namespace align_detail
-// {
-//     using max_offset_t = acmacs::named_size_t<struct max_offset_t_tag>;
-//     using hdth_t = acmacs::named_size_t<struct hdth_t_tag>; // hamming_distance_threshold
-//     using shift_t = acmacs::named_size_t<struct shift_t_tag>;
-//     constexpr const shift_t shift_is_pattern_size{-1};
-
-//     struct pat_t
-//     {
-//         std::string_view type_subtype_prefix;
-//         std::string_view type_subtype;
-//         char start_aa;
-//         std::string_view pattern;
-//         max_offset_t max_offset;
-//         hdth_t hamming_distance_threshold;
-//         shift_t shift;
-//     };
-
-// #pragma GCC diagnostic push
-// #ifdef __clang__
-// #pragma GCC diagnostic ignored "-Wglobal-constructors"
-// #pragma GCC diagnostic ignored "-Wexit-time-destructors"
-// #endif
-
-//     static const std::array patterns{
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com [50k]
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSCILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/47/2003(H3N2) [2.2k]
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCLIFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/NEW JERSEY/53/2015 (CDC) [1.1k]
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSHILCLVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/440/2000(H3N2) [745]
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYILCMVFA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A/New York/152/2000(H3N2) [692]
-
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIVLSCFFCLAFC", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/blue-winged teal/Ohio/31/1999
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Duck/Hong Kong/7/1975, A(H3N8)/duck/Chabarovsk/1610/1972
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYVFCLAFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N6)/duck/Nanchang/8-174/2000
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIALSYIFCLALG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N2)/Hong Kong/1-1-MA-12/1968 + 63 other results
-
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIILILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/equine/Idaho/37875/1991 + 70 other results
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTVIALSYILCLTFG", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Duck/Ukraine/1/1963
-//         pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTTIVLILLTHWVYS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com A(H3N8)/Equine/Kentucky/1/1987
-
-//         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISA", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0083/2013
-//         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTIIAFSCILCQISS", max_offset_t{50}, hdth_t{2}, shift_is_pattern_size}, // A/SWINE/MANITOBA/D0180/2012
-
-//         // pat_t{"A(H3N", "A(H3N2)", 'Q', "MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // signalpeptide.com
-//         // A(H3N2)/Swine/Ukkel/1/1984 pat_t{"A(H3N", "A(H3N2)", 'Q', "QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}}, pat_t{"A(H3N",
-//         // "A(H3N2)", 'Q', "QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
-//     };
-
-//     // signalpeptide H3
-//     // MKTIIALCYILCLVFA
-//     // MKTIIALSHIFCLVLG
-//     // MKTIIALSYIFCLAFA
-//     // MKTIIALSYIFCLAFS
-//     // MKTIIALSYIFCLVFA
-//     // MKTIIALSYIFCLVLG
-//     // MKTIIALSYIFCQVFA
-//     // MKTIIALSYIFCQVLA
-//     // MKTIIALSYILCLVFA
-//     // MKTIIALSYISCLVFA
-//     // MKTIIVLSCFFCLAFS
-//     // MKTIIVLSYFFCLALS
-//     // MKTTIILILLIHWVHS
-//     // MKTTTILILLTHWVHS
-
-// #pragma GCC diagnostic pop
-
-//     inline char start_aa(std::string_view type_subtype)
-//     {
-//         for (const auto& pattern : patterns) {
-//             if (pattern.type_subtype_prefix == type_subtype || pattern.type_subtype == type_subtype)
-//                 return pattern.start_aa;
-//         }
-//         throw std::runtime_error(fmt::format("align_detail::start_aa: unsupported type_subtype: {}", type_subtype));
-//     }
-
-// } // namespace align_detail
-
-// std::optional<std::tuple<int, std::string_view>> acmacs::seqdb::v3::align(std::string_view amino_acids, std::string_view type_subtype_hint)
-// {
-//     const auto hint = align_detail::type_subtype_hint(type_subtype_hint);
-//     const auto make_type_subtype = [hint, type_subtype_hint](const auto& pattern) -> std::string_view {
-//         if (hint == pattern.type_subtype_prefix)
-//             return type_subtype_hint;
-//         else
-//             return pattern.type_subtype;
-//     };
-//     const auto suitable_subtype = [hint](const auto& pattern) -> bool { return pattern.type_subtype_prefix == hint || hint.empty() || hint == "A(H0N"; };
-
-//     for (const auto& pattern : align_detail::patterns | ranges::view::filter(suitable_subtype)) {
-//         for (auto p_start = amino_acids.find(pattern.pattern[0]); p_start < *pattern.max_offset; p_start = amino_acids.find(pattern.pattern[0], p_start + 1)) {
-//             if (hamming_distance(pattern.pattern, amino_acids.substr(p_start, pattern.pattern.size())) < *pattern.hamming_distance_threshold) {
-//                 if (pattern.shift == align_detail::shift_is_pattern_size)
-//                     return std::tuple{static_cast<int>(p_start + pattern.pattern.size()), make_type_subtype(pattern)};
-//                 else
-//                     return std::tuple{static_cast<int>(p_start + *pattern.shift), make_type_subtype(pattern)};
-//             }
-//         }
-//     }
-//     return std::nullopt;
-
-// } // acmacs::seqdb::v3::align
-
-// ****************************************************************************************************
-
-//     // if (aa_.empty())
-//     //     return false;
-//     // if (type_subtype_hint == "A(H3N2)")
-//     //     return align_h3n2(debug_name) || align_any(debug_name, type_subtype_hint);
-//     // else
-//     //     return align_any(debug_name, type_subtype_hint);
-
-// } // acmacs::seqdb::v3::sequence_t::align
-
-// // ----------------------------------------------------------------------
-
-
-// #pragma GCC diagnostic push
-// #ifdef __clang__
-// #pragma GCC diagnostic ignored "-Wglobal-constructors"
-// #pragma GCC diagnostic ignored "-Wexit-time-destructors"
-// #endif
-
-// using max_offset_t = acmacs::named_size_t<struct max_offset_t_tag>;
-// using hdth_t = acmacs::named_size_t<struct hdth_t_tag>; // hamming_distance_threshold
-// using shift_t = acmacs::named_size_t<struct shift_t_tag>;
-// constexpr const shift_t shift_is_pattern_size{-1};
-
-// struct pat_t
-// {
-//     std::string_view pattern;
-//     max_offset_t max_offset;
-//     hdth_t hamming_distance_threshold;
-//     shift_t shift;
-// };
-
-// static const std::array sH3patterns{
-//     //pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Aichi/2/1968
-//     pat_t{"MKTIIALSYILCLVFA",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-//     // pat_t{"MKTLIALSYIFCLVLG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size},
-//     // pat_t{"MKTIIALSYIFCLALG",                                                 max_offset_t{ 50}, hdth_t{2}, shift_is_pattern_size}, // A/Hong Kong/1/1968
-//     // pat_t{"QKIPGNDNSTATLCLGHHAVPNGTIVKTITNDRIEVTNATELVQNSSIGEICDSPHQILDGENC", max_offset_t{100}, hdth_t{6}, shift_t{0}},
-//     // pat_t{"QKLPGNNNSTATLCLGHHAVPNGTIVKTI",                                    max_offset_t{100}, hdth_t{6}, shift_t{0}},
-// };
-
-// #pragma GCC diagnostic pop
-
-// bool acmacs::seqdb::v3::sequence_t::align_h3n2(std::string_view debug_name)
-// {
-//     const std::string_view data{aa_};
-//     std::vector<size_t> hamds;
-
-//     for (const auto& pattern : sH3patterns) {
-//         const std::string_view look_for = pattern.pattern.substr(0, 2);
-//         for (auto p1_start = data.find(look_for); p1_start < *pattern.max_offset; p1_start = data.find(look_for, p1_start + look_for.size())) {
-//             if (const auto hamd = hamming_distance(pattern.pattern, data.substr(p1_start, pattern.pattern.size())); hamd < *pattern.hamming_distance_threshold) {
-//                 if (pattern.shift == shift_is_pattern_size)
-//                     set_shift_aa(p1_start + pattern.pattern.size());
-//                 else
-//                     set_shift_aa(p1_start + *pattern.shift);
-//                 type_subtype_ = "A(H3N2)";
-//                 // fmt::print(stderr, "H3 ({}) {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 200));
-//                 return true;
-//             }
-//             else
-//                 hamds.push_back(hamd);
-//         }
-//     }
-
-//     // if (!hamds.empty())
-//     //     fmt::print(stderr, "NOT H3? ({}) {}\n{}\n", hamds, debug_name, std::string_view(aa_.data(), 200));
-//     return false;
-
-//     // const std::string_view pattern_1{sH3N2_align_1};
-
-//     // const std::string_view look_for = pattern_1.substr(0, 2);
-//     // std::vector<size_t> hamds;
-//     // for (auto p1_start = data.find(look_for); p1_start < (data.size() - pattern_1.size()); p1_start = data.find(look_for, p1_start + look_for.size())) {
-//     //     if (const auto hamd = ::string::hamming_distance(pattern_1, data.substr(p1_start, pattern_1.size())); hamd < 6) {
-//     //         shift_aa_ = p1_start;
-//     //         shift_nuc_ = nuc_translation_offset_ + p1_start * 3;
-//     //         return true;
-//     //     }
-//     //     else
-//     //         hamds.push_back(hamd);
-//     // }
-
-//     // fmt::print(stderr, "NOT H3? ({}) {}\n{}\n", hamds, debug_name, aa_); // std::string_view(aa_.data(), 100));
-//     // return false;
-
-//     // if (aa_start == std::string::npos) {
-//     //     // fmt::print(stderr, "NOT H3? {}\n{}\n", debug_name, std::string_view(aa_.data(), 100));
-//     //     return false;
-//     // }
-//     // const auto hamd = ::string::hamming_distance(pattern_1, std::string_view(aa_.data() + aa_start, pattern_1.size()));
-//     // if (hamd > 10)
-//     //     fmt::print(stderr, "hamm {} {}\n{}\n", hamd, debug_name, std::string_view(aa_.data(), 120));
-
-
-// } // acmacs::seqdb::v3::sequence_t::align_h3n2
-
-// // ----------------------------------------------------------------------
-
-// bool acmacs::seqdb::v3::sequence_t::align_any(std::string_view debug_name, std::string_view except)
-// {
-//     // if (except != "A(H3N2)" && align_h3n2(debug_name))
-//     //     return true;
-//     return false;
-
-// } // acmacs::seqdb::v3::sequence_t::align_any
 
 // ----------------------------------------------------------------------
 /// Local Variables:

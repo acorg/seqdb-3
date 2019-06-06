@@ -21,11 +21,11 @@ namespace acmacs::seqdb
 
             void import(std::string_view source);
             void translate();
-            bool align(std::string_view type_subtype_hint); // returns if aligining succeeded
+            bool align(const acmacs::virus::type_subtype_t& type_subtype_hint); // returns if aligining succeeded
 
             std::string_view aa() const { return aa_; }
             std::string_view nuc() const { return nuc_; }
-            std::string_view type_subtype() const { return type_subtype_; }
+            const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
             std::string_view lineage() const { return lineage_; }
 
             std::string aa_aligned() const
@@ -76,7 +76,7 @@ namespace acmacs::seqdb
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
 
-            void set_shift(int shift_aa, std::optional<std::string_view> type_subtype = std::nullopt)
+            void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt)
             {
                 shift_aa_ = shift_aa;
                 shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
@@ -110,7 +110,7 @@ namespace acmacs::seqdb
             int nuc_translation_offset_{0};
             shift_t shift_nuc_{not_aligned};
             shift_t shift_aa_{not_aligned};
-            std::string type_subtype_; // by alignment
+            acmacs::virus::type_subtype_t type_subtype_; // by alignment
             std::string lineage_;      // by deletion detection
         };
 

@@ -18,7 +18,7 @@ namespace acmacs::seqdb
             {
                 std::string entry_name;
                 std::string name;
-                std::string type_subtype;
+                acmacs::virus::type_subtype_t type_subtype;
                 std::string lineage;
                 std::string passage;
                 std::string filename;
@@ -36,7 +36,7 @@ namespace acmacs::seqdb
             constexpr const auto isnot_aligned = [](const scan_result_t& sc) { return !sc.sequence.aligned(); };
             constexpr const auto is_translated = [](const scan_result_t& sc) { return sc.sequence.translated(); };
             constexpr const auto is_different_type_subtype = [](const scan_result_t& sc) { return sc.fasta.type_subtype != sc.sequence.type_subtype(); };
-            constexpr const auto is_different_type_subtype_ignore_h0 = [](const scan_result_t& sc) { return sc.fasta.type_subtype != sc.sequence.type_subtype() && (sc.fasta.type_subtype.substr(0, 4) != "A(H0" || sc.sequence.type_subtype()[0] != 'A'); };
+            constexpr const auto is_different_type_subtype_ignore_h0 = [](const scan_result_t& sc) { return sc.fasta.type_subtype != sc.sequence.type_subtype() && (sc.fasta.type_subtype.h_or_b() != "H0" || sc.sequence.type_subtype().type() != 'A'); };
 
             // ----------------------------------------------------------------------
 

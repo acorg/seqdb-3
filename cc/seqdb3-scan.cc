@@ -95,7 +95,7 @@ int main(int argc, char* const argv[])
             for (auto limit : {50, 100, 150, 200, 1000}) {
                 acmacs::Counter<std::string> counter;
                 for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(found(static_cast<size_t>(limit))))
-                    counter.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
+                    counter.count(sc.fasta.type_subtype.h_or_b());
                 fmt::print(stderr, "Counter for {} at first {} positions\n{}\n", chunk, limit, counter.report_sorted_max_first());
             }
         }
@@ -106,8 +106,8 @@ int main(int argc, char* const argv[])
         if (opt.print_counter_for->empty()) {
             acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
             for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(acmacs::seqdb::fasta::isnot_aligned)) {
-                counter_not_aligned.count(sc.fasta.type_subtype); // .substr(2, 3));
-                counter_not_aligned_h.count(sc.fasta.type_subtype.size() > 4 ? sc.fasta.type_subtype.substr(2, 3) : sc.fasta.type_subtype);
+                counter_not_aligned.count(*sc.fasta.type_subtype);
+                counter_not_aligned_h.count(sc.fasta.type_subtype.h_or_b());
             }
             fmt::print(stderr, "NOT ALIGNED\n{}\n", counter_not_aligned_h.report_sorted_max_first());
             // fmt::print(stderr, "NOT ALIGNED\n{}\n", counter_not_aligned.report_sorted_max_first());
@@ -131,7 +131,7 @@ int main(int argc, char* const argv[])
         if (opt.print_aa_sizes) {
             std::map<std::string, acmacs::Counter<size_t>> counter; // subtype -> size:count
             for (const auto& sc : all_sequences | ranges::view::filter(acmacs::seqdb::fasta::is_translated) | ranges::view::filter(acmacs::seqdb::fasta::is_aligned))
-                counter[std::string(sc.sequence.type_subtype())].count(sc.sequence.aa_aligned_length());
+                counter[std::string(sc.sequence.type_subtype().h_or_b())].count(sc.sequence.aa_aligned_length());
             fmt::print("AA sizes\n");
             for (const auto& [subtype, cntr] : counter)
                 fmt::print("  {}\n{}\n", subtype, cntr.report_sorted_max_first("    "));
