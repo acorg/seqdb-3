@@ -38,6 +38,11 @@ namespace acmacs::seqdb
                     return std::string(static_cast<size_t>(- shift_aa_), 'X') + aa_;
             }
 
+            auto aa_aligned_length() const
+            {
+                return static_cast<size_t>(static_cast<decltype(shift_aa_)>(aa_.size()) - shift_aa_);
+            }
+
             // returned shift is non-negative
             // if it is 0, aligned sequence is returned
             // if it is negative, sequence must be prepended with shift 'X's
