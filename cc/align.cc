@@ -41,7 +41,7 @@ namespace align_detail
         start_aa_t{"H2",  'D'}, // DQIC
         start_aa_t{"H3",  'Q'},
         start_aa_t{"H4",  'Q'},
-        start_aa_t{"H5",  'D'},
+        start_aa_t{"H5",  'D'}, // DQIC
         start_aa_t{"H6",  'D'},
         start_aa_t{"H7",  'D'},
         start_aa_t{"H8",  'D'}, // DRIC
@@ -237,9 +237,11 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     }
 
     // H5
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GYHA"});
-        pos != std::string::npos && pos >= 21 && align_detail::has_infix(amino_acids, pos - 5, "DQ") && amino_acids[pos - 21] == 'M')
-        return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H5)")};
+    {
+        // specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"GYHANNSTEQ"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H5)")};
+    }
 
     // H6
     {
