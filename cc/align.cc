@@ -282,6 +282,10 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"SSVEL"}); pos != std::string::npos)
         return std::tuple{static_cast<int>(pos) - 27, make_type_subtype("A(H11)")};
 
+    // H13 (specific)
+    if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"VGYLSTN"}); pos != std::string::npos)
+        return std::tuple{static_cast<int>(pos) - 4, make_type_subtype("A(H13)")};
+
     return std::nullopt;
 
 } // acmacs::seqdb::v3::align
