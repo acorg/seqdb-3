@@ -406,8 +406,10 @@ std::string acmacs::seqdb::v3::fasta::report_false_positive(const std::vector<sc
 std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(isnot_aligned))
-        fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
+    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(isnot_aligned)) {
+        // fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
+        fmt::format_to(out, "{} ::: {} ::: {}:{}\n", sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no);
+    }
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::fasta::report_not_aligned
