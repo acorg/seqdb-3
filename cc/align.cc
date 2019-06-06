@@ -46,7 +46,7 @@ namespace align_detail
         start_aa_t{"H7",  'D'},
         start_aa_t{"H8",  'D'}, // DRIC
         start_aa_t{"H9",  'D'}, // DKIC
-        start_aa_t{"H10", 'D'}, // DRIC
+        start_aa_t{"H10", 'D'}, // DKIC
         start_aa_t{"H11", 'D'}, // DEIC
         start_aa_t{"H12", 'D'}, // DKIC
         start_aa_t{"H13", 'D'}, // DRIC
@@ -202,10 +202,6 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"QNYT"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 11, "GHHA"))
         return std::tuple{static_cast<int>(pos), make_type_subtype("A(H4)")};
 
-    // H10
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"LDKICLGHHA"}); pos != std::string::npos)
-        return std::tuple{static_cast<int>(pos) + 1, make_type_subtype("A(H10)")};
-
     // H11 (DEICIGYL is specific)
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"DEICIGYL"}); pos != std::string::npos)
         return std::tuple{static_cast<int>(pos), make_type_subtype("A(H11)")};
@@ -267,6 +263,19 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
         // CDLLLGG, CDLLLEG are H9 specific
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"CDLLLGG", "CDLLLEG"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 66, make_type_subtype("A(H9)")};
+    }
+
+    // H10
+    {
+        // specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"NGTIVKTLTNE"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 11, make_type_subtype("A(H10)")};
+        // specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"QKIMESG"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 99, make_type_subtype("A(H10)")};
+        // (redundant) specific
+        // if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"LDKICLGHHA"}); pos != std::string::npos)
+        //     return std::tuple{static_cast<int>(pos) + 1, make_type_subtype("A(H10)")};
     }
 
     // H11 (SSVEL is specific)
