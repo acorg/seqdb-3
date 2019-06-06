@@ -185,19 +185,6 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     // --------------------------------------------------
     // second stage
 
-    // H1
-    {
-        // VLEKN is H1 specific (whole AA sequence)
-        if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"VLEKN"}); pos != std::string::npos)
-            return std::tuple{static_cast<int>(pos) - 18, make_type_subtype("A(H1)")};
-        // SSWSYI and ESWSYI are H1 specific (whole AA sequence)
-        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SSWSYI", "ESWSYI"}); pos != std::string::npos)
-            return std::tuple{static_cast<int>(pos) - 73, make_type_subtype("A(H1)")};
-        // GVTAACPH is H1 specific (whole AA sequence)
-        if (const auto pos = align_detail::find_in_sequence(amino_acids, 200, {"GVTAACPH"}); pos != std::string::npos)
-            return std::tuple{static_cast<int>(pos) - 130, make_type_subtype("A(H1)")};
-    }
-
     // H4
     if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"QNYT"}); pos != std::string::npos && align_detail::has_infix(amino_acids, pos + 11, "GHHA"))
         return std::tuple{static_cast<int>(pos), make_type_subtype("A(H4)")};
@@ -234,6 +221,19 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
         // // Only H3 (and H0N0) has NWLTH in the whole AA sequence
         // if (const auto pos = align_detail::find_in_sequence(amino_acids, 200, {"NWLTH"}); pos != std::string::npos)
         //     return std::tuple{static_cast<int>(pos) - 151, make_type_subtype("A(H3)")};
+    }
+
+    // H1
+    {
+        // VLEKN is H1 specific (whole AA sequence)
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"VLEKN"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 18, make_type_subtype("A(H1)")};
+        // SSWSYI and ESWSYI are H1 specific (whole AA sequence)
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SSWSYI", "ESWSYI"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 73, make_type_subtype("A(H1)")};
+        // GVTAACPH is H1 specific (whole AA sequence)
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 200, {"GVTAACPH"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 130, make_type_subtype("A(H1)")};
     }
 
     // H5
