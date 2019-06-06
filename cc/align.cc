@@ -43,7 +43,7 @@ namespace align_detail
         start_aa_t{"H4",  'Q'},
         start_aa_t{"H5",  'D'}, // DQIC
         start_aa_t{"H6",  'D'},
-        start_aa_t{"H7",  'D'},
+        start_aa_t{"H7",  'D'}, // DKIC
         start_aa_t{"H8",  'D'}, // DRIC
         start_aa_t{"H9",  'D'}, // DKIC
         start_aa_t{"H10", 'D'}, // DKIC
@@ -263,8 +263,11 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
     }
 
     // H7
-    if (const auto pos = align_detail::find_in_sequence(amino_acids, 20, {"DKICLGHHAV"}); pos == 0) // sequence start
-        return std::tuple{static_cast<int>(pos), make_type_subtype("A(H7)")};
+    {
+        // specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GQCGL"}); pos != std::string::npos) // sequence start
+            return std::tuple{static_cast<int>(pos) - 51, make_type_subtype("A(H7)")};
+    }
 
     // H9
     {
