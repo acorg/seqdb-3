@@ -2,41 +2,18 @@
 
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/range-v3.hh"
 #include "seqdb-3/insertions.hh"
 
 // ----------------------------------------------------------------------
 
-namespace local
-{
-    // static size_t detect_master_length(const std::vector<std::reference_wrapper<acmacs::seqdb::sequence_t>>& sequences);
-    // static const acmacs::seqdb::sequence_t& get_master(const std::vector<std::reference_wrapper<acmacs::seqdb::sequence_t>>& sequences);
-    // static void detect_deletions(acmacs::seqdb::sequence_t& sequence, const std::string_view master);
-
-    static constexpr inline bool common(char a, char b) { return a == b && a != 'X' && a != '-'; }
-
-    static inline size_t number_of_common(std::string_view s1, std::string_view s2)
-    {
-        size_t num = 0;
-        for (auto f1 = s1.begin(), f2 = s2.begin(); f1 != s1.end() && f2 != s2.end(); ++f1, ++f2) {
-            if (common(*f1, *f2))
-                ++num;
-        }
-        return num;
-    }
-
-    // static inline size_t number_of_common_before(std::string_view s1, std::string_view s2, size_t last) { return number_of_common(s1.substr(0, last), s2.substr(0, last)); }
-
-} // namespace local
-
-// ----------------------------------------------------------------------
-
-std::map<std::string, const acmacs::seqdb::v3::sequence_t*> acmacs::seqdb::v3::masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences)
+acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences)
 {
     std::map<std::string, acmacs::Counter<size_t>> aligned_lengths;
-    for (const auto& sc : sequences)
+    for (const auto& sc : sequences | ranges::view::filter(fasta::is_aligned))
         aligned_lengths.try_emplace(std::string(sc.sequence.type_subtype().h_or_b())).first->second.count(sc.sequence.aa_aligned_length());
 
-    std::map<std::string, const sequence_t*> masters;
+    subtype_master_t masters;
     for (const auto& [subtype, counter] : aligned_lengths) {
         const size_t threshold = counter.total() / 6;
         size_t master_length = 0;
@@ -44,7 +21,7 @@ std::map<std::string, const acmacs::seqdb::v3::sequence_t*> acmacs::seqdb::v3::m
             if (vt.second > threshold)
                 master_length = vt.first;
         }
-        for (const auto& sc : sequences) {
+        for (const auto& sc : sequences | ranges::view::filter(fasta::is_aligned)) {
             if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
                 masters.emplace(subtype, &sc.sequence);
                 break;
@@ -58,16 +35,109 @@ std::map<std::string, const acmacs::seqdb::v3::sequence_t*> acmacs::seqdb::v3::m
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::insertions_deletions(std::vector<std::reference_wrapper<seqdb::sequence_t>>& sequences)
+namespace local
 {
-    // const auto& master = local::get_master(sequences);
-    // const auto master_seq = master.aa_aligned_fast();
-    // for (auto& seq : sequences) {
-    //     if (&seq.get() != &master)
-    //         detect_deletions(seq.get(), master_seq);
-    // }
+    struct deletion_t
+    {
+        size_t pos;
+        size_t num;
+    };
+
+    using deletions_t = std::vector<deletion_t>;
+
+    deletions_t find_deletions(std::string_view to_align, std::string_view master);
+}
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::insertions_deletions(sequence_t& to_align, const sequence_t& master)
+{
+    local::deletions_t dels;
+    if (to_align.aa_aligned_length() <= master.aa_aligned_length()) {
+        if (const auto [aligned, shift] = to_align.aa_shifted(); shift == 0)
+            dels = local::find_deletions(aligned, master.aa_aligned_fast());
+        else
+            dels = local::find_deletions(to_align.aa_aligned(), master.aa_aligned_fast());
+    }
+    else {
+        // fmt::print(stderr, "insertions_deletions {} > {} ::: {} {}\n{}\n{}\n", to_align.aa_aligned_length(), master.aa_aligned_length(), to_align.type_subtype(), to_align.full_name(), master.aa_aligned_fast(), to_align.aa_aligned());
+    }
 
 } // acmacs::seqdb::v3::insertions_deletions
+
+// ----------------------------------------------------------------------
+
+namespace local
+{
+    static constexpr inline bool common(char a, char b) { return a == b && a != 'X' && a != '-'; }
+
+    // static inline size_t number_of_common(std::string_view s1, std::string_view s2)
+    // {
+    //     size_t num = 0;
+    //     for (auto f1 = s1.begin(), f2 = s2.begin(); f1 != s1.end() && f2 != s2.end(); ++f1, ++f2) {
+    //         if (common(*f1, *f2))
+    //             ++num;
+    //     }
+    //     return num;
+    // }
+
+    template <typename Iter> size_t find_head_tail(const Iter first1, const Iter last1, const Iter first2, const Iter last2, const ssize_t threshold)
+    {
+        auto f1 = first1, f2 = first2, last_common = last1;
+        for (; f1 != last1 && f2 != last2; ++f1, ++f2) {
+            if (common(*f1, *f2))
+                last_common = f1;
+            else if (last_common != last1 && (f1 - last_common) >= threshold)
+                break;
+        }
+        return static_cast<size_t>(last_common - first1 + 1);
+    }
+
+    static inline size_t find_head(std::string_view s1, std::string_view s2, ssize_t threshold)
+    {
+        return find_head_tail(s1.begin(), s1.end(), s2.begin(), s2.end(), threshold);
+    }
+
+    static inline size_t find_tail(std::string_view s1, std::string_view s2, ssize_t threshold)
+    {
+        return find_head_tail(s1.rbegin(), s1.rend(), s2.rbegin(), s2.rend(), threshold);
+    }
+
+    // static inline size_t number_of_common_before(std::string_view s1, std::string_view s2, size_t last) { return number_of_common(s1.substr(0, last), s2.substr(0, last)); }
+
+} // namespace local
+
+// ----------------------------------------------------------------------
+
+local::deletions_t local::find_deletions(std::string_view to_align, std::string_view master)
+{
+    constexpr const ssize_t head_tail_threshold = 3;
+    auto head = find_head(master, to_align, head_tail_threshold);
+    if (head == to_align.size())
+        return deletions_t{};   // to_align truncated?
+    auto tail = find_tail(master.substr(head), to_align.substr(head), head_tail_threshold);
+    fmt::print(stderr, "head:{} tail:{}\n{} {} {}\n{} {} {}\n\n", head, tail,
+               master.substr(0, head), master.substr(head, master.size() - head - tail), master.substr(master.size() - tail),
+               to_align.substr(0, head), to_align.substr(head, to_align.size() - head - tail), to_align.substr(to_align.size() - tail));
+    return deletions_t{};
+
+} // local::find_deletions
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+
+// void acmacs::seqdb::v3::insertions_deletions(std::vector<std::reference_wrapper<seqdb::sequence_t>>& sequences)
+// {
+//     // const auto& master = local::get_master(sequences);
+//     // const auto master_seq = master.aa_aligned_fast();
+//     // for (auto& seq : sequences) {
+//     //     if (&seq.get() != &master)
+//     //         detect_deletions(seq.get(), master_seq);
+//     // }
+
+// } // acmacs::seqdb::v3::insertions_deletions
 
 // ----------------------------------------------------------------------
 

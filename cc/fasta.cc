@@ -469,33 +469,18 @@ std::string acmacs::seqdb::v3::fasta::report_aa(const std::vector<scan_result_t>
 
 // ----------------------------------------------------------------------
 
-// std::vector<std::string> acmacs::seqdb::v3::fasta::ha_types(const std::vector<scan_result_t>& sequences)
-// {
-//     std::set<std::string> ha_types;
-//     for (const auto& sc : sequences | ranges::view::filter(is_aligned))
-//         ha_types.emplace(sc.sequence.type_subtype().h_or_b());
-//     // fmt::print(stderr, "HA TYPES: {}\n", ha_types);
-//     return std::vector<std::string>(std::begin(ha_types), std::end(ha_types));
-
-// } // acmacs::seqdb::v3::fasta::ha_types
-
-// ----------------------------------------------------------------------
-
 void acmacs::seqdb::v3::fasta::detect_insertions_deletions(std::vector<scan_result_t>& sequence_data)
 {
-    const auto masters = acmacs::seqdb::v3::masters_per_subtype(sequence_data);
-    fmt::print(stderr, "masters_per_subtype {}\n", masters.size());
+    const auto masters = acmacs::seqdb::masters_per_subtype(sequence_data);
+    // fmt::print(stderr, "masters_per_subtype {}\n", masters.size());
 
-//     const auto all_ha_types = ha_types(sequence_data);
-
-// // #pragma omp parallel for default(shared) schedule(static)
-//     for (auto ht = all_ha_types.begin(); ht != all_ha_types.end(); ++ht) {
-//         std::vector<std::reference_wrapper<seqdb::sequence_t>> sequences;
-//         acmacs::transform_if(sequence_data.begin(), sequence_data.end(), std::back_inserter(sequences),
-//                              [&ht](const scan_result_t& sc) { return sc.sequence.aligned() && sc.sequence.type_subtype().h_or_b() == *ht; },
-//                              [](scan_result_t& sc) -> seqdb::sequence_t& { return sc.sequence; });
-//         insertions_deletions(sequences);
-//     }
+    // #pragma omp parallel for default(shared) schedule(static, 16)
+    for (auto sc_p = sequence_data.begin(); sc_p != sequence_data.end(); ++sc_p) {
+        if (sc_p->sequence.aligned()) {
+            if (const auto* master = masters.find(sc_p->sequence.type_subtype().h_or_b())->second; master != &sc_p->sequence)
+                acmacs::seqdb::insertions_deletions(sc_p->sequence, *master);
+        }
+    }
 
 } // detect_insertions_deletions
 

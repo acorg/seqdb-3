@@ -8,8 +8,11 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        std::map<std::string, const sequence_t*> masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences);
-        void insertions_deletions(std::vector<std::reference_wrapper<seqdb::sequence_t>>& sequences);
+        using subtype_master_t = std::map<std::string, const sequence_t*, std::less<>>;
+
+        subtype_master_t masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences);
+
+        void insertions_deletions(sequence_t& to_align, const sequence_t& master);
     }
 }
 
