@@ -71,15 +71,15 @@ namespace local
 {
     static constexpr inline bool common(char a, char b) { return a == b && a != 'X' && a != '-'; }
 
-    // static inline size_t number_of_common(std::string_view s1, std::string_view s2)
-    // {
-    //     size_t num = 0;
-    //     for (auto f1 = s1.begin(), f2 = s2.begin(); f1 != s1.end() && f2 != s2.end(); ++f1, ++f2) {
-    //         if (common(*f1, *f2))
-    //             ++num;
-    //     }
-    //     return num;
-    // }
+    static inline size_t number_of_common(std::string_view s1, std::string_view s2)
+    {
+        size_t num = 0;
+        for (auto f1 = s1.begin(), f2 = s2.begin(); f1 != s1.end() && f2 != s2.end(); ++f1, ++f2) {
+            if (common(*f1, *f2))
+                ++num;
+        }
+        return num;
+    }
 
     template <typename Iter> size_t find_head_tail(const Iter first1, const Iter last1, const Iter first2, const Iter last2, const ssize_t threshold)
     {
@@ -116,6 +116,12 @@ local::deletions_t local::find_deletions(std::string_view to_align, std::string_
     if (head == to_align.size())
         return deletions_t{};   // to_align truncated?
     auto tail = find_tail(master.substr(head), to_align.substr(head), head_tail_threshold);
+    if (to_align.size() == master.size()) {
+        const auto common = number_of_common(master.substr(head, master.size() - head - tail), to_align.substr(head, to_align.size() - head - tail));
+        fmt::print(stderr, "equal size common {} of {}\n", common, to_align.size() - head - tail);
+    }
+    else {
+    }
     fmt::print(stderr, "head:{} tail:{}\n{} {} {}\n{} {} {}\n\n", head, tail,
                master.substr(0, head), master.substr(head, master.size() - head - tail), master.substr(master.size() - tail),
                to_align.substr(0, head), to_align.substr(head, to_align.size() - head - tail), to_align.substr(to_align.size() - tail));
