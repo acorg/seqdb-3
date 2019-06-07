@@ -43,6 +43,16 @@ namespace acmacs::seqdb
                 return static_cast<size_t>(static_cast<decltype(shift_aa_)>(aa_.size()) - shift_aa_);
             }
 
+            std::string_view aa_aligned_fast() const
+            {
+                if (shift_aa_ > 0)
+                    return std::string_view(aa_.data() + shift_aa_, aa_.size() - static_cast<size_t>(shift_aa_));
+                else if (shift_aa_ == 0)
+                    return aa_;
+                else
+                    throw std::runtime_error("internal in sequence_t::aa_aligned_fast");
+            }
+
             // returned shift is non-negative
             // if it is 0, aligned sequence is returned
             // if it is negative, sequence must be prepended with shift 'X's
