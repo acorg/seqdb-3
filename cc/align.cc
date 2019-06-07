@@ -211,6 +211,9 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
         // Only H3 (and H0N0) has DKLYIWG in the whole AA sequence
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 200, {"DKLYIWG"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 174, make_type_subtype("A(H3)")};
+        // specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SNCYPYDV"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 94, make_type_subtype("A(H3)")};
         // -- below is redundant
         // // Only H3 (and H0N0) has SNCY in the whole AA sequence
         // if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"SNCY"}); pos != std::string::npos)
