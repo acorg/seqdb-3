@@ -69,23 +69,24 @@ void acmacs::seqdb::v3::insertions_deletions(sequence_t& to_align, const sequenc
 
 namespace local
 {
-    static constexpr inline bool common(char a, char b) { return a == b && a != 'X' && a != '-'; }
+    static constexpr const auto are_common = [](char a, char b) -> bool { return a == b && a != 'X' && a != '-'; };
+    static constexpr const auto arenot_common = [](char a, char b) -> bool { return !are_common(a, b); };
 
     static inline size_t number_of_common(std::string_view s1, std::string_view s2)
     {
         size_t num = 0;
         for (auto f1 = s1.begin(), f2 = s2.begin(); f1 != s1.end() && f2 != s2.end(); ++f1, ++f2) {
-            if (common(*f1, *f2))
+            if (are_common(*f1, *f2))
                 ++num;
         }
         return num;
     }
 
-    template <typename Iter> size_t find_head_tail(const Iter first1, const Iter last1, const Iter first2, const Iter last2, const ssize_t threshold)
+    template <typename Iter, typename Common> size_t find_head_tail(const Iter first1, const Iter last1, const Iter first2, const Iter last2, const ssize_t threshold, Common common_f)
     {
         auto f1 = first1, f2 = first2, last_common = last1;
         for (; f1 != last1 && f2 != last2; ++f1, ++f2) {
-            if (common(*f1, *f2))
+            if (common_f(*f1, *f2))
                 last_common = f1;
             else if (last_common != last1 && (f1 - last_common) >= threshold)
                 break;
@@ -93,14 +94,19 @@ namespace local
         return static_cast<size_t>(last_common - first1 + 1);
     }
 
-    static inline size_t find_head(std::string_view s1, std::string_view s2, ssize_t threshold)
+    static inline size_t find_common_head(std::string_view s1, std::string_view s2, ssize_t threshold)
     {
-        return find_head_tail(s1.begin(), s1.end(), s2.begin(), s2.end(), threshold);
+        return find_head_tail(s1.begin(), s1.end(), s2.begin(), s2.end(), threshold, are_common);
     }
 
-    static inline size_t find_tail(std::string_view s1, std::string_view s2, ssize_t threshold)
+    static inline size_t find_uncommon_head(std::string_view s1, std::string_view s2)
     {
-        return find_head_tail(s1.rbegin(), s1.rend(), s2.rbegin(), s2.rend(), threshold);
+        return find_head_tail(s1.begin(), s1.end(), s2.begin(), s2.end(), 0, arenot_common);
+    }
+
+    static inline size_t find_common_tail(std::string_view s1, std::string_view s2, ssize_t threshold)
+    {
+        return find_head_tail(s1.rbegin(), s1.rend(), s2.rbegin(), s2.rend(), threshold, are_common);
     }
 
     // static inline size_t number_of_common_before(std::string_view s1, std::string_view s2, size_t last) { return number_of_common(s1.substr(0, last), s2.substr(0, last)); }
@@ -112,15 +118,32 @@ namespace local
 local::deletions_t local::find_deletions(std::string_view to_align, std::string_view master)
 {
     constexpr const ssize_t head_tail_threshold = 3;
-    auto head = find_head(master, to_align, head_tail_threshold);
+    auto head = find_common_head(master, to_align, head_tail_threshold);
     if (head == to_align.size())
         return deletions_t{};   // to_align truncated?
-    auto tail = find_tail(master.substr(head), to_align.substr(head), head_tail_threshold);
-    if (to_align.size() == master.size()) {
-        const auto common = number_of_common(master.substr(head, master.size() - head - tail), to_align.substr(head, to_align.size() - head - tail));
-        fmt::print(stderr, "equal size common {} of {}\n", common, to_align.size() - head - tail);
+    auto tail = find_common_tail(master.substr(head), to_align.substr(head), head_tail_threshold);
+    if (to_align.size() != master.size()) {
+        auto start = head;
+        auto master_size = master.size() - head - tail, to_align_size = to_align.size() - head - tail;
+        std::vector<size_t> parts;
+        for (auto find_common = false; master_size > 0 && to_align_size > 0; find_common = !find_common) {
+            size_t part = 0;
+            if (find_common)
+                part = find_common_head(master.substr(start, master_size), to_align.substr(start, to_align_size), 0);
+            else
+                part = find_uncommon_head(master.substr(start, master_size), to_align.substr(start, to_align_size));
+            if (part == 0)
+                throw std::runtime_error("internal local::find_deletions");
+            parts.push_back(part);
+            start += part;
+            master_size -= part;
+            to_align_size -= part;
+        }
+        fmt::print(stderr, "parts: {}\n", parts);
     }
     else {
+        const auto num_common = number_of_common(master.substr(head, master.size() - head - tail), to_align.substr(head, to_align.size() - head - tail));
+        fmt::print(stderr, "equal size common {} of {}\n", num_common, to_align.size() - head - tail);
     }
     fmt::print(stderr, "head:{} tail:{}\n{} {} {}\n{} {} {}\n\n", head, tail,
                master.substr(0, head), master.substr(head, master.size() - head - tail), master.substr(master.size() - tail),
