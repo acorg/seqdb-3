@@ -120,35 +120,78 @@ local::deletions_t local::find_deletions(std::string_view to_align, std::string_
     constexpr const ssize_t head_tail_threshold = 3;
     auto head = find_common_head(master, to_align, head_tail_threshold);
     if (head == to_align.size())
-        return deletions_t{};   // to_align truncated?
+        return deletions_t{}; // to_align truncated?
+
+    deletions_t result;
     auto tail = find_common_tail(master.substr(head), to_align.substr(head), head_tail_threshold);
     if (to_align.size() != master.size()) {
+
+        struct parts_t
+        {
+            std::vector<size_t> uncommon, common;
+        };
         auto start = head;
-        auto master_size = master.size() - head - tail, to_align_size = to_align.size() - head - tail;
-        std::vector<size_t> parts;
-        for (auto find_common = false; master_size > 0 && to_align_size > 0; find_common = !find_common) {
+        auto master_chunk_size = master.size() - head - tail, to_align_chunk_size = to_align.size() - head - tail;
+        parts_t parts;
+        for (auto find_common = false; master_chunk_size > 0 && to_align_chunk_size > 0; find_common = !find_common) {
             size_t part = 0;
-            if (find_common)
-                part = find_common_head(master.substr(start, master_size), to_align.substr(start, to_align_size), 0);
-            else
-                part = find_uncommon_head(master.substr(start, master_size), to_align.substr(start, to_align_size));
+            if (find_common) {
+                part = find_common_head(master.substr(start, master_chunk_size), to_align.substr(start, to_align_chunk_size), 0);
+                parts.common.push_back(part);
+            }
+            else {
+                part = find_uncommon_head(master.substr(start, master_chunk_size), to_align.substr(start, to_align_chunk_size));
+                parts.uncommon.push_back(part);
+            }
             if (part == 0)
                 throw std::runtime_error("internal local::find_deletions");
-            parts.push_back(part);
             start += part;
-            master_size -= part;
-            to_align_size -= part;
+            master_chunk_size -= part;
+            to_align_chunk_size -= part;
         }
-        fmt::print(stderr, "parts: {}\n", parts);
+
+        const auto show = [&](auto&& prefix) {
+            fmt::memory_buffer master_middle, to_align_middle;
+            size_t offset = 0;
+            for (size_t ind = 0; ind < std::max(parts.common.size(), parts.uncommon.size()); ++ind) {
+                if (ind < parts.uncommon.size()) {
+                    fmt::format_to(master_middle, ".{}", master.substr(head + offset, parts.uncommon[ind]));
+                    fmt::format_to(to_align_middle, ".{}", to_align.substr(head + offset, parts.uncommon[ind]));
+                    offset += parts.uncommon[ind];
+                }
+                if (ind < parts.common.size()) {
+                    fmt::format_to(master_middle, "_{}", master.substr(head + offset, parts.common[ind]));
+                    fmt::format_to(to_align_middle, "_{}", to_align.substr(head + offset, parts.common[ind]));
+                    offset += parts.common[ind];
+                }
+            }
+            fmt::print(stderr, "{}:\nuncommon: {:3d} {}\n  common: {:3d} {}\nhead:{} tail:{} to_align.size:{} master.size:{}\n{} {} {}\n{} {} {}\n\n", prefix, parts.uncommon.size(), parts.uncommon,
+                       parts.common.size(), parts.common, head, tail, to_align.size(), master.size(),
+                       master.substr(0, head), fmt::to_string(master_middle) /* master.substr(head, master.size() - head - tail) */, master.substr(master.size() - tail),
+                       to_align.substr(0, head), fmt::to_string(to_align_middle) /* to_align.substr(head, to_align.size() - head - tail) */, to_align.substr(to_align.size() - tail));
+        };
+
+        if (parts.common.size() != parts.uncommon.size()) {
+            show("?parts-size-differ");
+        }
+        else if (parts.common.size() == 1 && parts.uncommon[0] <= 3 && parts.common[0] > 2) {
+            head += parts.uncommon[0] + parts.common[0];
+            if ((head + tail) == to_align.size()) {
+                result.push_back({head, master.size() - head - tail});
+            }
+            else {
+                show("?head+tail");
+            }
+        }
+        else {
+            show("");
+        }
     }
     else {
         const auto num_common = number_of_common(master.substr(head, master.size() - head - tail), to_align.substr(head, to_align.size() - head - tail));
         fmt::print(stderr, "equal size common {} of {}\n", num_common, to_align.size() - head - tail);
     }
-    fmt::print(stderr, "head:{} tail:{}\n{} {} {}\n{} {} {}\n\n", head, tail,
-               master.substr(0, head), master.substr(head, master.size() - head - tail), master.substr(master.size() - tail),
-               to_align.substr(0, head), to_align.substr(head, to_align.size() - head - tail), to_align.substr(to_align.size() - tail));
-    return deletions_t{};
+    return result;
 
 } // local::find_deletions
 
