@@ -69,7 +69,7 @@ std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::s
             }
         }
         catch (std::exception& err) {
-            throw scan_error("{}: {}"_format(filename, err));
+            throw scan_error(std::format("{}: {}", filename, err));
         }
     }
 
