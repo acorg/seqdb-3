@@ -1,4 +1,5 @@
 #include <numeric>
+#include <optional>
 
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/fmt.hh"
@@ -49,7 +50,17 @@ namespace local
 
         void add(size_t pos, size_t num) { data.push_back({pos, num}); }
         bool empty() const { return data.empty(); }
+        size_t size() const { return data.size(); }
+        const auto& back() const { return data.back(); }
+        void increment_last_num() { ++data.back().num; }
+        void pop_back() { data.pop_back(); }
         size_t number_of_deletions() const { return std::accumulate(std::begin(data), std::end(data), 0UL, [](size_t acc, const auto& en) { return acc + en.num; }); }
+        size_t number_of_deletions_without_last() const
+        {
+            if (data.size() < 2)
+                return 0;
+            return std::accumulate(std::begin(data), std::end(data) - 1, 0UL, [](size_t acc, const auto& en) { return acc + en.num; });
+        }
 
         std::string format(std::string_view sequence) const
         {
@@ -64,15 +75,14 @@ namespace local
         }
     };
 
-    // returns if deletion was found (and added)
-    bool find_deletion(std::string_view to_align, std::string_view master, deletions_t& deletions);
+    void find_deletions(std::string_view to_align, std::string_view master, deletions_t& deletions);
 
-    inline bool find_deletion(acmacs::seqdb::v3::sequence_t& to_align, const acmacs::seqdb::v3::sequence_t& master, deletions_t& deletions)
+    inline void find_deletions(acmacs::seqdb::v3::sequence_t& to_align, const acmacs::seqdb::v3::sequence_t& master, deletions_t& deletions)
     {
         if (const auto [aligned, shift] = to_align.aa_shifted(); shift == 0)
-            return find_deletion(aligned, master.aa_aligned_fast(), deletions);
+            find_deletions(aligned, master.aa_aligned_fast(), deletions);
         else
-            return find_deletion(to_align.aa_aligned(), master.aa_aligned_fast(), deletions);
+            find_deletions(to_align.aa_aligned(), master.aa_aligned_fast(), deletions);
     }
 
 } // namespace local
@@ -95,13 +105,7 @@ void acmacs::seqdb::v3::insertions_deletions(sequence_t& to_align, const sequenc
 {
     local::deletions_t deletions;
     if (to_align.aa_aligned_length() <= master.aa_aligned_length()) {
-        find_deletion(to_align, master, deletions);
-        if (!deletions.empty()) {
-            fmt::print(stderr, "DEL {}\n{}\n{}\n\n", deletions, master.aa_aligned_fast(), deletions.format(to_align.aa_aligned()));
-        }
-        else if (to_align.aa_aligned_length() != master.aa_aligned_length()) {
-            fmt::print(stderr, "!=\n{}\n{}\n", master.aa_aligned_fast(), to_align.aa_aligned());
-        }
+        find_deletions(to_align, master, deletions);
     }
     else {
         // fmt::print(stderr, "insertions_deletions {} > {} ::: {} {}\n{}\n{}\n", to_align.aa_aligned_length(), master.aa_aligned_length(), to_align.type_subtype(), to_align.full_name(),
@@ -180,36 +184,48 @@ namespace local
 
     // static inline size_t number_of_common_before(std::string_view s1, std::string_view s2, size_t last) { return number_of_common(s1.substr(0, last), s2.substr(0, last)); }
 
-    bool find_deletion(std::string_view to_align, std::string_view master, deletions_t& deletions)
+    inline std::optional<size_t> find_deletion(std::string_view to_align, std::string_view master)
     {
         constexpr const ssize_t head_tail_threshold = 3;
 
         const auto tail = find_common_tail(master, to_align, head_tail_threshold);
         if (tail == to_align.size()) {
             if (master.size() == to_align.size())
-                return false;
-            else {
-                // deletion at the beginning
-                deletions.add(0, master.size() - to_align.size());
-                return true;
-            }
+                return std::nullopt;
+            else // deletion at the beginning
+                return 0;
         }
 
         const auto front_aligned_head_size = to_align.size() - tail;
-        // fmt::print(stderr, "{}\n{}\n   tail:{} front_aligned_head_size:{}\n", master, to_align, tail, front_aligned_head_size);
-        // fmt::print(stderr, "{} {}\n{} {}\n:\n", master.substr(0, master.size() - tail), master.substr(master.size() - tail), to_align.substr(0, to_align.size() - tail),
-        // to_align.substr(to_align.size() - tail));
-
         const auto middle = find_uncommon_tail(master.substr(0, front_aligned_head_size), to_align.substr(0, front_aligned_head_size), head_tail_threshold);
-        const auto del_pos = front_aligned_head_size - middle;
-        const auto del_num = 1; // master.size() - tail - front_aligned_head_size + middle;
-        deletions.add(del_pos, del_num);
-        if (del_num > 1) {
-            fmt::print(stderr, "tail:{} middle:{} front_aligned_head_size:{} head:{} dels:{}\n", tail, middle, front_aligned_head_size, to_align.size() - tail - middle, del_num);
-            fmt::print(stderr, "{} {} {}\n{} {} {}\n", master.substr(0, del_pos), master.substr(del_pos, del_num), master.substr(del_pos + del_num), to_align.substr(0, del_pos),
-                       std::string(del_num, ' '), to_align.substr(del_pos));
+        return front_aligned_head_size - middle;
+    }
+
+    void find_deletions(std::string_view to_align, std::string_view master, deletions_t& deletions)
+    {
+        fmt::print(stderr, "\n{}\n{}\n", master, to_align);
+
+        size_t to_align_start = 0;
+        std::optional<size_t> del_pos;
+        while ((del_pos = find_deletion(to_align.substr(to_align_start), master.substr(to_align_start + deletions.number_of_deletions()))).has_value()) {
+            to_align_start += *del_pos;
+            if (!deletions.empty() && *del_pos == 0)
+                deletions.increment_last_num();
+            else
+                deletions.add(to_align_start, 1);
+            fmt::print(stderr, ":: {}\n", deletions.format(to_align));
         }
-        return true;
+
+        if (master.size() != (to_align.size() + deletions.number_of_deletions())) {
+            fmt::print(stderr, "WARNING: != {}\n{}\n{}\n", deletions, master, deletions.format(to_align));
+        }
+
+        // remove deletions at the end
+        if (!deletions.empty() && master.size() == (deletions.back().pos + deletions.back().num + deletions.number_of_deletions_without_last()))
+            deletions.pop_back();
+
+        if (!deletions.empty() && (deletions.size() > 1 || deletions.back().pos != 162 || deletions.back().num > 1))
+            fmt::print(stderr, "DEL {}\n{}\n{}\n\n", deletions, master, deletions.format(to_align));
     }
 
 } // namespace local
