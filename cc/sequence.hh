@@ -72,6 +72,12 @@ namespace acmacs::seqdb
                 return static_cast<size_t>(std::count(aa_.begin() + (shift_aa_ > 0 ? shift_aa_ : 0), aa_.end(), 'X'));
             }
 
+            size_t aa_number_of_not_X() const
+            {
+                const auto size  = shift_aa_ > 0 ? aa_.size() - static_cast<size_t>(shift_aa_) : aa_.size();
+                return size - aa_number_of_X();
+            }
+
             std::string nuc_aligned() const
             {
                 if (shift_nuc_ > 0)

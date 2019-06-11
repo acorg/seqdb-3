@@ -12,7 +12,7 @@ namespace acmacs::seqdb
 
         subtype_master_t masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences);
 
-        void insertions_deletions(sequence_t& to_align, const sequence_t& master);
+        void insertions_deletions(const sequence_t& master, sequence_t& to_align);
     }
 }
 
