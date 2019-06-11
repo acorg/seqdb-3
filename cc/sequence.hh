@@ -65,6 +65,13 @@ namespace acmacs::seqdb
                 throw std::runtime_error("internal in sequence_t::aa_aligned_fast");
             }
 
+            size_t aa_number_of_X() const
+            {
+                if (aa_.empty())
+                    throw std::runtime_error("internal in sequence_t::aa_number_of_X");
+                return static_cast<size_t>(std::count(aa_.begin() + (shift_aa_ > 0 ? shift_aa_ : 0), aa_.end(), 'X'));
+            }
+
             std::string nuc_aligned() const
             {
                 if (shift_nuc_ > 0)

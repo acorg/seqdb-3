@@ -3,6 +3,7 @@
 
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/date.hh"
 #include "acmacs-base/range-v3.hh"
 #include "seqdb-3/insertions.hh"
 
@@ -22,12 +23,25 @@ acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const
             if (vt.second > threshold)
                 master_length = vt.first;
         }
+        const sequence_t* master = nullptr;
+        size_t num_X = 0;
         for (const auto& sc : sequences | ranges::view::filter(fasta::is_aligned)) {
             if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
-                masters.emplace(subtype, &sc.sequence);
-                break;
+                if (master == nullptr) {
+                    master = &sc.sequence;
+                    num_X = sc.sequence.aa_number_of_X();
+                }
+                else if (const auto seq_X = sc.sequence.aa_number_of_X(); seq_X < num_X) {
+                    master = &sc.sequence;
+                    num_X = seq_X;
+                }
+                if (num_X == 0)
+                    break;
             }
         }
+        if (master == nullptr)
+            throw std::runtime_error("internal in acmacs::seqdb::v3::masters_per_subtype");
+        masters.emplace(subtype, master);
     }
 
     return masters;
@@ -220,8 +234,8 @@ namespace local
         // }
 
         // verify
-        if (const auto num_common = number_of_common(master, to_align, deletions); num_common < (to_align.size() * 0.8))
-            fmt::print(stderr, "------ NOT VERIFIED {} vs {} ({}) ----------\n{}\n{}\n\n", num_common, to_align.size(), static_cast<size_t>(to_align.size() * 0.8), master, deletions.format(to_align));
+        if (const auto num_common = number_of_common(master, to_align, deletions), size_without_X = to_align.size() - static_cast<size_t>(std::count(std::begin(to_align), std::end(to_align), 'X')); num_common < (size_without_X * 0.9))
+            fmt::print(stderr, "------ NOT VERIFIED {} vs {} ({:.2f}) ----------\n{}\n{}\n\n", num_common, to_align.size(), double(num_common) / to_align.size(), master, deletions.format(to_align));
     }
 
 } // namespace local
