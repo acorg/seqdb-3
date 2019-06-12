@@ -250,15 +250,15 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
 
     // H5
     {
-        // specific at first 150
-        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"NHFE"}); pos != std::string::npos)
-            return std::tuple{static_cast<int>(pos) - 108, make_type_subtype("A(H5)")};
         // specific
-        if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GVKPLIL"}); pos != std::string::npos)
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GVKPLIL", "GVRPLIL"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 45, make_type_subtype("A(H5)")};
         // specific
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"GWLLGNPMCDE"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 58, make_type_subtype("A(H5)")};
+        // specific at first 150
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"NHFE"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 108, make_type_subtype("A(H5)")};
         // (redundant) specific
         // if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"GYHANNSTEQ"}); pos != std::string::npos)
         //     return std::tuple{static_cast<int>(pos) - 5, make_type_subtype("A(H5)")};

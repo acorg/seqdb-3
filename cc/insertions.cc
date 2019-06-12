@@ -9,6 +9,13 @@
 
 // ----------------------------------------------------------------------
 
+namespace local
+{
+    struct not_verified : public std::runtime_error { using std::runtime_error::runtime_error; };
+}
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences)
 {
     std::map<std::string, acmacs::Counter<size_t>> aligned_lengths;
@@ -52,20 +59,36 @@ acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const
 
 void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_t& to_align)
 {
+    debug dbg = debug::no;
+    // fmt::print(stderr, "{}\n", to_align.full_name());
+    // if (to_align.full_name() == "A(H3N2)/PIAUI/4751/2011")
+    //     dbg = debug::yes;
+
     deletions_insertions_t deletions;
     const auto [master_aligned, master_shift] = master.aa_shifted();
     const auto [to_align_aligned, to_align_shift] = to_align.aa_shifted();
-    if (master_shift == 0) {
-        if (to_align_shift == 0)
-            deletions = deletions_insertions(master_aligned, to_align_aligned);
-        else
-            deletions = deletions_insertions(master_aligned, to_align.aa_aligned());
+    try {
+        if (master_shift == 0) {
+            if (to_align_shift == 0)
+                deletions = deletions_insertions(master_aligned, to_align_aligned, dbg);
+            else
+                deletions = deletions_insertions(master_aligned, to_align.aa_aligned(), dbg);
+        }
+        else {
+            if (to_align_shift == 0)
+                deletions = deletions_insertions(master.aa_aligned(), to_align_aligned, dbg);
+            else
+                deletions = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
+        }
     }
-    else {
-        if (to_align_shift == 0)
-            deletions = deletions_insertions(master.aa_aligned(), to_align_aligned);
-        else
-            deletions = deletions_insertions(master.aa_aligned(), to_align.aa_aligned());
+    catch (local::not_verified& err) {
+        fmt::print(stderr, "-------------------- NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
+        try {
+            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), debug::yes);
+        }
+        catch (local::not_verified&) {
+        }
+        fmt::print(stderr, "\n");
     }
 
 } // acmacs::seqdb::v3::deletions_insertions
@@ -110,7 +133,8 @@ std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
 namespace local
 {
     constexpr const ssize_t common_threshold = 3; // assume the chunk is common after that number of consecutive common positions
-    constexpr const ssize_t different_threshold = 20; // assume rest is different after that number of consecutive different positions
+    // constexpr const ssize_t different_threshold = 20; // assume rest is different after that number of consecutive different positions
+    constexpr const size_t max_deletions_insertions = 20; // give up if this number of deletions/insertions does not help
 
     static constexpr const auto are_common = [](char a, char b) -> bool { return a == b && a != 'X' && a != '-'; };
 
@@ -125,9 +149,9 @@ namespace local
         // find the last part with common_f()==true that is not shorter than common_threshold
         // returns offset of the end of this part
         auto f1 = first1, common_start = last1, last_common_end = first1;
-        size_t common = 0, common_at_last_common_end = 0;
+        size_t common = 0, common_at_last_common_end = 0, really_common_in_this_common_chunk = 0;
         const auto update_last_common_end = [&]() {
-            if (common_start != last1 && (f1 - common_start) >= common_threshold) {
+            if (common_start != last1 && really_common_in_this_common_chunk >= common_threshold) {
                 last_common_end = f1;
                 // fmt::print(stderr, "last_common_end:{}\n", f1 - first1);
                 common_at_last_common_end = common;
@@ -136,8 +160,10 @@ namespace local
 
         for (; f1 != last1 && first2 != last2; ++f1, ++first2) {
             if (*f1 == *first2 || *f1 == 'X' || *first2 == 'X') {
-                if (*f1 == *first2)
+                if (*f1 == *first2) {
                     ++common;
+                    ++really_common_in_this_common_chunk;
+                }
                 if (common_start == last1)
                     common_start = f1;
                 // fmt::print(stderr, "common:{} common_start:{}\n", f1 - first1, common_start - first1);
@@ -145,13 +171,15 @@ namespace local
             else {
                 // fmt::print(stderr, "NOTcommon:{}\n", f1 - first1);
                 update_last_common_end();
-                if (static_cast<size_t>(f1 - last_common_end) > different_threshold)
-                    break; // too many different, stop searching
+                // if (static_cast<size_t>(f1 - last_common_end) > different_threshold)
+                //     break; // too many different, stop searching
                 common_start = last1;
+                really_common_in_this_common_chunk = 0;
             }
         }
         update_last_common_end();
 
+        // fmt::print(stderr, "find_head end last_common_end:{} common_at_last_common_end:{}\n", last_common_end - first1, common_at_last_common_end);
         if (const auto head = static_cast<size_t>(last_common_end - first1); common_at_last_common_end * 3 > head)
             return {head, common_at_last_common_end};
         else
@@ -173,7 +201,7 @@ namespace local
     inline deletions_insertions_at_start_t deletions_insertions_at_start(std::string_view master, std::string_view to_align)
     {
         deletions_insertions_at_start_t result;
-        for (size_t dels = 1; dels < different_threshold; ++dels) {
+        for (size_t dels = 1; dels < max_deletions_insertions; ++dels) {
             if (dels < master.size()) {
                 result.head = find_common_head(master.substr(dels), to_align);
                 // fmt::print(stderr, "dels:{} head:{} common:{}\n{}\n{}\n", dels, result.head.head, result.head.common, master.substr(dels), to_align);
@@ -247,11 +275,10 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
             deletions.deletions.push_back({to_align_offset, tail_deletions.deletions});
             update_both(tail_deletions.deletions, tail_deletions.head.head, master_tail, to_align_tail, master_offset, to_align_offset);
         }
-        else if (tail_deletions.insertions) {
+        else { // insertions or nothing (in some cases)
             deletions.insertions.push_back({master_offset, tail_deletions.insertions});
             update_both(tail_deletions.insertions, tail_deletions.head.head, to_align_tail, master_tail, to_align_offset, master_offset);
         }
-
         common += tail_deletions.head.common;
     }
 
@@ -263,8 +290,9 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
     constexpr double diff_threshold = 0.7;
     const auto num_common_threshold = (to_align.size() - static_cast<size_t>(std::count(std::begin(to_align), std::end(to_align), 'X'))) * diff_threshold;
     if (common < num_common_threshold) {
-        fmt::print(stderr, "------ NOT VERIFIED common:{} vs size:{} num_common_threshold:{:.2f} ----------\n{}\n{}\n{}\n{}\n", common, to_align.size(), num_common_threshold, master, to_align,
-                   acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
+        throw local::not_verified(fmt::format("common:{} vs size:{} num_common_threshold:{:.2f}\n{}\n{}\n{}\n{}\n",
+                                              common, to_align.size(), num_common_threshold, master, to_align,
+                                              acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.')));
     }
 
     return deletions;
