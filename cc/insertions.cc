@@ -145,7 +145,7 @@ namespace local
         size_t common = 0;
     };
 
-    template <typename Iter> find_head_t find_head(const Iter first1, const Iter last1, Iter first2, const Iter last2)
+    template <typename Iter> find_head_t find_head(const Iter first1, const Iter last1, Iter first2, const Iter last2, acmacs::seqdb::v3::debug dbg)
     {
         // find the last part with common_f()==true that is not shorter than common_threshold
         // returns offset of the end of this part
@@ -167,10 +167,12 @@ namespace local
                 }
                 if (common_start == last1)
                     common_start = f1;
-                // fmt::print(stderr, "common:{} common_start:{}\n", f1 - first1, common_start - first1);
+                if (dbg == acmacs::seqdb::v3::debug::yes)
+                    fmt::print(stderr, "common:{} common_start:{}\n", f1 - first1, common_start - first1);
             }
             else {
-                // fmt::print(stderr, "NOTcommon:{}\n", f1 - first1);
+                // if (dbg == acmacs::seqdb::v3::debug::yes)
+                //     fmt::print(stderr, "NOTcommon:{}\n", f1 - first1);
                 update_last_common_end();
                 // if (static_cast<size_t>(f1 - last_common_end) > different_threshold)
                 //     break; // too many different, stop searching
@@ -180,16 +182,17 @@ namespace local
         }
         update_last_common_end();
 
-        // fmt::print(stderr, "find_head end last_common_end:{} common_at_last_common_end:{}\n", last_common_end - first1, common_at_last_common_end);
+        if (dbg == acmacs::seqdb::v3::debug::yes)
+            fmt::print(stderr, "find_head end last_common_end:{} common_at_last_common_end:{}\n", last_common_end - first1, common_at_last_common_end);
         if (const auto head = static_cast<size_t>(last_common_end - first1); common_at_last_common_end * 3 > head)
             return {head, common_at_last_common_end};
         else
             return {0, 0};      // too few common in the head, try more deletions
     }
 
-    static inline find_head_t find_common_head(std::string_view s1, std::string_view s2)
+    static inline find_head_t find_common_head(std::string_view s1, std::string_view s2, acmacs::seqdb::v3::debug dbg)
     {
-        return find_head(s1.begin(), s1.end(), s2.begin(), s2.end());
+        return find_head(s1.begin(), s1.end(), s2.begin(), s2.end(), dbg);
     }
 
     struct deletions_insertions_at_start_t
@@ -204,7 +207,7 @@ namespace local
         deletions_insertions_at_start_t result;
         for (size_t dels = 1; dels < max_deletions_insertions; ++dels) {
             if (dels < master.size()) {
-                result.head = find_common_head(master.substr(dels), to_align);
+                result.head = find_common_head(master.substr(dels), to_align, acmacs::seqdb::v3::debug::no);
                 // fmt::print(stderr, "dels:{} head:{} common:{}\n{}\n{}\n", dels, result.head.head, result.head.common, master.substr(dels), to_align);
                 if (result.head.head > common_threshold) {
                     result.deletions = dels;
@@ -212,7 +215,7 @@ namespace local
                 }
             }
             if (dels < to_align.size()) {
-                result.head = find_common_head(master, to_align.substr(dels));
+                result.head = find_common_head(master, to_align.substr(dels), acmacs::seqdb::v3::debug::no);
                 if (result.head.head > common_threshold) {
                     result.insertions = dels;
                     break;
@@ -247,7 +250,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
         fmt::print(stderr, "initial:\n{}\n{}\n\n", master, to_align);
 
     deletions_insertions_t deletions;
-    const auto initial_head = local::find_common_head(master, to_align);
+    const auto initial_head = local::find_common_head(master, to_align, debug::no /* dbg */);
     size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
     std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
     if (dbg == debug::yes)
