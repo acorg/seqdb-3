@@ -134,7 +134,7 @@ namespace local
 {
     constexpr const ssize_t common_threshold = 3; // assume the chunk is common after that number of consecutive common positions
     // constexpr const ssize_t different_threshold = 20; // assume rest is different after that number of consecutive different positions
-    constexpr const size_t max_deletions_insertions = 20; // give up if this number of deletions/insertions does not help
+    constexpr const size_t max_deletions_insertions = 200; // give up if this number of deletions/insertions does not help
     constexpr double verify_threshold = 0.6;              // if number of common is less than this fraction of non-X in shortest of to_align and master sequences, verification fails
 
     static constexpr const auto are_common = [](char a, char b) -> bool { return a == b && a != 'X' && a != '-'; };
