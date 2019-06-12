@@ -149,16 +149,20 @@ namespace local
     {
         deletions_insertions_at_start_t result;
         for (size_t dels = 1; dels < different_threshold; ++dels) {
-            result.head = find_common_head(master.substr(dels), to_align);
-            // fmt::print(stderr, "dels:{} head:{} common:{}\n{}\n{}\n", dels, result.head.head, result.head.common, master.substr(dels), to_align);
-            if (result.head.head > common_threshold) {
-                result.deletions = dels;
-                break;
+            if (dels < master.size()) {
+                result.head = find_common_head(master.substr(dels), to_align);
+                // fmt::print(stderr, "dels:{} head:{} common:{}\n{}\n{}\n", dels, result.head.head, result.head.common, master.substr(dels), to_align);
+                if (result.head.head > common_threshold) {
+                    result.deletions = dels;
+                    break;
+                }
             }
-            result.head = find_common_head(master, to_align.substr(dels));
-            if (result.head.head > common_threshold) {
-                result.insertions = dels;
-                break;
+            if (dels < to_align.size()) {
+                result.head = find_common_head(master, to_align.substr(dels));
+                if (result.head.head > common_threshold) {
+                    result.insertions = dels;
+                    break;
+                }
             }
         }
         return result;
@@ -201,7 +205,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
         const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail);
         // fmt::print(stderr, "dels:{} ins:{} head:{}  common:{}\n", tail_deletions.deletions, tail_deletions.insertions, tail_deletions.head.head, tail_deletions.head.common);
         if (tail_deletions.head.head < local::common_threshold)
-            throw std::runtime_error("rest is different");
+            break; // tails are different, insertions/deletions do not help
 
         if (tail_deletions.deletions) {
             deletions.deletions.push_back({to_align_offset, tail_deletions.deletions});
@@ -217,7 +221,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
 
     // sanity check (remove)
     if (const auto nc = local::number_of_common(master, to_align, deletions); nc != common)
-        fmt::print(stderr, "common diff: {} vs. {}\n", common, nc);
+        fmt::print(stderr, "common diff: {} vs. {}\n{}\n{}\n", common, nc, acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
 
     // verify
     constexpr double diff_threshold = 0.7;
