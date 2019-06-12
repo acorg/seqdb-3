@@ -147,8 +147,8 @@ namespace local
             }
         }
         update_last_common_end();
-        const auto head = static_cast<size_t>(last_common_end - first1);
-        if (common_at_last_common_end * 3 > head)
+
+        if (const auto head = static_cast<size_t>(last_common_end - first1); common_at_last_common_end * 3 > head)
             return {head, common_at_last_common_end};
         else
             return {0, 0};      // too few common in the head, try more deletions
@@ -234,8 +234,10 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
         const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail);
         if (dbg == debug::yes)
             fmt::print(stderr, "dels:{} ins:{} head:{}  common:{} number_of_common:{}\n", tail_deletions.deletions, tail_deletions.insertions, tail_deletions.head.head, tail_deletions.head.common, local::number_of_common(master_tail.substr(tail_deletions.deletions, tail_deletions.head.head), to_align_tail.substr(tail_deletions.insertions, tail_deletions.head.head)));
-        if (tail_deletions.head.head < local::common_threshold)
+        if (tail_deletions.head.head == 0) { // < local::common_threshold) {
+            common += local::number_of_common(master_tail, to_align_tail); // to avoid common diff warning below in case tail contains common aas
             break; // tails are different, insertions/deletions do not help
+        }
 
         if (tail_deletions.deletions) {
             deletions.deletions.push_back({to_align_offset, tail_deletions.deletions});
