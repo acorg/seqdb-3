@@ -131,6 +131,8 @@ namespace acmacs::seqdb
             shift_t shift_aa_{not_aligned};
             acmacs::virus::type_subtype_t type_subtype_; // by alignment
             std::string lineage_;      // by deletion detection
+
+            void aa_trim_absent();  // remove leading and trailing X and - from aa
         };
 
     } // namespace v3

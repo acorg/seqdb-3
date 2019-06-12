@@ -46,24 +46,32 @@ void acmacs::seqdb::v3::sequence_t::translate()
             std::max_element(std::begin(translated), std::end(translated), [](const auto& e1, const auto& e2) { return std::get<std::string>(e1).size() < std::get<std::string>(e2).size(); });
         if (std::get<std::string>(*longest_translated).size() >= MINIMUM_SEQUENCE_AA_LENGTH)
             std::tie(aa_, nuc_translation_offset_) = *longest_translated;
+    }
 
-        if (!aa_.empty()) {
-            // remove trailing X and - in aa
-            if (const auto found = aa_.find_last_not_of("X-"); found != std::string::npos)
-                aa_.erase(found + 1);
-            else
-                fmt::print(stderr, "WARNING: just X and - in AA sequence for {} ::: {}\n", full_name(), aa_);
+    aa_trim_absent();
 
-            // remove leading X and -
-            if (const auto found = aa_.find_first_not_of("X-"); found > 0 && found != std::string::npos) {
-                // fmt::print(stderr, "leading X: {} ::: {}\n", full_name(), aa_);
-                aa_.erase(0, found);
-                nuc_translation_offset_ += found * 3;
-            }
+} // acmacs::seqdb::v3::sequence_t::translate
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::sequence_t::aa_trim_absent()
+{
+    if (!aa_.empty()) {
+        // remove trailing X and - in aa
+        if (const auto found = aa_.find_last_not_of("X-"); found != std::string::npos)
+            aa_.erase(found + 1);
+        else
+            fmt::print(stderr, "WARNING: just X and - in AA sequence for {} ::: {}\n", full_name(), aa_);
+
+        // remove leading X and -
+        if (const auto found = aa_.find_first_not_of("X-"); found > 0 && found != std::string::npos) {
+            // fmt::print(stderr, "leading X: {} ::: {}\n", full_name(), aa_);
+            aa_.erase(0, found);
+            nuc_translation_offset_ += found * 3;
         }
     }
 
-} // acmacs::seqdb::v3::sequence_t::translate
+} // acmacs::seqdb::v3::sequence_t::aa_trim_absent
 
 // ----------------------------------------------------------------------
 
