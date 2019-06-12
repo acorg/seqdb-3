@@ -135,6 +135,7 @@ namespace local
     constexpr const ssize_t common_threshold = 3; // assume the chunk is common after that number of consecutive common positions
     // constexpr const ssize_t different_threshold = 20; // assume rest is different after that number of consecutive different positions
     constexpr const size_t max_deletions_insertions = 20; // give up if this number of deletions/insertions does not help
+    constexpr double verify_threshold = 0.6;              // if number of common is less than this fraction of non-X in shortest of to_align and master sequences, verification fails
 
     static constexpr const auto are_common = [](char a, char b) -> bool { return a == b && a != 'X' && a != '-'; };
 
@@ -282,13 +283,13 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
         common += tail_deletions.head.common;
     }
 
-    // sanity check (remove)
-    if (const auto nc = local::number_of_common(master, to_align, deletions); nc != common)
-        fmt::print(stderr, "common diff: {} vs. number_of_common:{} {}\n{}\n{}\n", common, nc, format(deletions), acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
+    // // sanity check (remove)
+    // if (const auto nc = local::number_of_common(master, to_align, deletions); nc != common)
+    //     fmt::print(stderr, "common diff: {} vs. number_of_common:{} {}\n{}\n{}\n", common, nc, format(deletions), acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
 
     // verify
-    constexpr double diff_threshold = 0.7;
-    const auto num_common_threshold = (to_align.size() - static_cast<size_t>(std::count(std::begin(to_align), std::end(to_align), 'X'))) * diff_threshold;
+    const auto get_num_non_x = [](std::string_view seq) { return seq.size() - static_cast<size_t>(std::count(std::begin(seq), std::end(seq), 'X')); };
+    const auto num_common_threshold = (master.size() < to_align.size() ? get_num_non_x(master) : get_num_non_x(to_align)) * local::verify_threshold;
     if (common < num_common_threshold) {
         throw local::not_verified(fmt::format("common:{} vs size:{} num_common_threshold:{:.2f}\n{}\n{}\n{}\n{}\n",
                                               common, to_align.size(), num_common_threshold, master, to_align,
