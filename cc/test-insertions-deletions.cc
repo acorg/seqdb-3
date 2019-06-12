@@ -13,7 +13,7 @@ int main(int argc, char* const argv[])
         return 1;
     }
 
-    const auto res = acmacs::seqdb::deletions_insertions(argv[1], argv[2]);
+    const auto res = acmacs::seqdb::deletions_insertions(argv[1], argv[2], acmacs::seqdb::debug::yes);
     fmt::print("{}\n{}\n", acmacs::seqdb::format(res.insertions, argv[1], '.'), acmacs::seqdb::format(res.deletions, argv[2], '.'));
 }
 

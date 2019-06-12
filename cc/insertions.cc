@@ -87,6 +87,26 @@ std::string acmacs::seqdb::v3::format(const std::vector<deletions_insertions_t::
 
 // ----------------------------------------------------------------------
 
+std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
+{
+    fmt::memory_buffer out;
+    const auto frmt = [&out](const char* prefix, const auto& num_pos) {
+        if (!num_pos.empty()) {
+            fmt::format_to(out, "{}[{}](", prefix, num_pos.size());
+            for (const auto& en : num_pos)
+                fmt::format_to(out, " {}:{}", en.pos, en.num);
+            fmt::format_to(out, ")");
+        }
+    };
+
+    frmt("DEL", deletions.deletions);
+    frmt(" INS", deletions.insertions);
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::format
+
+// ----------------------------------------------------------------------
+
 namespace local
 {
     constexpr const ssize_t common_threshold = 3; // assume the chunk is common after that number of consecutive common positions
@@ -188,15 +208,17 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertions(std::string_view master, std::string_view to_align)
+acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertions(std::string_view master, std::string_view to_align, debug dbg)
 {
-    // fmt::print(stderr, "{}\n{}\n", master, to_align);
+    if (dbg == debug::yes)
+        fmt::print(stderr, "initial:\n{}\n{}\n\n", master, to_align);
 
     deletions_insertions_t deletions;
     const auto initial_head = local::find_common_head(master, to_align);
     size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
     std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
-    // fmt::print(stderr, "initial_head:{} common:{} number_of_common:{}\n", initial_head.head, initial_head.common, local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)));
+    if (dbg == debug::yes)
+        fmt::print(stderr, "initial_head:{} common:{} number_of_common:{}\n", initial_head.head, initial_head.common, local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)));
 
     const auto update_both = [](size_t dels, size_t head, std::string_view& s1, std::string_view& s2, size_t& offset1, size_t& offset2) {
         s1.remove_prefix(head + dels);
@@ -207,9 +229,11 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
 
     size_t common = initial_head.common;
     while (!master_tail.empty() && !to_align_tail.empty()) {
-        // fmt::print(stderr, "m-offset:{} a-offset:{} common:{}\n{}\n{}\n", master_offset, to_align_offset, common, master_tail, to_align_tail);
+        if (dbg == debug::yes)
+            fmt::print(stderr, "m-offset:{} a-offset:{} common:{}\n{}\n{}\n", master_offset, to_align_offset, common, master_tail, to_align_tail);
         const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail);
-        // fmt::print(stderr, "dels:{} ins:{} head:{}  common:{}\n", tail_deletions.deletions, tail_deletions.insertions, tail_deletions.head.head, tail_deletions.head.common);
+        if (dbg == debug::yes)
+            fmt::print(stderr, "dels:{} ins:{} head:{}  common:{} number_of_common:{}\n", tail_deletions.deletions, tail_deletions.insertions, tail_deletions.head.head, tail_deletions.head.common, local::number_of_common(master_tail.substr(tail_deletions.deletions, tail_deletions.head.head), to_align_tail.substr(tail_deletions.insertions, tail_deletions.head.head)));
         if (tail_deletions.head.head < local::common_threshold)
             break; // tails are different, insertions/deletions do not help
 
@@ -227,7 +251,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
 
     // sanity check (remove)
     if (const auto nc = local::number_of_common(master, to_align, deletions); nc != common)
-        fmt::print(stderr, "common diff: {} vs. {}\n{}\n{}\n", common, nc, acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
+        fmt::print(stderr, "common diff: {} vs. number_of_common:{} {}\n{}\n{}\n", common, nc, format(deletions), acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
 
     // verify
     constexpr double diff_threshold = 0.7;
