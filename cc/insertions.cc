@@ -105,10 +105,11 @@ namespace local
         // find the last part with common_f()==true that is not shorter than common_threshold
         // returns offset of the end of this part
         auto f1 = first1, common_start = last1, last_common_end = first1;
-        size_t common = 0;
+        size_t common = 0, common_at_last_common_end = 0;
         const auto update_last_common_end = [&]() {
             if (common_start != last1 && (f1 - common_start) >= common_threshold) {
                 last_common_end = f1;
+                common_at_last_common_end = common;
                 common_start = last1; // reset
             }
         };
@@ -127,8 +128,8 @@ namespace local
         }
         update_last_common_end();
         const auto head = static_cast<size_t>(last_common_end - first1);
-        if (common * 3 > head)
-            return {head, common};
+        if (common_at_last_common_end * 3 > head)
+            return {head, common_at_last_common_end};
         else
             return {0, 0};      // too few common in the head, try more deletions
     }
@@ -168,15 +169,19 @@ namespace local
         return result;
     }
 
-    inline size_t number_of_common(std::string_view master, std::string_view to_align, acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline size_t number_of_common(std::string_view s1, std::string_view s2)
     {
-        const auto master_aligned = acmacs::seqdb::v3::format(deletions.insertions, master), to_align_aligned = acmacs::seqdb::v3::format(deletions.deletions, to_align);
         size_t common = 0;
-        for (auto mp = master_aligned.begin(), ap = to_align_aligned.begin(); mp != master_aligned.end() && ap != to_align_aligned.end(); ++mp, ++ap) {
-            if (are_common(*mp, *ap))
+        for (auto p1 = s1.begin(), p2 = s2.begin(); p1 != s1.end() && p2 != s2.end(); ++p1, ++p2) {
+            if (are_common(*p1, *p2))
                 ++common;
         }
         return common;
+    }
+
+    inline size_t number_of_common(std::string_view master, std::string_view to_align, acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    {
+        return number_of_common(acmacs::seqdb::v3::format(deletions.insertions, master), acmacs::seqdb::v3::format(deletions.deletions, to_align));
     }
 
 }
@@ -191,6 +196,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
     const auto initial_head = local::find_common_head(master, to_align);
     size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
     std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
+    // fmt::print(stderr, "initial_head:{} common:{} number_of_common:{}\n", initial_head.head, initial_head.common, local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)));
 
     const auto update_both = [](size_t dels, size_t head, std::string_view& s1, std::string_view& s2, size_t& offset1, size_t& offset2) {
         s1.remove_prefix(head + dels);
