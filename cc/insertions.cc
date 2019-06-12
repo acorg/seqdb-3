@@ -120,7 +120,7 @@ namespace local
         size_t common = 0;
     };
 
-    template <typename Iter, typename Common> find_head_t find_head(const Iter first1, const Iter last1, Iter first2, const Iter last2, Common common_f)
+    template <typename Iter> find_head_t find_head(const Iter first1, const Iter last1, Iter first2, const Iter last2)
     {
         // find the last part with common_f()==true that is not shorter than common_threshold
         // returns offset of the end of this part
@@ -129,21 +129,25 @@ namespace local
         const auto update_last_common_end = [&]() {
             if (common_start != last1 && (f1 - common_start) >= common_threshold) {
                 last_common_end = f1;
+                // fmt::print(stderr, "last_common_end:{}\n", f1 - first1);
                 common_at_last_common_end = common;
-                common_start = last1; // reset
             }
         };
 
         for (; f1 != last1 && first2 != last2; ++f1, ++first2) {
-            if (!common_f(*f1, *first2)) {
+            if (*f1 == *first2 || *f1 == 'X' || *first2 == 'X') {
+                if (*f1 == *first2)
+                    ++common;
+                if (common_start == last1)
+                    common_start = f1;
+                // fmt::print(stderr, "common:{} common_start:{}\n", f1 - first1, common_start - first1);
+            }
+            else {
+                // fmt::print(stderr, "NOTcommon:{}\n", f1 - first1);
                 update_last_common_end();
                 if (static_cast<size_t>(f1 - last_common_end) > different_threshold)
                     break; // too many different, stop searching
-            }
-            else {
-                ++common;
-                if (common_start == last1)
-                    common_start = f1;
+                common_start = last1;
             }
         }
         update_last_common_end();
@@ -156,7 +160,7 @@ namespace local
 
     static inline find_head_t find_common_head(std::string_view s1, std::string_view s2)
     {
-        return find_head(s1.begin(), s1.end(), s2.begin(), s2.end(), are_common);
+        return find_head(s1.begin(), s1.end(), s2.begin(), s2.end());
     }
 
     struct deletions_insertions_at_start_t
