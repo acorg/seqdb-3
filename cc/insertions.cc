@@ -164,44 +164,69 @@ namespace local
         return result;
     }
 
+    inline size_t number_of_common(std::string_view master, std::string_view to_align, acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    {
+        const auto master_aligned = acmacs::seqdb::v3::format(deletions.insertions, master), to_align_aligned = acmacs::seqdb::v3::format(deletions.deletions, to_align);
+        size_t common = 0;
+        for (auto mp = master_aligned.begin(), ap = to_align_aligned.begin(); mp != master_aligned.end() && ap != to_align_aligned.end(); ++mp, ++ap) {
+            if (are_common(*mp, *ap))
+                ++common;
+        }
+        return common;
+    }
+
 }
 
 // ----------------------------------------------------------------------
 
 acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertions(std::string_view master, std::string_view to_align)
 {
-    fmt::print(stderr, "{}\n{}\n", master, to_align);
+    // fmt::print(stderr, "{}\n{}\n", master, to_align);
 
     deletions_insertions_t deletions;
     const auto initial_head = local::find_common_head(master, to_align);
-    std::string_view master_tail = master.substr(initial_head.head), to_align_tail = to_align.substr(initial_head.head);
+    size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
+    std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
 
-    const auto update = [&](const local::deletions_insertions_at_start_t& source, size_t offset)
-    {
-        if (source.deletions) {
-            deletions.deletions.push_back({offset, source.deletions});
-            master_tail.remove_prefix(source.head.head + source.deletions);
-            to_align_tail.remove_prefix(source.head.head);
-        }
-        else if (source.insertions) {
-            deletions.insertions.push_back({offset, source.insertions});
-            master_tail.remove_prefix(source.head.head);
-            to_align_tail.remove_prefix(source.head.head + source.deletions);
-        }
+    const auto update_both = [](size_t dels, size_t head, std::string_view& s1, std::string_view& s2, size_t& offset1, size_t& offset2) {
+        s1.remove_prefix(head + dels);
+        s2.remove_prefix(head);
+        offset1 += head + dels;
+        offset2 += head;
     };
 
     size_t common = initial_head.common;
-    for (size_t offset = initial_head.head; offset < std::min(master.size(), to_align.size()); ) {
-        fmt::print(stderr, "offset:{}  common:{}\n", offset, common);
+    while (!master_tail.empty() && !to_align_tail.empty()) {
+        // fmt::print(stderr, "m-offset:{} a-offset:{} common:{}\n{}\n{}\n", master_offset, to_align_offset, common, master_tail, to_align_tail);
         const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail);
+        // fmt::print(stderr, "dels:{} ins:{} head:{}  common:{}\n", tail_deletions.deletions, tail_deletions.insertions, tail_deletions.head.head, tail_deletions.head.common);
         if (tail_deletions.head.head < local::common_threshold)
             throw std::runtime_error("rest is different");
-        update(tail_deletions, offset);
-        offset += tail_deletions.head.head;
+
+        if (tail_deletions.deletions) {
+            deletions.deletions.push_back({to_align_offset, tail_deletions.deletions});
+            update_both(tail_deletions.deletions, tail_deletions.head.head, master_tail, to_align_tail, master_offset, to_align_offset);
+        }
+        else if (tail_deletions.insertions) {
+            deletions.insertions.push_back({master_offset, tail_deletions.insertions});
+            update_both(tail_deletions.insertions, tail_deletions.head.head, to_align_tail, master_tail, to_align_offset, master_offset);
+        }
+
         common += tail_deletions.head.common;
-        // fmt::print(stderr, "dels:{} ins:{} head:{}  common:{}\n", tail_deletions.deletions, tail_deletions.insertions, tail_deletions.head.head, tail_deletions.head.common);
     }
-    fmt::print(stderr, "common: {}\n", common);
+
+    // sanity check (remove)
+    if (const auto nc = local::number_of_common(master, to_align, deletions); nc != common)
+        fmt::print(stderr, "common diff: {} vs. {}\n", common, nc);
+
+    // verify
+    constexpr double diff_threshold = 0.7;
+    const auto num_common_threshold = (to_align.size() - static_cast<size_t>(std::count(std::begin(to_align), std::end(to_align), 'X'))) * diff_threshold;
+    if (common < num_common_threshold) {
+        fmt::print(stderr, "------ NOT VERIFIED common:{} vs size:{} num_common_threshold:{:.2f} ----------\n{}\n{}\n{}\n{}\n", common, to_align.size(), num_common_threshold, master, to_align,
+                   acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
+    }
+
     return deletions;
 
 } // acmacs::seqdb::v3::deletions_insertions
