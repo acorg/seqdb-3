@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "seqdb-3/fasta.hh"
 
 namespace acmacs::seqdb
@@ -12,9 +10,22 @@ namespace acmacs::seqdb
 
         subtype_master_t masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences);
 
-        void insertions_deletions(const sequence_t& master, sequence_t& to_align);
-    }
-}
+        struct deletions_insertions_t
+        {
+            struct pos_num_t
+            {
+                size_t pos;
+                size_t num;
+            };
+
+            std::vector<pos_num_t> deletions, insertions;
+        };
+
+        void deletions_insertions(const sequence_t& master, sequence_t& to_align);
+        deletions_insertions_t deletions_insertions(std::string_view master, std::string_view to_align);
+
+    } // namespace v3
+} // namespace acmacs::seqdb
 
 // ----------------------------------------------------------------------
 /// Local Variables:

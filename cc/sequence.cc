@@ -69,7 +69,7 @@ void acmacs::seqdb::v3::sequence_t::translate()
 
 std::string acmacs::seqdb::v3::sequence_t::full_name() const
 {
-    return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage()});
+    return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage(), lineage()});
 
 } // acmacs::seqdb::v3::sequence_t::full_name
 
@@ -162,6 +162,19 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
     return result;
 
 } // symbol_frequences
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::sequence_t::set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype)
+{
+    shift_aa_ = shift_aa;
+    shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
+    if (type_subtype.has_value()) {
+        type_subtype_ = *type_subtype;
+        acmacs::virus::set_type_subtype(name_, type_subtype_);
+    }
+
+} // acmacs::seqdb::v3::sequence_t::set_shift
 
 // ----------------------------------------------------------------------
 

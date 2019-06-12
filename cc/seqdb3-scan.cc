@@ -115,7 +115,7 @@ int main(int argc, char* const argv[])
         }
 
         if (!opt.print_aa_for->empty()) {
-            const auto report = acmacs::seqdb::fasta::report_aa(all_sequences, ::string::upper(*opt.print_aa_for), 200);
+            const auto report = acmacs::seqdb::fasta::report_aa(all_sequences, ::string::upper(*opt.print_aa_for), 99999);
             fmt::print("{} {}\n{}\n", *opt.print_aa_for, ranges::count(report, '\n') / 2, report);
         }
 
@@ -125,7 +125,7 @@ int main(int argc, char* const argv[])
         }
 
         if (!opt.print_aligned_for->empty()) {
-            const auto report = acmacs::seqdb::fasta::report_aligned(all_sequences, ::string::upper(*opt.print_aligned_for));
+            const auto report = acmacs::seqdb::fasta::report_aa_aligned(all_sequences, ::string::upper(*opt.print_aligned_for));
             fmt::print("ALIGNED {} {}\n{}\n", *opt.print_aligned_for, ranges::count(report, '\n'), report);
         }
 

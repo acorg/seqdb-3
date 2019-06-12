@@ -156,6 +156,7 @@ std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta:
         result.fasta.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
     if (fields.size() > 6)
         result.fasta.lineage = parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no);
+    result.sequence.lineage(result.fasta.lineage);
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_spaces
@@ -432,29 +433,29 @@ std::string acmacs::seqdb::v3::fasta::report_not_aligned(const std::vector<scan_
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::fasta::report_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix)
-{
-    // std::string master;
-    fmt::memory_buffer out;
-    for (const auto& sc :
-         sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_aligned)) {
-        const auto aligned = sc.sequence.aa_aligned();
-        // fmt::format_to(out, "{:150s} {}\n", sc.fasta.entry_name, aligned);
-        fmt::format_to(out, "{}\n", aligned);
-        // if (!master.empty()) {
-        //     if (master.size() >= aligned.size()) {
-        //         if (const auto hd = hamming_distance_not_considering(master.substr(0, aligned.size()), aligned, '-'); hd > 100)
-        //             fmt::print(stderr, "too different from master (hd:{}) {} {}\n", hd, sc.fasta.entry_name, aligned.substr(0, 100));
-        //     }
-        //     else if (aligned.back() != 'X')
-        //         fmt::print(stderr, "too long {} {}\n", sc.fasta.entry_name, aligned);
-        // }
-        // else
-        //     master = aligned;
-    }
-    return fmt::to_string(out);
+// std::string acmacs::seqdb::v3::fasta::report_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix)
+// {
+//     // std::string master;
+//     fmt::memory_buffer out;
+//     for (const auto& sc :
+//          sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_aligned)) {
+//         const auto aligned = sc.sequence.aa_aligned();
+//         // fmt::format_to(out, "{:150s} {}\n", sc.fasta.entry_name, aligned);
+//         fmt::format_to(out, "{}\n", aligned);
+//         // if (!master.empty()) {
+//         //     if (master.size() >= aligned.size()) {
+//         //         if (const auto hd = hamming_distance_not_considering(master.substr(0, aligned.size()), aligned, '-'); hd > 100)
+//         //             fmt::print(stderr, "too different from master (hd:{}) {} {}\n", hd, sc.fasta.entry_name, aligned.substr(0, 100));
+//         //     }
+//         //     else if (aligned.back() != 'X')
+//         //         fmt::print(stderr, "too long {} {}\n", sc.fasta.entry_name, aligned);
+//         // }
+//         // else
+//         //     master = aligned;
+//     }
+//     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::fasta::report_not_aligned
+// } // acmacs::seqdb::v3::fasta::report_not_aligned
 
 // ----------------------------------------------------------------------
 
@@ -469,6 +470,19 @@ std::string acmacs::seqdb::v3::fasta::report_aa(const std::vector<scan_result_t>
 
 // ----------------------------------------------------------------------
 
+std::string acmacs::seqdb::v3::fasta::report_aa_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
+{
+    fmt::memory_buffer out;
+    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_aligned)) {
+        const auto seq = sc.sequence.aa_aligned();
+        fmt::format_to(out, "{} [{}]\n{}\n", sc.sequence.full_name(), seq.size(), seq.substr(0, sequence_cutoff));
+    }
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::fasta::report_aa_aligned
+
+// ----------------------------------------------------------------------
+
 void acmacs::seqdb::v3::fasta::detect_insertions_deletions(std::vector<scan_result_t>& sequence_data)
 {
     const auto masters = acmacs::seqdb::masters_per_subtype(sequence_data);
@@ -478,7 +492,7 @@ void acmacs::seqdb::v3::fasta::detect_insertions_deletions(std::vector<scan_resu
     for (auto sc_p = sequence_data.begin(); sc_p != sequence_data.end(); ++sc_p) {
         if (sc_p->sequence.aligned()) { //  && sc_p->sequence.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
             if (const auto* master = masters.find(sc_p->sequence.type_subtype().h_or_b())->second; master != &sc_p->sequence)
-                acmacs::seqdb::insertions_deletions(*master, sc_p->sequence);
+                acmacs::seqdb::deletions_insertions(*master, sc_p->sequence);
         }
     }
 

@@ -100,13 +100,7 @@ namespace acmacs::seqdb
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
 
-            void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt)
-            {
-                shift_aa_ = shift_aa;
-                shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
-                if (type_subtype.has_value())
-                    type_subtype_ = *type_subtype;
-            }
+            void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt);
 
             void date(const Date& a_date) { date_ = a_date; }
             void passage(acmacs::virus::Passage&& a_passage) { passage_ = std::move(a_passage); }
@@ -118,6 +112,7 @@ namespace acmacs::seqdb
             // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
             void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
             void remove_annotations() { annotations_.clear(); }
+            void lineage(std::string lin) { lineage_ = lin; }
             // void (const & a_) { _ = a_; }
 
           private:
