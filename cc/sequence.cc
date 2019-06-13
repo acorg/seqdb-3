@@ -42,14 +42,21 @@ std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
     const auto frmt = [&out](const char* prefix, const auto& num_pos) {
         if (!num_pos.empty()) {
             fmt::format_to(out, "{}[{}](", prefix, num_pos.size());
-            for (const auto& en : num_pos)
-                fmt::format_to(out, " {}:{}", en.pos, en.num);
+            bool first = true;
+            for (const auto& en : num_pos) {
+                if (first)
+                    first = false;
+                else
+                    fmt::format_to(out, " ");
+                fmt::format_to(out, "{}:{}", en.pos + 1, en.num);
+            }
             fmt::format_to(out, ")");
         }
     };
 
     frmt("DEL", deletions.deletions);
     frmt(" INS", deletions.insertions);
+    fmt::format_to(out, "<pos-1-based>");
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::format
@@ -115,7 +122,7 @@ void acmacs::seqdb::v3::sequence_t::aa_trim_absent()
 
 std::string acmacs::seqdb::v3::sequence_t::full_name() const
 {
-    return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage(), lineage()});
+    return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage(), *lineage()});
 
 } // acmacs::seqdb::v3::sequence_t::full_name
 

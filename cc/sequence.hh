@@ -43,8 +43,21 @@ namespace acmacs::seqdb
 
             std::string_view aa() const { return aa_; }
             std::string_view nuc() const { return nuc_; }
-            const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
-            std::string_view lineage() const { return lineage_; }
+            constexpr const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
+            constexpr const acmacs::virus::lineage_t& lineage() const { return lineage_; }
+            constexpr const Date& date() const { return date_; }
+
+            size_t year() const
+            {
+                if (date_.empty()) {
+                    if (auto yr = acmacs::virus::year(name_); yr.has_value())
+                        return *yr;
+                    else
+                        return 0;
+                }
+                else
+                    return static_cast<size_t>(date_.year());
+            }
 
             std::string aa_aligned() const
             {
@@ -130,7 +143,7 @@ namespace acmacs::seqdb
             // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
             void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
             void remove_annotations() { annotations_.clear(); }
-            void lineage(std::string lin) { lineage_ = lin; }
+            void lineage(const acmacs::virus::lineage_t& lin) { lineage_ = lin; }
             // void (const & a_) { _ = a_; }
 
             constexpr deletions_insertions_t& deletions() { return deletions_; }
@@ -152,7 +165,7 @@ namespace acmacs::seqdb
             shift_t shift_aa_{not_aligned};
             acmacs::virus::type_subtype_t type_subtype_; // by alignment
             deletions_insertions_t deletions_;
-            std::string lineage_;      // by deletion detection
+            acmacs::virus::lineage_t lineage_;      // by deletion detection
 
             void aa_trim_absent();  // remove leading and trailing X and - from aa
 

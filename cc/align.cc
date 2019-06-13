@@ -157,7 +157,7 @@ void acmacs::seqdb::v3::translate_align(std::vector<fasta::scan_result_t>& seque
     // remove not translated
     sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
 
-    fmt::print(stderr, "translate_align aligned 1: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), current_date_time());
+    // fmt::print(stderr, "translate_align aligned 1: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), current_date_time());
 
     local::Aligner aligner;
     for (const auto& entry : sequences | ranges::view::filter(fasta::is_aligned)) {
@@ -176,7 +176,7 @@ void acmacs::seqdb::v3::translate_align(std::vector<fasta::scan_result_t>& seque
         }
     }
 
-    fmt::print(stderr, "translate_align aligned 2: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), current_date_time());
+    // fmt::print(stderr, "translate_align aligned 2: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), current_date_time());
 
 } // acmacs::seqdb::v3::translate_align_clade
 

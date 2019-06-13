@@ -19,7 +19,7 @@ namespace acmacs::seqdb
                 std::string entry_name;
                 std::string name;
                 acmacs::virus::type_subtype_t type_subtype;
-                std::string lineage;
+                acmacs::virus::lineage_t lineage;
                 std::string passage;
                 std::string filename;
                 size_t line_no; // of the sequence name in filename

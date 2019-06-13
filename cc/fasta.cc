@@ -157,8 +157,11 @@ std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta:
     if (fields.size() > 5)
         result.fasta.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
     if (fields.size() > 6)
-        result.fasta.lineage = parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no);
-    result.sequence.lineage(result.fasta.lineage);
+        result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no)};
+
+    if (!result.fasta.lineage.empty() && result.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"})
+        result.sequence.lineage(result.fasta.lineage);
+
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_spaces
@@ -184,7 +187,7 @@ std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta:
     result.fasta.entry_name = result.fasta.name = name;
     result.sequence.lab(hints.lab);
     result.fasta.type_subtype = acmacs::virus::type_subtype_t{hints.subtype};
-    result.fasta.lineage = hints.lineage;
+    result.fasta.lineage = acmacs::virus::lineage_t{hints.lineage};
     return std::move(result);
 
 } // acmacs::seqdb::v3::fasta::name_plain
