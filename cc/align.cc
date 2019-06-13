@@ -108,9 +108,17 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> acmacs::seqdb::v3:
         // Only B has NSPHVV at first 100 AAs
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 100, {"NSPHVV"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 10, make_type_subtype("B")};
-        // Only B has CPNATS in whole AA sequence
+        // B specific
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"EHIRL"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 114, make_type_subtype("B")};
+        // Only B (YAMAGATA?) has CPNATS in whole AA sequence
         if (const auto pos = align_detail::find_in_sequence(amino_acids, 250, {"CPNATS"}); pos != std::string::npos)
             return std::tuple{static_cast<int>(pos) - 142, make_type_subtype("B")};
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 250, {"PNATSK"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 143, make_type_subtype("B")};
+        // B specific (VICTORIA?)
+        if (const auto pos = align_detail::find_in_sequence(amino_acids, 150, {"NVTNG"}); pos != std::string::npos)
+            return std::tuple{static_cast<int>(pos) - 144, make_type_subtype("B")};
         // --- below are redundant 2019-06-01
         // Only B has DRICT
         // if (const auto pos = align_detail::find_in_sequence(amino_acids, 50, {"DRICT"}); pos != std::string::npos)
