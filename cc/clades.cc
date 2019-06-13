@@ -50,7 +50,8 @@ namespace local
         const auto& deletions = sequence.deletions().deletions;
         return ((deletions.size() == 1 && deletions.front().pos == 158 && deletions.front().num == 1 && sequence.aa_aligned_substr(155, 6) == "MAWVIP")
                 || (deletions.size() == 1 && deletions.front().pos == 161 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 2) == "VP")
-                || (deletions.size() == 1 && deletions.front().pos == 163 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 5) == "VPKXN")
+                || (deletions.size() == 1 && deletions.front().pos == 160 && deletions.front().num == 1 && sequence.aa_aligned_substr(157, 3) == "WAV")
+                || (deletions.size() == 1 && deletions.front().pos == 163 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 3) == "VPK")
                 )
                 && sequence.deletions().insertions.empty();
     }
@@ -61,6 +62,12 @@ namespace local
                 && (deletions.deletions.size() == 1 || deletions.deletions[1].pos > 500)
                 && deletions.insertions.empty()
                 ;
+    }
+
+    // 12 sequences from TAIWAN 2010 have deletions 169:2
+    inline bool is_taiwan_169_2(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    {
+        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 168 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
     }
 
 }
@@ -123,6 +130,10 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
             warn("yamagata");
+    }
+    else if (is_taiwan_169_2(sequence.deletions())) {
+        // 12 sequences from TAIWAN 2010 have deletions 169:2
+        sequence.lineage(acmacs::virus::lineage_t{});
     }
     else {
         warn("unknown", "ERROR");
