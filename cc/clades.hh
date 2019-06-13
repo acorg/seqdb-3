@@ -1,11 +1,16 @@
 #pragma once
 
-#include "seqdb-3/sequence.hh"
+#include <vector>
+
+// ----------------------------------------------------------------------
 
 namespace acmacs::seqdb
 {
     inline namespace v3
     {
+        namespace fasta { struct scan_result_t; }
+
+        void detect_lineages_clades(std::vector<fasta::scan_result_t>& sequences);
     }
 }
 

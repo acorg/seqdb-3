@@ -14,6 +14,7 @@
 #include "seqdb-3/hamming-distance.hh"
 #include "seqdb-3/align.hh"
 #include "seqdb-3/insertions.hh"
+#include "seqdb-3/clades.hh"
 
 // ----------------------------------------------------------------------
 
@@ -89,9 +90,8 @@ int main(int argc, char* const argv[])
 
         acmacs::seqdb::translate_align(all_sequences);
         acmacs::seqdb::detect_insertions_deletions(all_sequences);
+        acmacs::seqdb::detect_lineages_clades(all_sequences);
 
-        // detect B lineage and VIC deletion mutants, adjust deletions
-        // detect clades
         // match hidb
         // infer continent/country
         // generate seqdb
