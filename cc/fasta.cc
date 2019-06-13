@@ -1,20 +1,22 @@
-#include <algorithm>
-#include <regex>
 #include <map>
-#include <array>
-#include <set>
+
+// #include <regex>
+// #include <array>
+// #include <set>
 
 #include "acmacs-base/fmt.hh"
-#include "acmacs-base/string-split.hh"
-#include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/algorithm.hh"
+
+#include "acmacs-base/string-split.hh"
+#include "acmacs-base/read-file.hh"
 #include "locationdb/locdb.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/fasta.hh"
 #include "seqdb-3/align.hh"
 #include "seqdb-3/hamming-distance.hh"
-#include "seqdb-3/insertions.hh"
+
+// ----------------------------------------------------------------------
 
 namespace acmacs::seqdb
 {
@@ -27,7 +29,7 @@ namespace acmacs::seqdb
             static acmacs::virus::type_subtype_t parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
             static std::string_view parse_lineage(std::string_view source, std::string_view filename, size_t line_no);
             static acmacs::seqdb::v3::fasta::hint_t find_hints(std::string_view filename);
-            static void detect_insertions_deletions(std::vector<acmacs::seqdb::v3::fasta::scan_result_t>& sequence_data);
+
         } // namespace fasta
     }     // namespace v3
 }
@@ -370,45 +372,6 @@ acmacs::seqdb::v3::fasta::hint_t acmacs::seqdb::v3::fasta::find_hints(std::strin
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::fasta::translate_align(std::vector<scan_result_t>& sequences)
-{
-#pragma omp parallel for default(shared) schedule(static, 256)
-    for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
-        auto& entry = sequences[e_no];
-        entry.sequence.translate();
-        entry.sequence.align(entry.fasta.type_subtype);
-    }
-
-    // remove not translated
-    sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
-
-    fmt::print(stderr, "translate_align aligned 1: {} :: {}\n", ranges::count_if(sequences, is_aligned), current_date_time());
-
-    Aligner aligner;
-    for (const auto& entry : sequences | ranges::view::filter(is_aligned)) {
-        const auto [aa, shift] = entry.sequence.aa_shifted();
-        aligner.update(aa, shift, entry.sequence.type_subtype());
-    }
-    // aligner.report();
-
-    for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
-        auto& entry = sequences[e_no];
-        if (!entry.sequence.aligned()) {
-            if (const auto align_data = aligner.align(entry.sequence.aa(), entry.fasta.type_subtype); align_data.has_value()) {
-                const auto [shift, type_subtype] = *align_data;
-                entry.sequence.set_shift(shift, type_subtype);
-            }
-        }
-    }
-
-    detect_insertions_deletions(sequences);
-
-    fmt::print(stderr, "translate_align aligned 2: {} :: {}\n", ranges::count_if(sequences, is_aligned), current_date_time());
-
-} // acmacs::seqdb::v3::fasta::translate_align
-
-// ----------------------------------------------------------------------
-
 std::string acmacs::seqdb::v3::fasta::report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
@@ -483,22 +446,6 @@ std::string acmacs::seqdb::v3::fasta::report_aa_aligned(const std::vector<scan_r
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::fasta::detect_insertions_deletions(std::vector<scan_result_t>& sequence_data)
-{
-    const auto masters = acmacs::seqdb::masters_per_subtype(sequence_data);
-    // fmt::print(stderr, "masters_per_subtype {}\n", masters.size());
-
-// #pragma omp parallel for default(shared) schedule(static) // , 100)
-    for (auto sc_p = sequence_data.begin(); sc_p != sequence_data.end(); ++sc_p) {
-        if (sc_p->sequence.aligned()) { //  && sc_p->sequence.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
-            if (const auto* master = masters.find(sc_p->sequence.type_subtype().h_or_b())->second; master != &sc_p->sequence)
-                acmacs::seqdb::deletions_insertions(*master, sc_p->sequence);
-        }
-    }
-
-} // detect_insertions_deletions
-
-// ----------------------------------------------------------------------
 
 
 // ----------------------------------------------------------------------

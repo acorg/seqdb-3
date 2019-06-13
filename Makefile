@@ -8,7 +8,7 @@ TARGETS = \
   $(DIST)/seqdb3-names \
   $(DIST)/test-insertions-deletions
 
-SEQDB_SOURCES = fasta.cc sequence.cc align.cc insertions.cc
+SEQDB_SOURCES = fasta.cc sequence.cc align.cc insertions.cc clades.cc
 
 SEQDB_LIB_MAJOR = 3
 SEQDB_LIB_MINOR = 0

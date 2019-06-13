@@ -12,7 +12,8 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/counter.hh"
 #include "seqdb-3/hamming-distance.hh"
-#include "seqdb-3/fasta.hh"
+#include "seqdb-3/align.hh"
+#include "seqdb-3/insertions.hh"
 
 // ----------------------------------------------------------------------
 
@@ -86,7 +87,15 @@ int main(int argc, char* const argv[])
         // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }),
         // std::end(all_sequences)); fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
 
-        acmacs::seqdb::fasta::translate_align(all_sequences);
+        acmacs::seqdb::translate_align(all_sequences);
+        acmacs::seqdb::detect_insertions_deletions(all_sequences);
+
+        // detect B lineage and VIC deletion mutants, adjust deletions
+        // detect clades
+        // match hidb
+        // infer continent/country
+        // generate seqdb
+
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
         fmt::print(stderr, "\n");
 

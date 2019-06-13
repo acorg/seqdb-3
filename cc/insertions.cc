@@ -12,14 +12,34 @@
 namespace local
 {
     struct not_verified : public std::runtime_error { using std::runtime_error::runtime_error; };
+
+    using subtype_master_t = std::map<std::string, const acmacs::seqdb::sequence_t*, std::less<>>;
+    subtype_master_t masters_per_subtype(const std::vector<acmacs::seqdb::v3::fasta::scan_result_t>& sequences);
 }
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const std::vector<fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::detect_insertions_deletions(std::vector<fasta::scan_result_t>& sequence_data)
+{
+    const auto masters = local::masters_per_subtype(sequence_data);
+    // fmt::print(stderr, "masters_per_subtype {}\n", masters.size());
+
+// #pragma omp parallel for default(shared) schedule(static) // , 100)
+    for (auto sc_p = sequence_data.begin(); sc_p != sequence_data.end(); ++sc_p) {
+        if (sc_p->sequence.aligned()) { //  && sc_p->sequence.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
+            if (const auto* master = masters.find(sc_p->sequence.type_subtype().h_or_b())->second; master != &sc_p->sequence)
+                deletions_insertions(*master, sc_p->sequence);
+        }
+    }
+
+} // detect_insertions_deletions
+
+// ----------------------------------------------------------------------
+
+local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seqdb::v3::fasta::scan_result_t>& sequences)
 {
     std::map<std::string, acmacs::Counter<size_t>> aligned_lengths;
-    for (const auto& sc : sequences | ranges::view::filter(fasta::is_aligned))
+    for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::fasta::is_aligned))
         aligned_lengths.try_emplace(std::string(sc.sequence.type_subtype().h_or_b())).first->second.count(sc.sequence.aa_aligned_length());
 
     subtype_master_t masters;
@@ -30,9 +50,9 @@ acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const
             if (vt.second > threshold)
                 master_length = vt.first;
         }
-        const sequence_t* master = nullptr;
+        const acmacs::seqdb::v3::sequence_t* master = nullptr;
         size_t num_X = 0;
-        for (const auto& sc : sequences | ranges::view::filter(fasta::is_aligned)) {
+        for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::fasta::is_aligned)) {
             if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
                 if (master == nullptr) {
                     master = &sc.sequence;
@@ -53,16 +73,16 @@ acmacs::seqdb::v3::subtype_master_t acmacs::seqdb::v3::masters_per_subtype(const
 
     return masters;
 
-} // acmacs::seqdb::v3::masters_per_subtype
+} // local::masters_per_subtype
 
 // ----------------------------------------------------------------------
 
 void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_t& to_align)
 {
-    debug dbg = debug::no;
+    acmacs::debug dbg = acmacs::debug::no;
     // fmt::print(stderr, "{}\n", to_align.full_name());
     // if (to_align.full_name() == "A(H3N2)/PIAUI/4751/2011")
-    //     dbg = debug::yes;
+    //     dbg = acmacs::debug::yes;
 
     deletions_insertions_t deletions;
     const auto [master_aligned, master_shift] = master.aa_shifted();
@@ -84,7 +104,7 @@ void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_
     catch (local::not_verified& err) {
         fmt::print(stderr, "-------------------- NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
         try {
-            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), debug::yes);
+            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), acmacs::debug::yes);
         }
         catch (local::not_verified&) {
         }
@@ -150,7 +170,7 @@ namespace local
         return fmt::format("head:{} common:{}", head.head, head.common);
     }
 
-    template <typename Iter> find_head_t find_head(const Iter first1, const Iter last1, Iter first2, const Iter last2, acmacs::seqdb::v3::debug dbg)
+    template <typename Iter> find_head_t find_head(const Iter first1, const Iter last1, Iter first2, const Iter last2, acmacs::debug dbg)
     {
         // find the last part with common_f()==true that is not shorter than common_threshold
         // returns offset of the end of this part
@@ -172,11 +192,11 @@ namespace local
                 }
                 if (common_start == last1)
                     common_start = f1;
-                if (dbg == acmacs::seqdb::v3::debug::yes)
+                if (dbg == acmacs::debug::yes)
                     fmt::print(stderr, "common:{} common_start:{}\n", f1 - first1, common_start - first1);
             }
             else {
-                // if (dbg == acmacs::seqdb::v3::debug::yes)
+                // if (dbg == acmacs::debug::yes)
                 //     fmt::print(stderr, "NOTcommon:{}\n", f1 - first1);
                 update_last_common_end();
                 // if (static_cast<size_t>(f1 - last_common_end) > not_common_threshold)
@@ -187,7 +207,7 @@ namespace local
         }
         update_last_common_end();
 
-        if (dbg == acmacs::seqdb::v3::debug::yes)
+        if (dbg == acmacs::debug::yes)
             fmt::print(stderr, "find_head end last_common_end:{} common_at_last_common_end:{}\n", last_common_end - first1, common_at_last_common_end);
         if (const auto head = static_cast<size_t>(last_common_end - first1); common_at_last_common_end * 3 > head)
             return {head, common_at_last_common_end};
@@ -195,7 +215,7 @@ namespace local
             return {0, 0};      // too few common in the head, try more deletions
     }
 
-    inline find_head_t find_common_head(std::string_view s1, std::string_view s2, acmacs::seqdb::v3::debug dbg)
+    inline find_head_t find_common_head(std::string_view s1, std::string_view s2, acmacs::debug dbg)
     {
         return find_head(s1.begin(), s1.end(), s2.begin(), s2.end(), dbg);
     }
@@ -222,7 +242,7 @@ namespace local
         deletions_insertions_at_start_t result;
         for (size_t dels = 1; dels < max_deletions_insertions; ++dels) {
             if (dels < master.size()) {
-                result.head = find_common_head(master.substr(dels), to_align, acmacs::seqdb::v3::debug::no);
+                result.head = find_common_head(master.substr(dels), to_align, acmacs::debug::no);
                 // fmt::print(stderr, "dels:{} {}\n{}\n{}\n", dels, format(result.head), master.substr(dels), to_align);
                 if (result.head.head > common_threshold) {
                     result.deletions = dels;
@@ -230,7 +250,7 @@ namespace local
                 }
             }
             if (dels < to_align.size()) {
-                result.head = find_common_head(master, to_align.substr(dels), acmacs::seqdb::v3::debug::no);
+                result.head = find_common_head(master, to_align.substr(dels), acmacs::debug::no);
                 if (result.head.head > common_threshold) {
                     result.insertions = dels;
                     break;
@@ -259,16 +279,16 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertions(std::string_view master, std::string_view to_align, debug dbg)
+acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertions(std::string_view master, std::string_view to_align, acmacs::debug dbg)
 {
-    if (dbg == debug::yes)
+    if (dbg == acmacs::debug::yes)
         fmt::print(stderr, "initial:\n{}\n{}\n\n", master, to_align);
 
     deletions_insertions_t deletions;
-    const auto initial_head = local::find_common_head(master, to_align, debug::no /* dbg */);
+    const auto initial_head = local::find_common_head(master, to_align, acmacs::debug::no /* dbg */);
     size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
     std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
-    if (dbg == debug::yes)
+    if (dbg == acmacs::debug::yes)
         fmt::print(stderr, "initial {} number_of_common:{}\n", local::format(initial_head), local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)));
 
     const auto update_both = [](size_t dels, size_t head, std::string_view& s1, std::string_view& s2, size_t& offset1, size_t& offset2) {
@@ -280,10 +300,10 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
 
     size_t common = initial_head.common;
     while (!master_tail.empty() && !to_align_tail.empty()) {
-        if (dbg == debug::yes)
+        if (dbg == acmacs::debug::yes)
             fmt::print(stderr, "m-offset:{} a-offset:{} common:{}\n{}\n{}\n", master_offset, to_align_offset, common, master_tail, to_align_tail);
         const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail);
-        if (dbg == debug::yes)
+        if (dbg == acmacs::debug::yes)
             fmt::print(stderr, "dels:{} ins:{} {} number_of_common:{}\n", tail_deletions.deletions, tail_deletions.insertions, local::format(tail_deletions.head), local::number_of_common(master_tail.substr(tail_deletions.deletions, tail_deletions.head.head), to_align_tail.substr(tail_deletions.insertions, tail_deletions.head.head)));
         if (tail_deletions.head.head == 0) { // < local::common_threshold) {
             common += local::number_of_common(master_tail, to_align_tail); // to avoid common diff warning below in case tail contains common aas

@@ -21,7 +21,6 @@ namespace acmacs::seqdb
 
             void import(std::string_view source);
             void translate();
-            bool align(const acmacs::virus::type_subtype_t& type_subtype_hint); // returns if aligining succeeded
 
             std::string_view aa() const { return aa_; }
             std::string_view nuc() const { return nuc_; }

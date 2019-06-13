@@ -185,19 +185,6 @@ void acmacs::seqdb::v3::sequence_t::set_shift(int shift_aa, std::optional<acmacs
 } // acmacs::seqdb::v3::sequence_t::set_shift
 
 // ----------------------------------------------------------------------
-
-bool acmacs::seqdb::v3::sequence_t::align(const acmacs::virus::type_subtype_t& type_subtype_hint)
-{
-    if (const auto shift_type = acmacs::seqdb::v3::align(aa_, type_subtype_hint); shift_type.has_value()) {
-        const auto [shift, type_subtype] = *shift_type;
-        set_shift(shift, type_subtype);
-        return true;
-    }
-    else
-        return false;
-}
-
-// ----------------------------------------------------------------------
 /// Local Variables:
 /// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
 /// End:

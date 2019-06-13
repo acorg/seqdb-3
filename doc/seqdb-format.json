@@ -1,0 +1,28 @@
+{"_": "-*- js-indent-level: 1 -*-",
+ "  version": "sequence-database-v2",
+ "  date": "2019-01-01 01:01:01 CEST",
+ "data": [
+     {
+         "N": <name>,
+         "d": ["YYYY-MM-DD"],
+         "C": "continent",
+         "c": "country",
+         "l": "VICTORIA",  // VICTORIA, YAMAGATA, 2009PDM, SEASONAL
+         "s": [
+             {
+                 "a": "sequence-amino-acids",
+                 "c": ["clade"],
+                 "g": "gene: HA|NA", // HA if omitted
+                 "h": ["hi-name"],
+                 "l": {"lab": ["lab_id"]},
+                 "n": "sequence-nucleotides",
+                 "p": ["passage"],
+                 "r": ["reassortant"],
+                 "s": <shift (int) for aa sequence>,
+                 "t": <shift (int) for nuc sequence>,
+             },
+         ],
+         "v": "virus_type"
+     }
+ ]
+}
