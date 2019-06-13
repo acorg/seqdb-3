@@ -40,14 +40,27 @@ namespace local
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_tripledel2017_pos_shifted(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_tripledel2017_pos_shifted_164(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
+    inline bool is_yamagata_shifted(acmacs::seqdb::v3::sequence_t& sequence)
+    {
+        const auto& deletions = sequence.deletions().deletions;
+        return ((deletions.size() == 1 && deletions.front().pos == 158 && deletions.front().num == 1 && sequence.aa_aligned_substr(155, 6) == "MAWVIP")
+                || (deletions.size() == 1 && deletions.front().pos == 161 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 2) == "VP")
+                || (deletions.size() == 1 && deletions.front().pos == 163 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 5) == "VPKXN")
+                )
+                && sequence.deletions().insertions.empty();
+    }
+
     inline bool is_yamagata(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
     {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 162 && deletions.deletions.front().num == 1 && deletions.insertions.empty();
+        return !deletions.deletions.empty() && deletions.deletions.front().pos == 162 && deletions.deletions.front().num == 1
+                && (deletions.deletions.size() == 1 || deletions.deletions[1].pos > 500)
+                && deletions.insertions.empty()
+                ;
     }
 
 }
@@ -64,43 +77,55 @@ namespace local
 
 void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
 {
+    const auto warn = [&](const char* infix, const char* prefix = "WARNING") {
+        fmt::print(stderr, "{}: {} lineage {} and {} deletions {} {}\n{}\n", prefix, sequence.year(), *sequence.lineage(), infix, sequence.full_name(),
+                   acmacs::seqdb::format(sequence.deletions()), acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
+    };
+
     auto& deletions = sequence.deletions();
     if (deletions.empty()) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
-            fmt::print(stderr, "WARNING: {} lineage {} and no deletions {}\n", sequence.year(), *sequence.lineage(), sequence.full_name());
+            warn("no");
     }
     else if (is_victoria_del2017(sequence.deletions())) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
-            fmt::print(stderr, "WARNING: {} lineage {} and victoria del2017 deletions {}\n", sequence.year(), *sequence.lineage(), sequence.full_name());
+            warn("victoria del2017");
         // sequence.add_clade("DEL2017");
     }
     else if (is_victoria_tripledel2017(sequence.deletions())) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
-            fmt::print(stderr, "WARNING: {} lineage {} and victoria tripledel2017 deletions {}\n", sequence.year(), *sequence.lineage(), sequence.full_name());
+            warn("victoria tripledel2017");
         // sequence.add_clade("TRIPLEDEL2017");
     }
-    else if (is_victoria_tripledel2017_pos_shifted(sequence.deletions())) {
+    else if (is_victoria_tripledel2017_pos_shifted_164(sequence.deletions())) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
-            fmt::print(stderr, "WARNING: {} lineage {} and victoria tripledel2017 deletions {}\n", sequence.year(), *sequence.lineage(), sequence.full_name());
+            warn("victoria tripledel2017 (pos shifted)");
         sequence.deletions().deletions.front().pos = 161;
         // sequence.add_clade("TRIPLEDEL2017");
+    }
+    else if (is_yamagata_shifted(sequence)) {
+        if (sequence.lineage().empty())
+            sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
+        else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
+            warn("yamagata-shifted");
+        sequence.deletions().deletions = std::vector<acmacs::seqdb::deletions_insertions_t::pos_num_t>{{162, 1}};
     }
     else if (is_yamagata(sequence.deletions())) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
-            fmt::print(stderr, "WARNING: {} lineage {} and yamagata deletions {}\n", sequence.year(), *sequence.lineage(), sequence.full_name());
+            warn("yamagata");
     }
     else {
-        fmt::print(stderr, "ERROR: {} :: {}\n", sequence.full_name(), format(sequence.deletions()));
+        warn("unknown", "ERROR");
     }
 
 } // local::detect_B_lineage

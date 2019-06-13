@@ -96,6 +96,14 @@ namespace acmacs::seqdb
                 throw std::runtime_error("internal in sequence_t::aa_aligned_fast");
             }
 
+            std::string_view aa_aligned_substr(size_t pos, size_t num) const
+            {
+                if (const auto offset = static_cast<ssize_t>(pos) + shift_aa_; offset >= 0 && offset < static_cast<ssize_t>(aa_.size()))
+                    return std::string_view(aa_.data() + offset, num);
+                else
+                    return {};
+            }
+
             size_t aa_number_of_X() const
             {
                 if (aa_.empty())
