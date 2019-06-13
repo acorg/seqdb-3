@@ -11,6 +11,25 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
+        struct deletions_insertions_t
+        {
+            struct pos_num_t
+            {
+                size_t pos;
+                size_t num;
+            };
+
+            std::vector<pos_num_t> deletions, insertions;
+
+            bool empty() const { return deletions.empty() && insertions.empty(); }
+
+        }; // struct deletions_insertions_t
+
+        std::string format(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
+        std::string format(const deletions_insertions_t& deletions);
+
+        // ----------------------------------------------------------------------
+
         class sequence_t
         {
             using shift_t = int;
@@ -114,6 +133,9 @@ namespace acmacs::seqdb
             void lineage(std::string lin) { lineage_ = lin; }
             // void (const & a_) { _ = a_; }
 
+            constexpr deletions_insertions_t& deletions() { return deletions_; }
+            constexpr const deletions_insertions_t& deletions() const { return deletions_; }
+
           private:
             acmacs::virus::virus_name_t name_;
             // acmacs::virus::host_t host_;
@@ -129,10 +151,12 @@ namespace acmacs::seqdb
             shift_t shift_nuc_{not_aligned};
             shift_t shift_aa_{not_aligned};
             acmacs::virus::type_subtype_t type_subtype_; // by alignment
+            deletions_insertions_t deletions_;
             std::string lineage_;      // by deletion detection
 
             void aa_trim_absent();  // remove leading and trailing X and - from aa
-        };
+
+        }; // class sequence_t
 
     } // namespace v3
 } // namespace acmacs::seqdb

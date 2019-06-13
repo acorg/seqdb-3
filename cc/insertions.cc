@@ -84,21 +84,20 @@ void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_
     // if (to_align.full_name() == "A(H3N2)/PIAUI/4751/2011")
     //     dbg = acmacs::debug::yes;
 
-    deletions_insertions_t deletions;
     const auto [master_aligned, master_shift] = master.aa_shifted();
     const auto [to_align_aligned, to_align_shift] = to_align.aa_shifted();
     try {
         if (master_shift == 0) {
             if (to_align_shift == 0)
-                deletions = deletions_insertions(master_aligned, to_align_aligned, dbg);
+                to_align.deletions() = deletions_insertions(master_aligned, to_align_aligned, dbg);
             else
-                deletions = deletions_insertions(master_aligned, to_align.aa_aligned(), dbg);
+                to_align.deletions() = deletions_insertions(master_aligned, to_align.aa_aligned(), dbg);
         }
         else {
             if (to_align_shift == 0)
-                deletions = deletions_insertions(master.aa_aligned(), to_align_aligned, dbg);
+                to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align_aligned, dbg);
             else
-                deletions = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
+                to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
         }
     }
     catch (local::not_verified& err) {
@@ -112,41 +111,6 @@ void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_
     }
 
 } // acmacs::seqdb::v3::deletions_insertions
-
-// ----------------------------------------------------------------------
-
-std::string acmacs::seqdb::v3::format(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol)
-{
-    fmt::memory_buffer out;
-    size_t pos = 0;
-    for (const auto& en : pos_num) {
-        fmt::format_to(out, "{}{}", sequence.substr(pos, en.pos - pos), std::string(en.num, deletion_symbol));
-        pos = en.pos;
-    }
-    fmt::format_to(out, "{}", sequence.substr(pos));
-    return fmt::to_string(out);
-
-} // acmacs::seqdb::v3::format
-
-// ----------------------------------------------------------------------
-
-std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
-{
-    fmt::memory_buffer out;
-    const auto frmt = [&out](const char* prefix, const auto& num_pos) {
-        if (!num_pos.empty()) {
-            fmt::format_to(out, "{}[{}](", prefix, num_pos.size());
-            for (const auto& en : num_pos)
-                fmt::format_to(out, " {}:{}", en.pos, en.num);
-            fmt::format_to(out, ")");
-        }
-    };
-
-    frmt("DEL", deletions.deletions);
-    frmt(" INS", deletions.insertions);
-    return fmt::to_string(out);
-
-} // acmacs::seqdb::v3::format
 
 // ----------------------------------------------------------------------
 

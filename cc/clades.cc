@@ -30,6 +30,14 @@ void acmacs::seqdb::v3::detect_lineages_clades(std::vector<fasta::scan_result_t>
 
 void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
 {
+    auto& deletions = sequence.deletions();
+    if (deletions.empty()) {
+        if (sequence.lineage() != "VICTORIA")
+            fmt::print(stderr, "WARNING: lineage {} and no deletions\n", sequence.lineage());
+    }
+    else {
+        // fmt::print(stderr, "{} :: {}\n", sequence.full_name(), format(sequence.deletions()));
+    }
 
 } // local::detect_B_lineage
 

@@ -13,8 +13,46 @@
 
 // ----------------------------------------------------------------------
 
-static std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq);
-static std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset);
+namespace local
+{
+    static std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq);
+    static std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset);
+}
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::format(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol)
+{
+    fmt::memory_buffer out;
+    size_t pos = 0;
+    for (const auto& en : pos_num) {
+        fmt::format_to(out, "{}{}", sequence.substr(pos, en.pos - pos), std::string(en.num, deletion_symbol));
+        pos = en.pos;
+    }
+    fmt::format_to(out, "{}", sequence.substr(pos));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::format
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
+{
+    fmt::memory_buffer out;
+    const auto frmt = [&out](const char* prefix, const auto& num_pos) {
+        if (!num_pos.empty()) {
+            fmt::format_to(out, "{}[{}](", prefix, num_pos.size());
+            for (const auto& en : num_pos)
+                fmt::format_to(out, " {}:{}", en.pos, en.num);
+            fmt::format_to(out, ")");
+        }
+    };
+
+    frmt("DEL", deletions.deletions);
+    frmt(" INS", deletions.insertions);
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::format
 
 // ----------------------------------------------------------------------
 
@@ -37,7 +75,7 @@ void acmacs::seqdb::v3::sequence_t::translate()
                 const auto longest_part = std::max_element(std::begin(split_data), std::end(split_data), [](const auto& e1, const auto& e2) { return e1.size() < e2.size(); });
                 return {std::string(*longest_part), offset + static_cast<size_t>(longest_part->data() - aa.data()) * 3};
             };
-            return find_longest_part(translate_nucleotides_to_amino_acids(this->nuc_, offset));
+            return find_longest_part(local::translate_nucleotides_to_amino_acids(this->nuc_, offset));
         };
 
         std::array<translated_t, 3> translated;
@@ -107,7 +145,7 @@ static const std::map<std::string_view, char> CODON_TO_PROTEIN = {
 
 #pragma GCC diagnostic pop
 
-std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset)
+std::string local::translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset)
 {
     using diff_t = decltype(CODON_TO_PROTEIN)::difference_type;
 
@@ -122,7 +160,7 @@ std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, s
     result.resize(static_cast<size_t>(result_p - result.begin()));
     return result;
 
-} // translate_nucleotides_to_amino_acids
+} // local::translate_nucleotides_to_amino_acids
 
 // ----------------------------------------------------------------------
 
@@ -131,7 +169,7 @@ void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
     nuc_.resize(source.size(), '-');
     std::transform(std::begin(source), std::end(source), std::begin(nuc_), [](char c) { return std::toupper(c); });
 
-    auto freq = symbol_frequences(nuc_);
+    auto freq = local::symbol_frequences(nuc_);
     ranges::sort(freq, [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
     // std::sort(freq.begin(), freq.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
 
@@ -158,7 +196,7 @@ void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
 
 // ----------------------------------------------------------------------
 
-std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
+std::vector<std::pair<char, size_t>> local::symbol_frequences(std::string_view seq)
 {
     std::vector<std::pair<char, size_t>> result;
     for (auto cc : seq) {
@@ -169,7 +207,7 @@ std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq)
     }
     return result;
 
-} // symbol_frequences
+} // local::symbol_frequences
 
 // ----------------------------------------------------------------------
 
