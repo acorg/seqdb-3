@@ -345,13 +345,22 @@ namespace local::H3
     void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
     {
         const auto warn = [&](const char* prefix = "WARNING") {
-            fmt::print(stderr, "{}: {} {} {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.date_simulated(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
+            fmt::print(stderr, "{}: {} <{}> {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.aa_aligned_length(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
                        acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
         };
 
         const auto& deletions = sequence.deletions();
-        if (!deletions.empty()) {
-            warn();
+        if (!deletions.insertions.empty())
+            sequence.add_clade(acmacs::seqdb::clade_t{"*INS"});
+        else if (!deletions.empty()) {
+            if (sequence.aa_aligned_length() < 500)
+                ;               // ignore short
+            else if (!acmacs::virus::host(sequence.name()).empty())
+                ;               // ignore
+            else if (sequence.year() < 2018)
+                sequence.add_clade(acmacs::seqdb::clade_t{"*DEL"});
+            else
+                warn();
         }
 
     } // deletions
