@@ -142,14 +142,14 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria del2017");
-        // sequence.add_clade("DEL2017");
+        sequence.add_clade(acmacs::seqdb::v3::clade_t{"DEL2017"});
     }
     else if (is_victoria_tripledel2017(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria tripledel2017");
-        // sequence.add_clade("TRIPLEDEL2017");
+        sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
     }
     else if (is_victoria_tripledel2017_pos_shifted_164(deletions)) {
         if (sequence.lineage().empty())
@@ -157,14 +157,14 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria tripledel2017 (pos shifted)");
         deletions.deletions.front().pos = 161;
-        // sequence.add_clade("TRIPLEDEL2017");
+        sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
     }
     else if (is_victoria_sixdel2019(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria sixdel2019 (pos shifted)");
-        // sequence.add_clade("SIXDEL2019");
+        sequence.add_clade(acmacs::seqdb::v3::clade_t{"SIXDEL2019"});
     }
     else if (is_yamagata_shifted(sequence)) {
         if (sequence.lineage().empty())
@@ -188,7 +188,7 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
     else if (is_taiwan_169_2(deletions)) {
         // 12 sequences from TAIWAN 2010 have deletions 169:2
         sequence.lineage(acmacs::virus::lineage_t{});
-        // sequence.add_clade("TAIWAN2010");
+        sequence.add_clade(acmacs::seqdb::v3::clade_t{"TAIWAN2010"});
     }
     else if (is_semi_ignored(sequence)) {
         fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::format(deletions));

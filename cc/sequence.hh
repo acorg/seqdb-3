@@ -30,6 +30,27 @@ namespace acmacs::seqdb
 
         // ----------------------------------------------------------------------
 
+        using clade_t = named_string_t<struct clade_tag>;
+
+        class clades_t
+        {
+          public:
+            clades_t() = default;
+
+            void add(const clade_t& clade)
+            {
+                if (std::find(std::begin(clades_), std::end(clades_), clade) == std::end(clades_)) {
+                    clades_.push_back(clade);
+                    std::sort(std::begin(clades_), std::end(clades_));
+                }
+            }
+
+          private:
+            std::vector<clade_t> clades_;
+        };
+
+        // ----------------------------------------------------------------------
+
         class sequence_t
         {
             using shift_t = int;
@@ -153,6 +174,7 @@ namespace acmacs::seqdb
             void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
             void remove_annotations() { annotations_.clear(); }
             void lineage(const acmacs::virus::lineage_t& lin) { lineage_ = lin; }
+            void add_clade(const clade_t& clade) { clades_.add(clade); }
             // void (const & a_) { _ = a_; }
 
             constexpr deletions_insertions_t& deletions() { return deletions_; }
@@ -175,6 +197,7 @@ namespace acmacs::seqdb
             acmacs::virus::type_subtype_t type_subtype_; // by alignment
             deletions_insertions_t deletions_;
             acmacs::virus::lineage_t lineage_;      // by deletion detection
+            clades_t clades_;
 
             void aa_trim_absent();  // remove leading and trailing X and - from aa
 
