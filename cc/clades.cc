@@ -7,6 +7,8 @@ namespace local
 {
     void detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence);
     void detect_B_clade(acmacs::seqdb::v3::sequence_t& sequence);
+    void detect_H1_clade(acmacs::seqdb::v3::sequence_t& sequence);
+    void detect_H3_clade(acmacs::seqdb::v3::sequence_t& sequence);
 }
 
 // ----------------------------------------------------------------------
@@ -16,10 +18,16 @@ void acmacs::seqdb::v3::detect_lineages_clades(std::vector<fasta::scan_result_t>
 #pragma omp parallel for default(shared) schedule(static, 256)
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
         if (auto& entry = sequences[e_no]; fasta::is_aligned(entry)) {
-            const auto& type_subtype = entry.sequence.type_subtype();
-            if (*type_subtype == "B") {
+            const auto subtype = entry.sequence.type_subtype().h_or_b();
+            if (subtype == "B") {
                 local::detect_B_lineage(entry.sequence);
                 local::detect_B_clade(entry.sequence);
+            }
+            else if (subtype == "H1") {
+                local::detect_H1_clade(entry.sequence);
+            }
+            else if (subtype == "H3") {
+                local::detect_H3_clade(entry.sequence);
             }
         }
     }
@@ -233,6 +241,40 @@ void local::detect_B_clade(acmacs::seqdb::v3::sequence_t& sequence)
     }
 
 } // local::detect_B_clade
+
+// ----------------------------------------------------------------------
+
+void local::detect_H1_clade(acmacs::seqdb::v3::sequence_t& sequence)
+{
+    // // ----------------------------------------------------------------------
+    // // 2018-09-19 clade definitions changed by Sarah before SSM
+    // // ----------------------------------------------------------------------
+    // // 6B: 163Q
+    // // 6B1: 162N, 163Q
+    // // 6B2: 152T, 163Q
+    // auto r = std::vector<std::string>();
+    // const auto pos152 = static_cast<size_t>(151 - aShift),
+    //         pos162 = static_cast<size_t>(161 - aShift),
+    //         pos163 = static_cast<size_t>(162 - aShift);
+    // if (pos163 > 0 && aSequence.size() > pos163) {
+    //     if (aSequence[pos163] == 'Q') {
+    //         r.push_back("6B");
+    //         if (aSequence[pos162] == 'N')
+    //             r.push_back("6B1");
+    //         if (aSequence[pos152] == 'T')
+    //             r.push_back("6B2");
+    //     }
+    // }
+    // return r;
+
+} // local::detect_H1_clade
+
+// ----------------------------------------------------------------------
+
+void local::detect_H3_clade(acmacs::seqdb::v3::sequence_t& sequence)
+{
+
+} // local::detect_H3_clade
 
 // ----------------------------------------------------------------------
 
