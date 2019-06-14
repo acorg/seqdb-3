@@ -323,20 +323,13 @@ namespace local::H1
 
     void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
     {
-        // auto r = std::vector<std::string>();
-        // const auto pos152 = static_cast<size_t>(151 - aShift),
-        //         pos162 = static_cast<size_t>(161 - aShift),
-        //         pos163 = static_cast<size_t>(162 - aShift);
-        // if (pos163 > 0 && aSequence.size() > pos163) {
-        //     if (aSequence[pos163] == 'Q') {
-        //         r.push_back("6B");
-        //         if (aSequence[pos162] == 'N')
-        //             r.push_back("6B1");
-        //         if (aSequence[pos152] == 'T')
-        //             r.push_back("6B2");
-        //     }
-        // }
-        // return r;
+        if (sequence.aa_at_pos1(163) == 'Q') {
+            sequence.add_clade(acmacs::seqdb::clade_t{"6B"});
+            if (sequence.aa_at_pos1(162) == 'N')
+                sequence.add_clade(acmacs::seqdb::clade_t{"6B1"});
+            if (sequence.aa_at_pos1(152) == 'T')
+                sequence.add_clade(acmacs::seqdb::clade_t{"6B2"});
+        }
 
     } // clade
 
