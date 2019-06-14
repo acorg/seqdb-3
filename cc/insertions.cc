@@ -14,7 +14,15 @@ namespace local
     struct not_verified : public std::runtime_error { using std::runtime_error::runtime_error; };
 
     using subtype_master_t = std::map<std::string, const acmacs::seqdb::sequence_t*, std::less<>>;
+
     subtype_master_t masters_per_subtype(const std::vector<acmacs::seqdb::v3::fasta::scan_result_t>& sequences);
+
+#include "acmacs-base/global-constructors-push.hh"
+    static const std::array master_sequences_for_insertions = {
+        std::pair{std::string{"B"}, acmacs::seqdb::sequence_t::from_aligned_aa(acmacs::virus::virus_name_t{"B/BRISBANE/60/2008 VICTORIA (master_sequences_for_insertions)"}, "DRICTGITSSNSPHVVKTATQGEVNVTGVIPLTTTPTKSHFANLKGTETRGKLCPKCLNCTDLDVALGRPKCTGKIPSARVSILHEVRPVTSGCFPIMHDRTKIRQLPNLLRGYEHIRLSTHNVINAENAPGGPYKIGTSGSCPNITNGNGFFATMAWAVPKNDKNKTATNPLTIEVPYICTEGEDQITVWGFHSDNETQMAKLYGDSKPQKFTSSANGVTTHYVSQIGGFPNQTEDGGLPQSGRIVVDYMVQKSGKTGTITYQRGILLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLKLANGTKYRPPAKLLKERGFFGAIAGFLEGGWEGMIAGWHGYTSHGAHGVAVAADLKSTQEAINKITKNLNSLSELEVKNLQRLSGAMDELHNEILELDEKVDDLRADTISSQIELAVLLSNEGIINSEDEHLLALERKLKKMLGPSAVEIGNGCFETKHKCNQTCLDRIAAGTFDAGEFSLPTFDSLNITAASLNDDGLDNHTILLYYSTAASSLAVTLMIAIFVVYMVSRDNVSCSICL")},
+    };
+#include "acmacs-base/diagnostics-pop.hh"
+
 }
 
 // ----------------------------------------------------------------------
@@ -44,26 +52,31 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
 
     subtype_master_t masters;
     for (const auto& [subtype, counter] : aligned_lengths) {
-        const size_t threshold = counter.total() / 6;
-        size_t master_length = 0;
-        for (const auto& vt : counter.counter()) {
-            if (vt.second > threshold)
-                master_length = vt.first;
-        }
         const acmacs::seqdb::v3::sequence_t* master = nullptr;
-        size_t num_X = 0;
-        for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::fasta::is_aligned)) {
-            if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
-                if (master == nullptr) {
-                    master = &sc.sequence;
-                    num_X = sc.sequence.aa_number_of_X();
+        if (const auto found = std::find_if(std::begin(master_sequences_for_insertions), std::end(master_sequences_for_insertions), [subtype=subtype](const auto& en) { return en.first == subtype; }); found != std::end(master_sequences_for_insertions)) {
+            master = &found->second;
+        }
+        else {
+            const size_t threshold = counter.total() / 6;
+            size_t master_length = 0;
+            for (const auto& vt : counter.counter()) {
+                if (vt.second > threshold)
+                    master_length = vt.first;
+            }
+            size_t num_X = 0;
+            for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::fasta::is_aligned)) {
+                if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
+                    if (master == nullptr) {
+                        master = &sc.sequence;
+                        num_X = sc.sequence.aa_number_of_X();
+                    }
+                    else if (const auto seq_X = sc.sequence.aa_number_of_X(); seq_X < num_X) {
+                        master = &sc.sequence;
+                        num_X = seq_X;
+                    }
+                    if (num_X == 0)
+                        break;
                 }
-                else if (const auto seq_X = sc.sequence.aa_number_of_X(); seq_X < num_X) {
-                    master = &sc.sequence;
-                    num_X = seq_X;
-                }
-                if (num_X == 0)
-                    break;
             }
         }
         if (master == nullptr)
