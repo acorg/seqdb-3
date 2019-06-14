@@ -37,6 +37,7 @@ namespace acmacs::seqdb
 
           public:
             sequence_t() = default;
+            static sequence_t from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source);
 
             void import(std::string_view source);
             void translate();
