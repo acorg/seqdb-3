@@ -1,3 +1,5 @@
+#include <array>
+
 #include "seqdb-3/clades.hh"
 #include "seqdb-3/fasta.hh"
 
@@ -354,9 +356,9 @@ namespace local::H3
             sequence.add_clade(acmacs::seqdb::clade_t{"*INS"});
         else if (!deletions.empty()) {
             if (sequence.aa_aligned_length() < 500)
-                ;               // ignore short
+                ; // ignore short
             else if (!acmacs::virus::host(sequence.name()).empty())
-                ;               // ignore
+                ; // ignore
             else if (sequence.year() < 2018)
                 sequence.add_clade(acmacs::seqdb::clade_t{"*DEL"});
             else
@@ -367,9 +369,53 @@ namespace local::H3
 
     // ----------------------------------------------------------------------
 
-    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/) {} // clade
+    struct clade_desc_t
+    {
+        struct pos_aa_t
+        {
+            size_t pos;
+            char aa;
+        };
 
-    // ----------------------------------------------------------------------
+        acmacs::seqdb::clade_t clade;
+        std::vector<pos_aa_t> pos_aa;
+    };
+
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wglobal-constructors"
+#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#endif
+
+    static const std::array sClades{
+        clade_desc_t{acmacs::seqdb::clade_t{"3C.3"}, {{159, 'N'}, {160, 'F'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{139, 'S'}, {160, 'S'}, {226, 'D'}, {327, 'R'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3B"},   {{63, 'K'}, {84, 'R'}, {262, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A"},   {{159, 'N'}, {160, 'Y'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1"},  {{159, 'N'}, {160, 'Y'}, {172, 'K'}, {407, 'V'}, {485, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1A"}, {{122, 'K'}, {136, 'K'}, {159, 'N'}, {160, 'Y'}, {172, 'K'}, {407, 'V'}, {480, 'E'}, {485, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1B"}, {{93, 'R'}, {122, 'K'}, {159, 'N'}, {160, 'Y'}, {172, 'K'}, {312, 'Q'}, {407, 'V'}, {485, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A2"},  {{132, 'K'}, {143, 'K'}, {159, 'N'}, {160, 'Y'}, {262, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A3"},  {{122, 'K'}, {136, 'K'}, {145, 'K'}, {151, 'K'}, {159, 'N'}, {160, 'Y'}, {262, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A4"},  {{32, 'S'}, {54, 'N'}, {143, 'G'}, {145, 'R'}, {159, 'N'}, {160, 'Y'}, {172, 'K'}, {193, 'T'}, {198, 'H'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{161, 'S'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{161, 'T'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"159S"}, {{160, 'S'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"159F"}, {{160, 'F'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"159Y"}, {{160, 'Y'}}}, // explicit Derek's request on 2019-04-18
+    };
+
+#pragma GCC diagnostic pop
+
+    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/)
+    {
+        const auto has_aa = [&](const auto& pos_aa) -> bool { return sequence.aa_at_pos1(pos_aa.pos) == pos_aa.aa; };
+
+        for (const auto& clade_desc : sClades) {
+            if (std::all_of(clade_desc.pos_aa.begin(), clade_desc.pos_aa.end(), has_aa))
+                sequence.add_clade(clade_desc.clade);
+        }
+    } // clade
 
 } // namespace local::H3
 
