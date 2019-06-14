@@ -94,6 +94,23 @@ namespace local
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 168 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
     }
 
+    inline bool is_semi_ignored(acmacs::seqdb::v3::sequence_t& sequence)
+    {
+        return *sequence.name() == "B/MIE/1/2019"         // DEL[1](162:4)<pos-1-based>  NIID:20190314   -- B/MIE/1/2019 |  2019-01-22 | MDCK 1 +1 |  18/19-498 | National Institute of Infectious Diseases (NIID) | B / H0N0 |  Victoria
+                || *sequence.name() == "B/INDONESIA/NIHRDSB183950/2018" // DEL[1](164:2)<pos-1-based> VIDRL:20180913 -- B/Indonesia/NIHRDSB183950/2018 |  2018-04-01 | X, MDCK1 |  10004643 VW10005052 | WHO Collaborating Centre for Reference and Research on Influenza | B / H0N0 |  Victoria
+                ;
+    }
+
+    inline bool is_ignored(acmacs::seqdb::v3::sequence_t& sequence)
+    {
+        return *sequence.name() == "B/ONTARIO/RV1769/2019"         // DEL[1](163:3)<pos-1-based>  B/Ontario/RV1769/2019 |  2019-04-11 | P1 |  RV1769/19 | Public Health Agency of Canada (PHAC) | B / H0N0 |  Victoria
+                || *sequence.name() == "B/KENYA/4/2018"            // DEL[1](160:1)<pos-1-based>  B/Kenya/004/2018 |  2018-01-05 |  |   | Other Database Import | B / H0N0 |  unknown
+                || *sequence.name() == "B/KENYA/11/2018"           // DEL[1](160:1)<pos-1-based>  B/Kenya/011/2018 |  2018-01-15 |  |   | Other Database Import | B / H0N0 |  unknown
+                || *sequence.name() == "B/ORENBURG/CRIE-100/2018"  // DEL[1](160:1)<pos-1-based>  B/Orenburg/CRIE/100/2018 |  2018-02-08 |  |   | Central Research Institute of Epidemiology | B / H0N0 |  Yamagata
+                ;
+    }
+
+
 }
 
 // B/Yamagata/16/88
@@ -120,29 +137,29 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("no");
     }
-    else if (is_victoria_del2017(sequence.deletions())) {
+    else if (is_victoria_del2017(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria del2017");
         // sequence.add_clade("DEL2017");
     }
-    else if (is_victoria_tripledel2017(sequence.deletions())) {
+    else if (is_victoria_tripledel2017(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria tripledel2017");
         // sequence.add_clade("TRIPLEDEL2017");
     }
-    else if (is_victoria_tripledel2017_pos_shifted_164(sequence.deletions())) {
+    else if (is_victoria_tripledel2017_pos_shifted_164(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
             warn("victoria tripledel2017 (pos shifted)");
-        sequence.deletions().deletions.front().pos = 161;
+        deletions.deletions.front().pos = 161;
         // sequence.add_clade("TRIPLEDEL2017");
     }
-    else if (is_victoria_sixdel2019(sequence.deletions())) {
+    else if (is_victoria_sixdel2019(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
@@ -154,9 +171,9 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
             warn("yamagata-shifted");
-        sequence.deletions().deletions = std::vector<acmacs::seqdb::deletions_insertions_t::pos_num_t>{{162, 1}};
+        deletions.deletions = std::vector<acmacs::seqdb::deletions_insertions_t::pos_num_t>{{162, 1}};
     }
-    else if (is_yamagata(sequence.deletions())) {
+    else if (is_yamagata(deletions)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
@@ -168,10 +185,16 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
         else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
             warn("yamagata");
     }
-    else if (is_taiwan_169_2(sequence.deletions())) {
+    else if (is_taiwan_169_2(deletions)) {
         // 12 sequences from TAIWAN 2010 have deletions 169:2
         sequence.lineage(acmacs::virus::lineage_t{});
         // sequence.add_clade("TAIWAN2010");
+    }
+    else if (is_semi_ignored(sequence)) {
+        fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::format(deletions));
+    }
+    else if (is_ignored(sequence)) {
+        // do not issue warning
     }
     else {
         warn("unknown", "ERROR");
