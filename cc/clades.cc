@@ -321,7 +321,7 @@ namespace local::H1
     // 6B1: 162N, 163Q
     // 6B2: 152T, 163Q
 
-    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
+    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
         if (sequence.aa_at_pos1(163) == 'Q') {
             sequence.add_clade(acmacs::seqdb::clade_t{"6B"});
@@ -342,11 +342,23 @@ namespace local::H1
 namespace local::H3
 {
 
-    void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref) {} // deletions
+    void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
+    {
+        const auto warn = [&](const char* prefix = "WARNING") {
+            fmt::print(stderr, "{}: {} {} {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.date_simulated(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
+                       acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
+        };
+
+        const auto& deletions = sequence.deletions();
+        if (!deletions.empty()) {
+            warn();
+        }
+
+    } // deletions
 
     // ----------------------------------------------------------------------
 
-    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref) {} // clade
+    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/) {} // clade
 
     // ----------------------------------------------------------------------
 
