@@ -88,6 +88,7 @@ int main(int argc, char* const argv[])
         // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }),
         // std::end(all_sequences)); fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
 
+        // acmacs::seqdb::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::translate_align(all_sequences);
         acmacs::seqdb::detect_insertions_deletions(all_sequences);
         acmacs::seqdb::detect_lineages_clades(all_sequences);

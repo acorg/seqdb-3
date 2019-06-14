@@ -45,6 +45,11 @@ namespace local
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
+    inline bool is_victoria_sixdel2019(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    {
+        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 6 && deletions.insertions.empty();
+    }
+
     inline bool is_yamagata_shifted(acmacs::seqdb::v3::sequence_t& sequence)
     {
         const auto& deletions = sequence.deletions().deletions;
@@ -118,6 +123,13 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
         sequence.deletions().deletions.front().pos = 161;
         // sequence.add_clade("TRIPLEDEL2017");
     }
+    else if (is_victoria_sixdel2019(sequence.deletions())) {
+        if (sequence.lineage().empty())
+            sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
+        else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
+            warn("victoria sixdel2019 (pos shifted)");
+        // sequence.add_clade("SIXDEL2019");
+    }
     else if (is_yamagata_shifted(sequence)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
@@ -134,6 +146,7 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
     else if (is_taiwan_169_2(sequence.deletions())) {
         // 12 sequences from TAIWAN 2010 have deletions 169:2
         sequence.lineage(acmacs::virus::lineage_t{});
+        // sequence.add_clade("TAIWAN2010");
     }
     else {
         warn("unknown", "ERROR");

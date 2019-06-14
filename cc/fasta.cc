@@ -85,6 +85,24 @@ std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::s
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::fasta::sort_by_date(std::vector<fasta::scan_result_t>& sequences)
+{
+    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
+        const auto date = [](const auto& entry) -> Date {
+            if (const auto& dat = entry.sequence.date(); !dat.empty())
+                return dat;
+            else if (auto yr = acmacs::virus::year(entry.sequence.name()); yr.has_value())
+                return Date(static_cast<int>(*yr), 1, 1);
+            else
+                return Date(1800, 1, 1);
+        };
+        return date(e1) < date(e2);
+    });
+
+} // acmacs::seqdb::v3::fasta::sort_by_date
+
+// ----------------------------------------------------------------------
+
 std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::scan_output_t> acmacs::seqdb::v3::fasta::scan(scan_input_t input)
 {
     for (; !input.done() && (*input.first == '\r' || *input.first == '\n'); ++input.first) {
@@ -446,10 +464,6 @@ std::string acmacs::seqdb::v3::fasta::report_aa_aligned(const std::vector<scan_r
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::fasta::report_aa_aligned
-
-// ----------------------------------------------------------------------
-
-
 
 // ----------------------------------------------------------------------
 /// Local Variables:
