@@ -84,6 +84,7 @@ namespace acmacs::seqdb
             constexpr const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
             constexpr const acmacs::virus::lineage_t& lineage() const { return lineage_; }
             constexpr const Date& date() const { return date_; }
+            Date date_simulated() const noexcept; // returns either stored date or date inferred from name
 
             size_t year() const
             {

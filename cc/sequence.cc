@@ -99,6 +99,19 @@ void acmacs::seqdb::v3::sequence_t::translate()
 
 // ----------------------------------------------------------------------
 
+Date acmacs::seqdb::v3::sequence_t::date_simulated() const noexcept
+{
+    if (!date_.empty())
+        return date_;
+    else if (auto yr = acmacs::virus::year(name()); yr.has_value())
+        return Date(static_cast<int>(*yr), 1UL, 1UL);
+    else
+        return Date(1800, 1UL, 1UL);
+
+} // acmacs::seqdb::v3::sequence_t::date_simulated
+
+// ----------------------------------------------------------------------
+
 void acmacs::seqdb::v3::sequence_t::aa_trim_absent()
 {
     if (!aa_.empty()) {

@@ -85,18 +85,10 @@ std::vector<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta::s
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::fasta::sort_by_date(std::vector<fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::fasta::sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept
 {
     std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
-        const auto date = [](const auto& entry) -> Date {
-            if (const auto& dat = entry.sequence.date(); !dat.empty())
-                return dat;
-            else if (auto yr = acmacs::virus::year(entry.sequence.name()); yr.has_value())
-                return Date(static_cast<int>(*yr), 1, 1);
-            else
-                return Date(1800, 1, 1);
-        };
-        return date(e1) < date(e2);
+        return e1.sequence.date_simulated() < e2.sequence.date_simulated();
     });
 
 } // acmacs::seqdb::v3::fasta::sort_by_date
