@@ -203,6 +203,18 @@ void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::sequence_t acmacs::seqdb::v3::sequence_t::from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source)
+{
+    sequence_t result;
+    result.name_ = name;
+    result.aa_ = source;
+    result.shift_aa_ = 0;
+    return result;
+
+} // acmacs::seqdb::v3::sequence_t::from_aligned_aa
+
+// ----------------------------------------------------------------------
+
 std::vector<std::pair<char, size_t>> local::symbol_frequences(std::string_view seq)
 {
     std::vector<std::pair<char, size_t>> result;
