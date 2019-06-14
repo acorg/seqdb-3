@@ -69,6 +69,15 @@ namespace local
                 ;
     }
 
+    inline bool is_yamagata_doubledel(acmacs::seqdb::v3::sequence_t& sequence)
+    {
+        const auto& deletions = sequence.deletions().deletions;
+        return deletions.size() == 1 && deletions.front().pos == 162 && deletions.front().num == 2
+                && sequence.year() <= 2013
+                && sequence.deletions().insertions.empty()
+                ;
+    }
+
     // 12 sequences from TAIWAN 2010 have deletions 169:2
     inline bool is_taiwan_169_2(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
     {
@@ -138,6 +147,12 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
         sequence.deletions().deletions = std::vector<acmacs::seqdb::deletions_insertions_t::pos_num_t>{{162, 1}};
     }
     else if (is_yamagata(sequence.deletions())) {
+        if (sequence.lineage().empty())
+            sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
+        else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
+            warn("yamagata");
+    }
+    else if (is_yamagata_doubledel(sequence)) {
         if (sequence.lineage().empty())
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
         else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
