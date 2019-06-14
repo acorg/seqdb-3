@@ -6,6 +6,7 @@
 namespace local
 {
     void detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence);
+    void detect_B_clade(acmacs::seqdb::v3::sequence_t& sequence);
 }
 
 // ----------------------------------------------------------------------
@@ -18,6 +19,7 @@ void acmacs::seqdb::v3::detect_lineages_clades(std::vector<fasta::scan_result_t>
             const auto& type_subtype = entry.sequence.type_subtype();
             if (*type_subtype == "B") {
                 local::detect_B_lineage(entry.sequence);
+                local::detect_B_clade(entry.sequence);
             }
         }
     }
@@ -201,6 +203,36 @@ void local::detect_B_lineage(acmacs::seqdb::v3::sequence_t& sequence)
     }
 
 } // local::detect_B_lineage
+
+// ----------------------------------------------------------------------
+
+void local::detect_B_clade(acmacs::seqdb::v3::sequence_t& sequence)
+{
+    if (sequence.lineage() == acmacs::virus::lineage_t{"VICTORIA"}) {
+        // 2018-09-03, Sarah: clades should (technically) be defined by a phylogenetic tree rather than a set of amino acids
+        if (sequence.aa_at_pos1(75) == 'K' && sequence.aa_at_pos1(172) == 'P' && sequence.aa_at_pos1(58) != 'P')
+            sequence.add_clade(acmacs::seqdb::v3::clade_t{"1A"});
+        else if (sequence.aa_at_pos1(58) == 'P')
+            sequence.add_clade(acmacs::seqdb::v3::clade_t{"1B"});
+        else
+            sequence.add_clade(acmacs::seqdb::v3::clade_t{"1"});
+    }
+    else if (sequence.lineage() == acmacs::virus::lineage_t{"YAMAGATA"}) {
+        // 165N -> Y2, 165Y -> Y3 (yamagata numeration, 163 is not -)
+        // 166N -> Y2, 166Y -> Y3 (victoria numeration, 163 is -)
+        switch (sequence.aa_at_pos1(166)) {
+            case 'N':
+                sequence.add_clade(acmacs::seqdb::v3::clade_t{"Y2"});
+                break;
+            case 'Y':
+                sequence.add_clade(acmacs::seqdb::v3::clade_t{"Y3"});
+                break;
+            default:
+                break;
+        }
+    }
+
+} // local::detect_B_clade
 
 // ----------------------------------------------------------------------
 

@@ -23,6 +23,22 @@ namespace acmacs::seqdb
 
             bool empty() const { return deletions.empty() && insertions.empty(); }
 
+            // returns {pos deleted, adjusted pos}
+            std::pair<bool, size_t> apply_deletions(size_t pos)
+            {
+                for (const auto& pos_num : deletions) {
+                    if (pos_num.pos <= pos) {
+                        if ((pos_num.pos + pos_num.num) > pos)
+                            return {true, pos};
+                        else
+                            pos -= pos_num.num;
+                    }
+                    else
+                        break;
+                }
+                return {false, pos};
+            }
+
         }; // struct deletions_insertions_t
 
         std::string format(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
@@ -124,6 +140,27 @@ namespace acmacs::seqdb
                     return std::string_view(aa_.data() + offset, num);
                 else
                     return {};
+            }
+
+            // pos is 0 based
+            // returns '-' if deleted
+            // returns '\0' if beyond the end of sequence or before the beginning
+            char aa_at_pos0(size_t pos)
+            {
+                const auto [deleted, pos_with_deletions] = deletions_.apply_deletions(pos);
+                if (deleted)
+                    return '-';
+                const auto [aa, shift] = aa_shifted();
+                const ssize_t shifted = static_cast<ssize_t>(pos_with_deletions) + shift;
+                if (shifted < 0 || shifted >= static_cast<ssize_t>(aa.size()))
+                    return 0;
+                return aa[pos];
+            }
+
+            // pos is 1 based
+            char aa_at_pos1(size_t pos)
+            {
+                return aa_at_pos0(pos - 1);
             }
 
             size_t aa_number_of_X() const
