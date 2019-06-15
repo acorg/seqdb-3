@@ -98,17 +98,17 @@ void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_
     // if (to_align.full_name() == "A(H3N2)/PIAUI/4751/2011")
     //     dbg = acmacs::debug::yes;
 
-    const auto [master_aligned, master_shift] = master.aa_shifted();
-    const auto [to_align_aligned, to_align_shift] = to_align.aa_shifted();
+    const auto [master_aligned, master_prefix_size] = master.aa_shifted();
+    const auto [to_align_aligned, to_align_prefix_size] = to_align.aa_shifted();
     try {
-        if (master_shift == 0) {
-            if (to_align_shift == 0)
+        if (master_prefix_size == 0) {
+            if (to_align_prefix_size == 0)
                 to_align.deletions() = deletions_insertions(master_aligned, to_align_aligned, dbg);
             else
                 to_align.deletions() = deletions_insertions(master_aligned, to_align.aa_aligned(), dbg);
         }
         else {
-            if (to_align_shift == 0)
+            if (to_align_prefix_size == 0)
                 to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align_aligned, dbg);
             else
                 to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
@@ -250,7 +250,7 @@ namespace local
 
     inline size_t number_of_common(std::string_view master, std::string_view to_align, acmacs::seqdb::v3::deletions_insertions_t& deletions)
     {
-        return number_of_common(acmacs::seqdb::v3::format(deletions.insertions, master), acmacs::seqdb::v3::format(deletions.deletions, to_align));
+        return number_of_common(acmacs::seqdb::v3::format_aa(deletions.insertions, master), acmacs::seqdb::v3::format_aa(deletions.deletions, to_align));
     }
 
 }
@@ -309,7 +309,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
     if (common < num_common_threshold) {
         throw local::not_verified(fmt::format("common:{} vs size:{} num_common_threshold:{:.2f}\n{}\n{}\n{}\n{}\n",
                                               common, to_align.size(), num_common_threshold, master, to_align,
-                                              acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.')));
+                                              acmacs::seqdb::v3::format_aa(deletions.insertions, master, '.'), acmacs::seqdb::v3::format_aa(deletions.deletions, to_align, '.')));
     }
 
     return deletions;

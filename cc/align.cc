@@ -82,9 +82,9 @@ namespace local
       public:
         Aligner() = default;
 
-        void update(std::string_view amino_acids, int shift, const acmacs::virus::type_subtype_t& type_subtype)
+        void update(std::string_view amino_acids, size_t prefix_size, const acmacs::virus::type_subtype_t& type_subtype)
         {
-            tables_.try_emplace(std::string(type_subtype.h_or_b())).first->second.update(amino_acids, shift);
+            tables_.try_emplace(std::string(type_subtype.h_or_b())).first->second.update(amino_acids, prefix_size);
         }
 
         std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint) const
@@ -122,13 +122,11 @@ namespace local
                 }
             }
 
-            // shift is non-positive!
-            void update(std::string_view amino_acids, int shift)
+            void update(std::string_view amino_acids, size_t prefix_size)
             {
-                auto pos = static_cast<size_t>(-shift);
                 for (char aa : amino_acids) {
-                    data[number_of_symbols * pos + static_cast<size_t>(aa)] = 0;
-                    ++pos;
+                    data[number_of_symbols * prefix_size + static_cast<size_t>(aa)] = 0;
+                    ++prefix_size;
                 }
             }
 
@@ -161,8 +159,8 @@ void acmacs::seqdb::v3::translate_align(std::vector<fasta::scan_result_t>& seque
 
     local::Aligner aligner;
     for (const auto& entry : sequences | ranges::view::filter(fasta::is_aligned)) {
-        const auto [aa, shift] = entry.sequence.aa_shifted();
-        aligner.update(aa, shift, entry.sequence.type_subtype());
+        const auto [aa, prefix_size] = entry.sequence.aa_shifted();
+        aligner.update(aa, prefix_size, entry.sequence.type_subtype());
     }
     // aligner.report();
 

@@ -150,8 +150,12 @@ namespace local::B
     {
         const auto warn = [&](const char* infix, const char* prefix = "WARNING") {
             fmt::print(stderr, "{}: {} lineage {} and {} deletions {} {}\n{}\n{}\n", prefix, sequence.year(), *sequence.lineage(), infix, sequence.full_name(),
-                       acmacs::seqdb::format(sequence.deletions()), fasta_ref, acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
+                       acmacs::seqdb::format(sequence.deletions()), fasta_ref, sequence.aa_format());
         };
+
+        // const auto rep = [&]() {
+        //     fmt::print(stderr, "{}\n{}\n{}\n", sequence.full_name(), sequence.aa_format(), sequence.nuc_format());
+        // };
 
         auto& deletions = sequence.deletions();
         if (is_victoria(deletions) || is_victoria_deletions_at_the_end(deletions)) {
@@ -181,6 +185,7 @@ namespace local::B
                 warn("victoria tripledel2017 (pos shifted)");
             deletions.deletions.front().pos = 161;
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
+            // rep();
         }
         else if (is_victoria_sixdel2019(deletions)) {
             if (sequence.lineage().empty())
@@ -188,6 +193,7 @@ namespace local::B
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria sixdel2019 (pos shifted)");
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"SIXDEL2019"});
+            // rep();
         }
         else if (is_yamagata_shifted(sequence)) {
             if (sequence.lineage().empty())
@@ -272,7 +278,7 @@ namespace local::H1
     {
         const auto warn = [&](const char* prefix = "WARNING") {
             fmt::print(stderr, "{}: {} {} {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.date_simulated(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
-                       acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
+                       sequence.aa_format());
         };
 
         const auto& deletions = sequence.deletions();
@@ -303,11 +309,6 @@ namespace local::H1
             warn();
         }
 
-            // if (local_H1::is_127_1(deletions)) {
-            //     sequence.add_clade(acmacs::seqdb::clade_t{"DEL-127:1"});
-            // }
-            // fmt::print(stderr, "WARNING: {} {} {} :: {}\n{}\n", sequence.year(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
-            // acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
     } // deletions
 
     // ----------------------------------------------------------------------
@@ -348,7 +349,7 @@ namespace local::H3
     {
         const auto warn = [&](const char* prefix = "WARNING") {
             fmt::print(stderr, "{}: {} <{}> {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.aa_aligned_length(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
-                       acmacs::seqdb::format(sequence.deletions().deletions, sequence.aa_aligned()));
+                       sequence.aa_format());
         };
 
         const auto& deletions = sequence.deletions();

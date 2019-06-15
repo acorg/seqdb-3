@@ -14,7 +14,7 @@ int main(int argc, char* const argv[])
     }
 
     const auto res = acmacs::seqdb::deletions_insertions(argv[1], argv[2], acmacs::debug::yes);
-    fmt::print("{}\n{}\n", acmacs::seqdb::format(res.insertions, argv[1], '.'), acmacs::seqdb::format(res.deletions, argv[2], '.'));
+    fmt::print("{}\n{}\n", acmacs::seqdb::format_aa(res.insertions, argv[1], '.'), acmacs::seqdb::format_aa(res.deletions, argv[2], '.'));
 }
 
 // ----------------------------------------------------------------------

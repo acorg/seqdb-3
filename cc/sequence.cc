@@ -21,7 +21,7 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::format(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol)
+std::string acmacs::seqdb::v3::format_aa(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol)
 {
     fmt::memory_buffer out;
     size_t pos = 0;
@@ -60,6 +60,40 @@ std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::format
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::sequence_t::aa_format() const
+{
+    fmt::memory_buffer out;
+    auto [aa, pos] = aa_shifted();
+    if (pos)
+        fmt::format_to(out, "{:X>{}s}", "", pos);
+    for (const auto& en : deletions_.deletions) {
+        fmt::format_to(out, "{}{:->{}s}", aa.substr(pos, en.pos - pos), "", en.num);
+        pos = en.pos;
+    }
+    fmt::format_to(out, "{}", aa.substr(pos));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::sequence_t::aa_format
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
+{
+    fmt::memory_buffer out;
+    auto [nuc, pos] = nuc_shifted();
+    if (pos)
+        fmt::format_to(out, "{:->{}s}", "", pos);
+    for (const auto& en : deletions_.deletions) {
+        fmt::format_to(out, "{}{:->{}s}", nuc.substr(pos, en.pos * 3 - pos), "", en.num * 3);
+        pos = en.pos * 3;
+    }
+    fmt::format_to(out, "{}", nuc.substr(pos));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::sequence_t::nuc_format
 
 // ----------------------------------------------------------------------
 
