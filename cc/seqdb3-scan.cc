@@ -15,6 +15,7 @@
 #include "seqdb-3/align.hh"
 #include "seqdb-3/insertions.hh"
 #include "seqdb-3/clades.hh"
+#include "seqdb-3/create.hh"
 
 // ----------------------------------------------------------------------
 
@@ -64,6 +65,8 @@ struct Options : public argv
     option<bool> all_lab_messages{*this, "all-lab-messages", desc{"otherwise show messages for WHO CCs only"}};
     option<bool> all_subtypes_messages{*this, "all-subtypes-messages", desc{"otherwise show messages for H1, H3, B only"}};
 
+    option<str>  output_seqdb{*this, 'o', "seqdb", dflt{""}};
+
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
     option<str>  print_counter_for{*this, "print-counter-for", dflt{""}};
@@ -92,10 +95,10 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::translate_align(all_sequences);
         acmacs::seqdb::detect_insertions_deletions(all_sequences);
         acmacs::seqdb::detect_lineages_clades(all_sequences);
-
         // match hidb
         // infer continent/country
-        // generate seqdb
+        if (!opt.output_seqdb->empty())
+            acmacs::seqdb::create(opt.output_seqdb, all_sequences, acmacs::seqdb::create_filter::h1_h3_b_aligned);
 
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
         fmt::print(stderr, "\n");
