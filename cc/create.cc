@@ -85,7 +85,10 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
                 entry = to_json::object(to_json::key_val("N", *seq.name()), to_json::key_val("v", *seq.type_subtype()));
                 if (!seq.lineage().empty())
                     entry << to_json::key_val("l", *seq.lineage());
-                // "C": "continent", "c": "country",
+                if (!seq.country().empty())
+                    entry << to_json::key_val("c", seq.country());
+                if (!seq.continent().empty())
+                    entry << to_json::key_val("C", seq.continent());
             }
 
             {

@@ -222,6 +222,8 @@ namespace acmacs::seqdb
             constexpr auto shift_aa() const { return shift_aa_; }
             constexpr auto shift_nuc() const { return shift_nuc_; }
             constexpr const clades_t& clades() const { return clades_; }
+            std::string_view country() const { return country_; }
+            std::string_view continent() const { return continent_; }
 
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
@@ -241,6 +243,10 @@ namespace acmacs::seqdb
             void lineage(const acmacs::virus::lineage_t& lin) { lineage_ = lin; }
             void add_clade(const clade_t& clade) { clades_.add(clade); }
             // void (const & a_) { _ = a_; }
+            // void country(const std::string& country) { country_ = country; }
+            void country(std::string&& country) { country_ = std::move(country); }
+            // void continent(const std::string& continent) { continent_ = continent; }
+            void continent(std::string&& continent) { continent_ = std::move(continent); }
 
             constexpr deletions_insertions_t& deletions() { return deletions_; }
             constexpr const deletions_insertions_t& deletions() const { return deletions_; }
@@ -248,6 +254,8 @@ namespace acmacs::seqdb
           private:
             acmacs::virus::virus_name_t name_;
             // acmacs::virus::host_t host_;
+            std::string country_;
+            std::string continent_;
             Date date_;
             acmacs::virus::Reassortant reassortant_;
             acmacs::virus::Passage passage_;
