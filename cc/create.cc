@@ -76,7 +76,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
 
     for (const auto& en : sequences) {
         const auto& seq = en.sequence;
-        if (filter->good(seq)) {
+        if (filter->good(seq) && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
             if (seq.name() == previous) {
             }
             else {
@@ -89,6 +89,10 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
 
             {
                 to_json::object entry_seq;
+                if (!seq.reassortant().empty())
+                    entry_seq << to_json::key_val("r", to_json::array(*seq.reassortant(), to_json::json::compact_output::yes));
+                if (!seq.passage().empty())
+                    entry_seq << to_json::key_val("p", to_json::array(*seq.passage(), to_json::json::compact_output::yes));
                 if (!seq.aa().empty())
                     entry_seq << to_json::key_val("a", seq.aa_format_not_aligned());
                 if (!seq.nuc().empty())
@@ -98,12 +102,16 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
                 if (seq.shift_nuc() != 0)
                     entry_seq << to_json::key_val("t", seq.shift_nuc());
                 if (!seq.clades().empty())
-                    entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
+                    entry_seq << to_json::key_val("c", to_json::array(
+                                                           seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
+                if (!seq.lab().empty()) {
+                    if (!seq.lab_id().empty())
+                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{seq.lab_id()})));
+                    else
+                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{})));
+                }
                 // "g": "gene: HA|NA", // HA if omitted
                 // "h": ["hi-name"],
-                // "l": {"lab": ["lab_id"]},
-                // "p": ["passage"],
-                // "r": ["reassortant"],
                 entry_seqs << std::move(entry_seq);
             }
 
