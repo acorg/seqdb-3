@@ -62,7 +62,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
             if (!dates.empty()) {
                 std::sort(std::begin(dates), std::end(dates));
                 const auto end = std::unique(std::begin(dates), std::end(dates));
-                entry << to_json::key_val("d", to_json::array(std::begin(dates), end));
+                entry << to_json::key_val("d", to_json::array(std::begin(dates), end, to_json::json::compact_output::yes));
             }
             entry << to_json::key_val("s", entry_seq);
             seqdb_data << std::move(entry);
@@ -91,7 +91,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
             if (seq.date())
                 dates.push_back(seq.date().display());
             ++num_sequences;
-            if (num_sequences > 20)
+            if (num_sequences > 5)
                 break;
         }
     }
