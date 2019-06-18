@@ -15,6 +15,7 @@
 #include "seqdb-3/align.hh"
 #include "seqdb-3/insertions.hh"
 #include "seqdb-3/clades.hh"
+#include "seqdb-3/match-hidb.hh"
 #include "seqdb-3/create.hh"
 
 // ----------------------------------------------------------------------
@@ -95,8 +96,7 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::translate_align(all_sequences);
         acmacs::seqdb::detect_insertions_deletions(all_sequences);
         acmacs::seqdb::detect_lineages_clades(all_sequences);
-        // match hidb
-        // infer continent/country
+        acmacs::seqdb::v3::match_hidb(all_sequences);
         if (!opt.output_seqdb->empty())
             acmacs::seqdb::create(opt.output_seqdb, all_sequences, acmacs::seqdb::create_filter::h1_h3_b_aligned);
 
