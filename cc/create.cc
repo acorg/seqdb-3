@@ -106,9 +106,9 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
                                                            seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
                 if (!seq.lab().empty()) {
                     if (!seq.lab_id().empty())
-                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{seq.lab_id()})));
+                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{seq.lab_id()}), to_json::json::compact_output::yes));
                     else
-                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{})));
+                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{}), to_json::json::compact_output::yes));
                 }
                 // "g": "gene: HA|NA", // HA if omitted
                 // "h": ["hi-name"],
