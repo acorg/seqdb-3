@@ -42,6 +42,7 @@ namespace
           case acmacs::seqdb::create_filter::whocc_aligned:
               return std::make_unique<filter_whocc_aligned>();
         }
+        return nullptr;         // gcc8 wants this
     }
 }
 
