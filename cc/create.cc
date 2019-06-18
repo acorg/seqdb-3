@@ -53,7 +53,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
 
     to_json::array seqdb_data;
     to_json::object entry;
-    to_json::array entry_seq;
+    to_json::array entry_seqs;
     std::vector<std::string> dates;
     acmacs::virus::virus_name_t previous;
 
@@ -64,11 +64,11 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
                 const auto end = std::unique(std::begin(dates), std::end(dates));
                 entry << to_json::key_val("d", to_json::array(std::begin(dates), end, to_json::json::compact_output::yes));
             }
-            entry << to_json::key_val("s", entry_seq);
+            entry << to_json::key_val("s", entry_seqs);
             seqdb_data << std::move(entry);
         }
         dates.clear();
-        entry_seq = to_json::array{};
+        entry_seqs = to_json::array{};
     };
 
     auto filter = make_filter(cfilter);
@@ -81,13 +81,32 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
             }
             else {
                 flush();
-                entry = to_json::object(to_json::key_val("N", *seq.name()),
-                                        to_json::key_val("v", *seq.type_subtype()));
+                entry = to_json::object(to_json::key_val("N", *seq.name()), to_json::key_val("v", *seq.type_subtype()));
                 if (!seq.lineage().empty())
                     entry << to_json::key_val("l", *seq.lineage());
                 // "C": "continent", "c": "country",
             }
-            entry_seq << to_json::object(to_json::key_val("a", seq.aa()));
+
+            {
+                to_json::object entry_seq;
+                if (!seq.aa().empty())
+                    entry_seq << to_json::key_val("a", seq.aa_format_not_aligned());
+                if (!seq.nuc().empty())
+                    entry_seq << to_json::key_val("n", seq.nuc_format_not_aligned());
+                if (seq.shift_aa() != 0)
+                    entry_seq << to_json::key_val("s", seq.shift_aa());
+                if (seq.shift_nuc() != 0)
+                    entry_seq << to_json::key_val("t", seq.shift_nuc());
+                if (!seq.clades().empty())
+                    entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
+                // "g": "gene: HA|NA", // HA if omitted
+                // "h": ["hi-name"],
+                // "l": {"lab": ["lab_id"]},
+                // "p": ["passage"],
+                // "r": ["reassortant"],
+                entry_seqs << std::move(entry_seq);
+            }
+
             if (seq.date())
                 dates.push_back(seq.date().display());
             ++num_sequences;
@@ -97,9 +116,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
     }
     flush();
 
-    auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"),
-                              to_json::key_val("  version", "sequence-database-v2"),
-                              to_json::key_val("  date", current_date_time()),
+    auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"), to_json::key_val("  version", "sequence-database-v2"), to_json::key_val("  date", current_date_time()),
                               to_json::key_val("data", std::move(seqdb_data)));
     fmt::print("{:1}\n", js);
 

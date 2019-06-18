@@ -80,6 +80,21 @@ std::string acmacs::seqdb::v3::sequence_t::aa_format() const
 
 // ----------------------------------------------------------------------
 
+std::string acmacs::seqdb::v3::sequence_t::aa_format_not_aligned() const
+{
+    fmt::memory_buffer out;
+    size_t pos = 0;
+    for (const auto& en : deletions_.deletions) {
+        fmt::format_to(out, "{}{:->{}s}", aa_.substr(pos, static_cast<size_t>(static_cast<ssize_t>(en.pos) + shift_aa_)), "", en.num);
+        pos = en.pos;
+    }
+    fmt::format_to(out, "{}", aa_.substr(pos));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::sequence_t::aa_format_not_aligned
+
+// ----------------------------------------------------------------------
+
 std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
 {
     fmt::memory_buffer out;
@@ -94,6 +109,21 @@ std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::sequence_t::nuc_format
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned() const
+{
+    fmt::memory_buffer out;
+    size_t pos = 0;
+    for (const auto& en : deletions_.deletions) {
+        fmt::format_to(out, "{}{:->{}s}", nuc_.substr(pos, static_cast<size_t>(static_cast<ssize_t>(en.pos * 3) + shift_nuc_)), "", en.num * 3);
+        pos = en.pos * 3;
+    }
+    fmt::format_to(out, "{}", nuc_.substr(pos));
+    return fmt::to_string(out);
+
+} // acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned
 
 // ----------------------------------------------------------------------
 

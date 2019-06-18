@@ -62,6 +62,10 @@ namespace acmacs::seqdb
                 }
             }
 
+            auto begin() const { return clades_.begin(); }
+            auto end() const { return clades_.end(); }
+            auto empty() const { return clades_.empty(); }
+
           private:
             std::vector<clade_t> clades_;
         };
@@ -70,12 +74,12 @@ namespace acmacs::seqdb
 
         class sequence_t
         {
-            using shift_t = int;
-            constexpr static const shift_t not_aligned = -99999;
-
           public:
             sequence_t() = default;
             static sequence_t from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source);
+
+            using shift_t = int;
+            constexpr static const shift_t not_aligned = -99999;
 
             void import(std::string_view source);
             void translate();
@@ -102,6 +106,9 @@ namespace acmacs::seqdb
             // aligned, deletions inserted
             std::string aa_format() const;
             std::string nuc_format() const;
+            // NOT aligned, deletions inserted
+            std::string aa_format_not_aligned() const;
+            std::string nuc_format_not_aligned() const;
 
             // without applying deletions
             std::string aa_aligned() const
@@ -212,6 +219,9 @@ namespace acmacs::seqdb
             std::string_view lab_id() const { return lab_id_; }
             std::string_view lab() const { return lab_; }
             std::string full_name() const;
+            constexpr auto shift_aa() const { return shift_aa_; }
+            constexpr auto shift_nuc() const { return shift_nuc_; }
+            constexpr const clades_t& clades() const { return clades_; }
 
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
