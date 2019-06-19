@@ -250,7 +250,7 @@ namespace acmacs::seqdb
             void country(std::string&& country) { country_ = std::move(country); }
             // void continent(const std::string& continent) { continent_ = continent; }
             void continent(std::string&& continent) { continent_ = std::move(continent); }
-            void add_hi_name(const std::string& hi_name) { hi_names_.push_back(hi_name); }
+            void add_hi_name(const std::string& hi_name);
 
             constexpr deletions_insertions_t& deletions() { return deletions_; }
             constexpr const deletions_insertions_t& deletions() const { return deletions_; }

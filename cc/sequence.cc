@@ -217,6 +217,15 @@ void acmacs::seqdb::v3::sequence_t::add_date(const std::string& date)
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::sequence_t::add_hi_name(const std::string& hi_name)
+{
+    if (std::find(std::begin(hi_names_), std::end(hi_names_), hi_name) == std::end(hi_names_))
+        hi_names_.push_back(hi_name);
+
+} // acmacs::seqdb::v3::sequence_t::add_hi_name
+
+// ----------------------------------------------------------------------
+
 #pragma GCC diagnostic push
 #ifdef __clang__
 #pragma GCC diagnostic ignored "-Wglobal-constructors"
