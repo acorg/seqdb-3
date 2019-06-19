@@ -95,8 +95,62 @@ bool match(const hidb_ref_t& hidb_ref, const acmacs::seqdb::v3::sequence_t& seq,
 
 Matching make_matching(const acmacs::seqdb::v3::sequence_t& seq, const hidb::AntigenPList& found)
 {
-    Matching result;
-    return result;
+    // enum class CellOrEgg {Unknown, Cell, Egg, CellAndEgg};
+
+    // const auto cell_or_egg = [](std::string aPassage) -> CellOrEgg
+    // {
+    //     acmacs::virus::Passage passage(aPassage);
+    //     return passage.is_egg() ? CellOrEgg::Egg : (passage.is_cell() ? CellOrEgg::Cell : CellOrEgg::CellAndEgg); // OR is CellAndEgg
+    // };
+
+    // const auto cell_or_egg_v = [cell_or_egg](const std::vector<std::string>& variants) -> CellOrEgg
+    // {
+    //     CellOrEgg r = CellOrEgg::Unknown;
+    //     for (const auto& passage: variants) {
+    //         CellOrEgg p = cell_or_egg(passage);
+    //         if (r == CellOrEgg::Unknown)
+    //             r = p;
+    //         else if (p != r) {
+    //             r = CellOrEgg::CellAndEgg;
+    //             break;
+    //         }
+    //     }
+    //     return r == CellOrEgg::Unknown ? CellOrEgg::CellAndEgg : r; // unknown (or no passage) gives CellOrEgg::CellAndEgg to match anything
+    // };
+
+    // const auto match_cell_egg = [](CellOrEgg a, CellOrEgg b) -> bool
+    // {
+    //     return a == b || a == CellOrEgg::CellAndEgg || b == CellOrEgg::CellAndEgg;
+
+    // };
+
+    Matching matching;
+    // size_t seq_no = 0;
+    // for (auto& seq: entry.seqs()) {
+    //     std::vector<score_seq_found_t> matching_for_seq;
+    //     size_t found_no = 0;
+    //     const auto seq_cell_or_egg = cell_or_egg_v(seq.passages());
+    //     for (auto f: found) {
+    //         const auto f_passage = f->passage();
+    //           // std::cerr << "match_cell_egg: " << match_cell_egg(cell_or_egg(f_passage), seq_cell_or_egg) << " -- " << f_passage << ':' << static_cast<int>(passage::cell_or_egg(f_passage)) << " " << seq.passages() << ':' << static_cast<int>(seq_cell_or_egg) << '\n';
+    //         if (seq.reassortant_match(f->reassortant()) && match_cell_egg(cell_or_egg(f_passage), seq_cell_or_egg)) {
+    //             std::vector<score_size_t> scores; // score and min passage length (to avoid too incomplete matches)
+    //             if (!seq.passages().empty())
+    //                 std::transform(seq.passages().begin(), seq.passages().end(), std::back_inserter(scores),
+    //                                [&f_passage](const auto& passage) -> score_size_t { return {string_match::match(passage, f_passage), std::min(passage.size(), f_passage.size())}; });
+    //             else
+    //                 scores.emplace_back(string_match::match(std::string{}, f_passage), 0);
+    //             matching_for_seq.emplace_back(*std::max_element(scores.begin(), scores.end() /*$, [](const auto& a, const auto& b) { return a.first < b.first; }*/), seq_no, found_no);
+    //               // report_stream << "  @" << seq.passages() << " @ " << f_passage << " " << score_size->first << " " << score_size->second << '\n';
+    //         }
+    //         ++found_no;
+    //     }
+    //     std::sort(matching_for_seq.begin(), matching_for_seq.end());
+    //     matching.push_back(std::move(matching_for_seq));
+    //     ++seq_no;
+    // }
+    // std::sort(matching.begin(), matching.end(), [](const auto& a, const auto& b) -> bool { return a.empty() ? false : (b.empty() || a[0] < b[0]); });
+    return matching;
 
 } // make_matching
 
