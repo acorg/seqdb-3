@@ -257,6 +257,8 @@ acmacs::seqdb::v3::fasta::messages_t acmacs::seqdb::v3::fasta::normalize_name(ac
             source.sequence.annotations(::string::join(" ", {source.sequence.annotations(), passage_extra}));
         }
     }
+    else
+        source.sequence.passage(acmacs::virus::Passage{passage});
 
     // adjust subtype
     // parse lineage
