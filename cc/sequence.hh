@@ -225,6 +225,7 @@ namespace acmacs::seqdb
             constexpr const clades_t& clades() const { return clades_; }
             std::string_view country() const { return country_; }
             std::string_view continent() const { return continent_; }
+            constexpr const auto& hi_names() const { return hi_names_; }
 
             constexpr bool aligned() const { return shift_aa_ != not_aligned; }
             bool translated() const { return !aa_.empty(); }
@@ -249,6 +250,7 @@ namespace acmacs::seqdb
             void country(std::string&& country) { country_ = std::move(country); }
             // void continent(const std::string& continent) { continent_ = continent; }
             void continent(std::string&& continent) { continent_ = std::move(continent); }
+            void add_hi_name(const std::string& hi_name) { hi_names_.push_back(hi_name); }
 
             constexpr deletions_insertions_t& deletions() { return deletions_; }
             constexpr const deletions_insertions_t& deletions() const { return deletions_; }
@@ -261,6 +263,7 @@ namespace acmacs::seqdb
             std::vector<std::string> dates_;
             acmacs::virus::Reassortant reassortant_;
             acmacs::virus::Passage passage_;
+            std::vector<std::string> hi_names_;
             std::string annotations_;
             std::string lab_id_;
             std::string lab_;

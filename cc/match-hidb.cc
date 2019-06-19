@@ -38,8 +38,8 @@ static bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last,
 static void find_by_lab_id(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static void find_by_name(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found);
-static bool match_greedy(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found, const Matching& matching);
-static bool match_normal(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found, const Matching& matching);
+static bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
+static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
 
 // ----------------------------------------------------------------------
 
@@ -87,8 +87,8 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
             first->sequence.add_date(en->date());
 
         const auto matching = make_matching(first, last, found_hidb_antigens); // for each seq list of matching [[score, min passage len], found_no] - sorted by score desc
-        matched = match_greedy(first, last, found_hidb_antigens, matching);
-        // matched = match_normal(first, last, found, matching);
+        matched = match_greedy(first, found_hidb_antigens, matching);
+        // matched = match_normal(first, found, matching);
     }
     return matched;
 
@@ -98,77 +98,83 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
 
 Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found)
 {
-    // enum class CellOrEgg {Unknown, Cell, Egg, CellAndEgg};
-
-    // const auto cell_or_egg = [](std::string aPassage) -> CellOrEgg
-    // {
-    //     acmacs::virus::Passage passage(aPassage);
-    //     return passage.is_egg() ? CellOrEgg::Egg : (passage.is_cell() ? CellOrEgg::Cell : CellOrEgg::CellAndEgg); // OR is CellAndEgg
-    // };
-
-    // const auto cell_or_egg_v = [cell_or_egg](const std::vector<std::string>& variants) -> CellOrEgg
-    // {
-    //     CellOrEgg r = CellOrEgg::Unknown;
-    //     for (const auto& passage: variants) {
-    //         CellOrEgg p = cell_or_egg(passage);
-    //         if (r == CellOrEgg::Unknown)
-    //             r = p;
-    //         else if (p != r) {
-    //             r = CellOrEgg::CellAndEgg;
-    //             break;
-    //         }
-    //     }
-    //     return r == CellOrEgg::Unknown ? CellOrEgg::CellAndEgg : r; // unknown (or no passage) gives CellOrEgg::CellAndEgg to match anything
-    // };
-
-    // const auto match_cell_egg = [](CellOrEgg a, CellOrEgg b) -> bool
-    // {
-    //     return a == b || a == CellOrEgg::CellAndEgg || b == CellOrEgg::CellAndEgg;
-
-    // };
-
     Matching matching;
-    // size_t seq_no = 0;
-    // for (auto& seq: entry.seqs()) {
-    //     std::vector<score_seq_found_t> matching_for_seq;
-    //     size_t found_no = 0;
-    //     const auto seq_cell_or_egg = cell_or_egg_v(seq.passages());
-    //     for (auto f: found) {
-    //         const auto f_passage = f->passage();
-    //           // std::cerr << "match_cell_egg: " << match_cell_egg(cell_or_egg(f_passage), seq_cell_or_egg) << " -- " << f_passage << ':' << static_cast<int>(passage::cell_or_egg(f_passage)) << " " << seq.passages() << ':' << static_cast<int>(seq_cell_or_egg) << '\n';
-    //         if (seq.reassortant_match(f->reassortant()) && match_cell_egg(cell_or_egg(f_passage), seq_cell_or_egg)) {
-    //             std::vector<score_size_t> scores; // score and min passage length (to avoid too incomplete matches)
-    //             if (!seq.passages().empty())
-    //                 std::transform(seq.passages().begin(), seq.passages().end(), std::back_inserter(scores),
-    //                                [&f_passage](const auto& passage) -> score_size_t { return {string_match::match(passage, f_passage), std::min(passage.size(), f_passage.size())}; });
-    //             else
-    //                 scores.emplace_back(string_match::match(std::string{}, f_passage), 0);
-    //             matching_for_seq.emplace_back(*std::max_element(scores.begin(), scores.end() /*$, [](const auto& a, const auto& b) { return a.first < b.first; }*/), seq_no, found_no);
-    //               // report_stream << "  @" << seq.passages() << " @ " << f_passage << " " << score_size->first << " " << score_size->second << '\n';
-    //         }
-    //         ++found_no;
-    //     }
-    //     std::sort(matching_for_seq.begin(), matching_for_seq.end());
-    //     matching.push_back(std::move(matching_for_seq));
-    //     ++seq_no;
-    // }
-    // std::sort(matching.begin(), matching.end(), [](const auto& a, const auto& b) -> bool { return a.empty() ? false : (b.empty() || a[0] < b[0]); });
+    size_t seq_no = 0;
+    for (; first != last; ++first) {
+        const auto& seq = first->sequence;
+        std::vector<score_seq_found_t> matching_for_seq;
+        size_t found_no = 0;
+        for (auto f : found) {
+            if (seq.reassortant() == f->reassortant()) {
+                if (const auto f_passage = f->passage(), s_passage = seq.passage(); acmacs::virus::passages_match(f_passage, s_passage))
+                    matching_for_seq.emplace_back(score_size_t{string_match::match(*s_passage, *f_passage), std::min(s_passage.size(), f_passage.size())}, seq_no, found_no);
+            }
+            ++found_no;
+        }
+        std::sort(matching_for_seq.begin(), matching_for_seq.end());
+        matching.push_back(std::move(matching_for_seq));
+        ++seq_no;
+    }
+    std::sort(matching.begin(), matching.end(), [](const auto& a, const auto& b) -> bool { return a.empty() ? false : (b.empty() || a[0] < b[0]); });
     return matching;
 
 } // make_matching
 
 // ----------------------------------------------------------------------
 
-bool match_greedy(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found, const Matching& matching)
+// greedy matching: add all hi-names having matching reassortant and passage type (egg/cell) regardless of score
+// if antigen is in multiple matching entries, use the one with the highest score
+// returns if at least one seq matched
+bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching)
 {
-    return false;
+    std::map<size_t, score_seq_found_t> antigen_to_matching; // antigen index in found to (matching index and score)
+    for (const auto& mp : matching) {
+        for (const auto& sf: mp) {
+            const auto ampi = antigen_to_matching.emplace(sf.found_no, sf);
+            if (!ampi.second && ampi.first->second.score < sf.score) {        // already present, replace if sf has hi higher score
+                ampi.first->second = sf;
+            }
+        }
+    }
+
+    bool matched = false;
+    for (const auto& e: antigen_to_matching) {
+        const auto name = found[e.first]->full_name();
+        std::next(first, static_cast<ssize_t>(e.second.seq_no))->sequence.add_hi_name(name);
+        matched = true;
+    }
+    return matched;
+
 } // match_greedy
 
 // ----------------------------------------------------------------------
 
-bool match_normal(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found, const Matching& matching)
+bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching)
 {
-    return false;
+    bool matched = false;
+    if (matching.size() == 1) {
+        for (const auto& ms: matching[0]) {
+            if (ms.score == matching[0][0].score) {
+                const auto name = found[ms.found_no]->full_name();
+                first->sequence.add_hi_name(name);
+                matched = true;
+            }
+        }
+    }
+    else {
+        std::set<size_t> found_assigned;
+        for (const auto& m: matching) {
+            for (const auto& sf: m) {
+                if (sf.score == m[0].score && found_assigned.count(sf.found_no) == 0) {
+                    const auto name = found[sf.found_no]->full_name();
+                    std::next(first, static_cast<ssize_t>(sf.seq_no))->sequence.add_hi_name(name);
+                    matched = true;
+                    found_assigned.insert(sf.found_no);
+                }
+            }
+        }
+    }
+    return matched;
 
 } // match_normal
 
