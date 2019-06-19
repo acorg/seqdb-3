@@ -95,6 +95,16 @@ void acmacs::seqdb::v3::fasta::sort_by_date(std::vector<fasta::scan_result_t>& s
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::fasta::sort_by_name(std::vector<fasta::scan_result_t>& sequences) noexcept
+{
+    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
+        return e1.sequence.name() < e2.sequence.name();
+    });
+
+} // acmacs::seqdb::v3::fasta::sort_by_name
+
+// ----------------------------------------------------------------------
+
 std::tuple<acmacs::seqdb::v3::fasta::scan_input_t, acmacs::seqdb::v3::fasta::scan_output_t> acmacs::seqdb::v3::fasta::scan(scan_input_t input)
 {
     for (; !input.done() && (*input.first == '\r' || *input.first == '\n'); ++input.first) {

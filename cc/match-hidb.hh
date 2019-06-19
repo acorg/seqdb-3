@@ -10,6 +10,7 @@ namespace acmacs::seqdb
     {
         namespace fasta { struct scan_result_t; }
 
+        // sequences msut be sorted by name!
         void match_hidb(std::vector<fasta::scan_result_t>& sequences);
 
     } // namespace v3

@@ -96,6 +96,7 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::translate_align(all_sequences);
         acmacs::seqdb::detect_insertions_deletions(all_sequences);
         acmacs::seqdb::detect_lineages_clades(all_sequences);
+        acmacs::seqdb::fasta::sort_by_name(all_sequences);
         acmacs::seqdb::v3::match_hidb(all_sequences);
         if (!opt.output_seqdb->empty())
             acmacs::seqdb::create(opt.output_seqdb, all_sequences, acmacs::seqdb::create_filter::h1_h3_b_aligned);
