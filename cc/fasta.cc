@@ -98,7 +98,10 @@ void acmacs::seqdb::v3::fasta::sort_by_date(std::vector<fasta::scan_result_t>& s
 void acmacs::seqdb::v3::fasta::sort_by_name(std::vector<fasta::scan_result_t>& sequences) noexcept
 {
     std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
-        return e1.sequence.name() < e2.sequence.name();
+        if (e1.sequence.name() == e2.sequence.name())
+            return e1.sequence.annotations() < e2.sequence.annotations();
+        else
+            return e1.sequence.name() < e2.sequence.name();
     });
 
 } // acmacs::seqdb::v3::fasta::sort_by_name

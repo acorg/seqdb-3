@@ -56,7 +56,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
     to_json::object entry;
     to_json::array entry_seqs;
     std::vector<std::string> dates;
-    acmacs::virus::virus_name_t previous;
+    std::string previous;
 
     const auto flush = [&]() {
         if (!entry.empty()) {
@@ -72,17 +72,25 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
         entry_seqs = to_json::array{};
     };
 
+    const auto make_seq_name = [](const auto& seq) {
+        if (seq.annotations().empty())
+            return std::string{seq.name()};
+        else
+            return fmt::format("{} {}", *seq.name(), seq.annotations());
+    };
+
     auto filter = make_filter(cfilter);
     size_t num_sequences = 0;
 
     for (const auto& en : sequences) {
         const auto& seq = en.sequence;
+        const auto name = make_seq_name(seq);
         if (filter->good(seq) && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
-            if (seq.name() == previous) {
+            if (name == previous) {
             }
             else {
                 flush();
-                entry = to_json::object(to_json::key_val("N", *seq.name()), to_json::key_val("v", *seq.type_subtype()));
+                entry = to_json::object(to_json::key_val("N", name), to_json::key_val("v", *seq.type_subtype()));
                 if (!seq.lineage().empty())
                     entry << to_json::key_val("l", *seq.lineage());
                 if (!seq.country().empty())
