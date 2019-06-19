@@ -163,14 +163,14 @@ void acmacs::seqdb::v3::sequence_t::translate()
 
 // ----------------------------------------------------------------------
 
-Date acmacs::seqdb::v3::sequence_t::date_simulated() const noexcept
+std::string acmacs::seqdb::v3::sequence_t::date_simulated() const noexcept
 {
-    if (!date_.empty())
-        return date_;
+    if (!dates_.empty())
+        return dates_.front();
     else if (auto yr = acmacs::virus::year(name()); yr.has_value())
-        return Date(static_cast<int>(*yr), 1UL, 1UL);
+        return fmt::format("{}-01-01", *yr);
     else
-        return Date(1800, 1UL, 1UL);
+        return "1800-01-01";
 
 } // acmacs::seqdb::v3::sequence_t::date_simulated
 
@@ -202,6 +202,18 @@ std::string acmacs::seqdb::v3::sequence_t::full_name() const
     return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage(), *lineage()});
 
 } // acmacs::seqdb::v3::sequence_t::full_name
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::sequence_t::add_date(const std::string& date)
+{
+    if (!date.empty()) {
+        auto insertion_pos = std::lower_bound(dates_.begin(), dates_.end(), date);
+        if (insertion_pos == dates_.end() || date != *insertion_pos)
+            dates_.insert(insertion_pos, date);
+    }
+
+} // acmacs::seqdb::v3::sequence_t::add_date
 
 // ----------------------------------------------------------------------
 

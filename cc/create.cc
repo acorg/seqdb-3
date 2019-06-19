@@ -119,8 +119,7 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
                 entry_seqs << std::move(entry_seq);
             }
 
-            if (seq.date())
-                dates.push_back(seq.date().display());
+            std::copy(std::begin(seq.dates()), std::end(seq.dates()), std::back_inserter(dates));
             ++num_sequences;
             if (num_sequences > 5)
                 break;

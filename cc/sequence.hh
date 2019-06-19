@@ -88,19 +88,20 @@ namespace acmacs::seqdb
             std::string_view nuc() const { return nuc_; }
             constexpr const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
             constexpr const acmacs::virus::lineage_t& lineage() const { return lineage_; }
-            constexpr const Date& date() const { return date_; }
-            Date date_simulated() const noexcept; // returns either stored date or date inferred from name
+            std::optional<std::string> date() const { if (dates_.empty()) return std::nullopt; else return dates_.front(); }
+            constexpr const auto& dates() const { return dates_; }
+            std::string date_simulated() const noexcept; // returns either stored date or date inferred from name
 
             size_t year() const
             {
-                if (date_.empty()) {
+                if (dates_.empty()) {
                     if (auto yr = acmacs::virus::year(name_); yr.has_value())
                         return *yr;
                     else
                         return 0;
                 }
                 else
-                    return static_cast<size_t>(date_.year());
+                    return std::stoul(dates_.front().substr(0, 4));
             }
 
             // aligned, deletions inserted
@@ -230,7 +231,8 @@ namespace acmacs::seqdb
 
             void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt);
 
-            void date(const Date& a_date) { date_ = a_date; }
+            void add_date(const std::string& a_date);
+            void add_date(const Date& a_date) { add_date(a_date.display()); }
             void passage(acmacs::virus::Passage&& a_passage) { passage_ = std::move(a_passage); }
             void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
             void lab_id(std::string&& a_lab_id) { lab_id_ = std::move(a_lab_id); }
@@ -256,7 +258,7 @@ namespace acmacs::seqdb
             // acmacs::virus::host_t host_;
             std::string country_;
             std::string continent_;
-            Date date_;
+            std::vector<std::string> dates_;
             acmacs::virus::Reassortant reassortant_;
             acmacs::virus::Passage passage_;
             std::string annotations_;

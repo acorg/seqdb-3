@@ -157,7 +157,7 @@ std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta:
     result.fasta.name = fields[0];
     result.fasta.filename = filename;
     result.fasta.line_no = line_no;
-    result.sequence.date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no));
+    result.sequence.add_date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no).display());
     if (fields.size() > 2)
         result.fasta.passage = ::string::upper(::string::strip(fields[2]));
     if (fields.size() > 3)

@@ -32,7 +32,7 @@ struct score_seq_found_t : public score_size_t
 
 using Matching = std::vector<std::vector<score_seq_found_t>>;
 
-static bool match(const hidb_ref_t& hidb_ref, const acmacs::seqdb::v3::sequence_t& seq, std::string_view subtype);
+static bool match(const hidb_ref_t& hidb_ref, acmacs::seqdb::v3::sequence_t& seq, std::string_view subtype);
 static void find_by_lab_id(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, const acmacs::seqdb::v3::sequence_t& sequence);
 static void find_by_name(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, const acmacs::seqdb::v3::sequence_t& sequence);
 static Matching make_matching(const acmacs::seqdb::v3::sequence_t& seq, const hidb::AntigenPList& found);
@@ -63,7 +63,7 @@ void acmacs::seqdb::v3::match_hidb(std::vector<fasta::scan_result_t>& sequences)
 
 // ----------------------------------------------------------------------
 
-bool match(const hidb_ref_t& hidb_ref, const acmacs::seqdb::v3::sequence_t& seq, std::string_view subtype)
+bool match(const hidb_ref_t& hidb_ref, acmacs::seqdb::v3::sequence_t& seq, std::string_view subtype)
 {
     hidb::AntigenPList found_hidb_antigens;
     find_by_lab_id(found_hidb_antigens, hidb_ref, seq);
@@ -79,9 +79,8 @@ bool match(const hidb_ref_t& hidb_ref, const acmacs::seqdb::v3::sequence_t& seq,
                 fmt::print(stderr, "WARNING: lineage mismatch seq: {} vs. hidb: {} {}\n", seq.full_name(), found_hidb_antigens.front()->name(),
                            static_cast<std::string>(found_hidb_antigens.front()->lineage()));
         }
-        // update date
-        // for (const auto& en: found_hidb_antigens)
-        //     seq.add_date(en->date());
+        for (const auto& en: found_hidb_antigens)
+            seq.add_date(en->date());
 
         const auto matching = make_matching(seq, found_hidb_antigens); // for each seq list of matching [[score, min passage len], found_no] - sorted by score desc
         matched = match_greedy(seq, found_hidb_antigens, matching);
