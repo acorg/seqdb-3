@@ -11,9 +11,7 @@ namespace acmacs::seqdb
     {
         namespace fasta { struct scan_result_t; }
 
-        enum class create_filter { all_aligned, h1_h3_b_aligned, whocc_aligned };
-
-        void create(std::string_view filename, std::vector<fasta::scan_result_t>& sequences, create_filter filter);
+        void create(std::string_view prefix, std::vector<fasta::scan_result_t>& sequences);
 
     } // namespace v3
 } // namespace acmacs::seqdb

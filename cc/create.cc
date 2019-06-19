@@ -1,57 +1,57 @@
 #include <memory>
 
 #include "acmacs-base/to-json.hh"
+#include "acmacs-base/read-file.hh"
 #include "seqdb-3/create.hh"
 #include "seqdb-3/fasta.hh"
 
 // ----------------------------------------------------------------------
 
-namespace
+struct filter_base
 {
-    struct filter_base
-    {
-        virtual ~filter_base() = default;
-        virtual bool good(const acmacs::seqdb::sequence_t& seq) const  = 0;
-    };
+    virtual ~filter_base() = default;
+    virtual bool good(const acmacs::seqdb::sequence_t& seq) const = 0;
+};
 
-    struct filter_all_aligned : public filter_base
-    {
-        bool good(const acmacs::seqdb::sequence_t& seq) const override { return seq.aligned(); }
-    };
+struct filter_all_aligned : public filter_base
+{
+    bool good(const acmacs::seqdb::sequence_t& seq) const override { return seq.aligned(); }
+};
 
-    struct filter_h1_h3_b_aligned : public filter_base
+struct filter_h1_h3_b_aligned : public filter_all_aligned
+{
+    bool good(const acmacs::seqdb::sequence_t& seq) const override
     {
-        bool good(const acmacs::seqdb::sequence_t& seq) const override
-        {
-            return seq.aligned() && (seq.type_subtype() == acmacs::virus::type_subtype_t{"B"} || seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H1N1)"} || seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"});
-        }
-    };
-
-    struct filter_whocc_aligned : public filter_base
-    {
-        bool good(const acmacs::seqdb::sequence_t& seq) const override { return seq.aligned(); }
-    };
-
-    inline std::unique_ptr<filter_base> make_filter(acmacs::seqdb::create_filter cfil)
-    {
-        switch (cfil) {
-          case acmacs::seqdb::create_filter::all_aligned:
-              return std::make_unique<filter_all_aligned>();
-          case acmacs::seqdb::create_filter::h1_h3_b_aligned:
-              return std::make_unique<filter_h1_h3_b_aligned>();
-          case acmacs::seqdb::create_filter::whocc_aligned:
-              return std::make_unique<filter_whocc_aligned>();
-        }
-        return nullptr;         // gcc8 wants this
+        return filter_all_aligned::good(seq) && (seq.type_subtype() == acmacs::virus::type_subtype_t{"B"} || seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H1N1)"} ||
+                                                 seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"});
     }
-}
+};
+
+struct filter_whocc_aligned : public filter_h1_h3_b_aligned
+{
+    bool good(const acmacs::seqdb::sequence_t& seq) const override
+    {
+        return filter_h1_h3_b_aligned::good(seq) && (seq.lab() == "CDC" || seq.lab() == "Crick" || seq.lab() == "NIID" || seq.lab() == "VIDRL");
+    }
+};
+
+static void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, const filter_base& filter);
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::scan_result_t>& sequences, create_filter cfilter)
+void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<fasta::scan_result_t>& sequences)
 {
-    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) { return e1.sequence.name() < e2.sequence.name(); });
+    acmacs::seqdb::fasta::sort_by_name(sequences);
+    generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
+    generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
+    generate(fmt::format("{}/seqdb.json.xz", prefix), sequences, filter_whocc_aligned{});
 
+} // acmacs::seqdb::create
+
+// ----------------------------------------------------------------------
+
+void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, const filter_base& filter)
+{
     to_json::array seqdb_data;
     to_json::object entry;
     to_json::array entry_seqs;
@@ -79,13 +79,11 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
             return fmt::format("{} {}", *seq.name(), seq.annotations());
     };
 
-    auto filter = make_filter(cfilter);
     size_t num_sequences = 0;
-
     for (const auto& en : sequences) {
         const auto& seq = en.sequence;
         const auto name = make_seq_name(seq);
-        if (filter->good(seq) && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
+        if (filter.good(seq)) { //  && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
             if (name == previous) {
             }
             else {
@@ -129,20 +127,18 @@ void acmacs::seqdb::v3::create(std::string_view filename, std::vector<fasta::sca
 
             std::copy(std::begin(seq.dates()), std::end(seq.dates()), std::back_inserter(dates));
             ++num_sequences;
-            if (num_sequences > 5)
-                break;
+            // if (num_sequences > 5)
+            //     break;
         }
     }
     flush();
 
-    auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"), to_json::key_val("  version", "sequence-database-v2"), to_json::key_val("  date", current_date_time()),
+    const auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"), to_json::key_val("  version", "sequence-database-v2"), to_json::key_val("  date", current_date_time()),
                               to_json::key_val("data", std::move(seqdb_data)));
-    fmt::print("{:1}\n", js);
+    acmacs::file::write(filename, fmt::format("{:1}\n", js));
+    fmt::print("INFO: {} sequences written to {}\n", num_sequences, filename);
 
-} // acmacs::seqdb::create
-
-// ----------------------------------------------------------------------
-
+} // generate
 
 // ----------------------------------------------------------------------
 /// Local Variables:

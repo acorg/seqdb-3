@@ -66,7 +66,7 @@ struct Options : public argv
     option<bool> all_lab_messages{*this, "all-lab-messages", desc{"otherwise show messages for WHO CCs only"}};
     option<bool> all_subtypes_messages{*this, "all-subtypes-messages", desc{"otherwise show messages for H1, H3, B only"}};
 
-    option<str>  output_seqdb{*this, 'o', "seqdb", dflt{""}};
+    option<str>  output_seqdb{*this, 'o', "output-dir", dflt{""}};
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
@@ -99,7 +99,7 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::fasta::sort_by_name(all_sequences);
         acmacs::seqdb::v3::match_hidb(all_sequences);
         if (!opt.output_seqdb->empty())
-            acmacs::seqdb::create(opt.output_seqdb, all_sequences, acmacs::seqdb::create_filter::h1_h3_b_aligned);
+            acmacs::seqdb::create(opt.output_seqdb, all_sequences);
 
         fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::fasta::is_aligned));
         fmt::print(stderr, "\n");
