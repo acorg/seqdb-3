@@ -32,32 +32,6 @@ static inline bool our_subtype(std::string_view type_subtype)
 
 // ----------------------------------------------------------------------
 
-// static inline std::string infer_regex(const std::vector<std::string>& sources)
-// {
-//     std::vector<std::string> letters(128);
-//     for (const auto& src : sources) {
-//         for (size_t pos = 0; pos < src.size(); ++pos) {
-//             if (ranges::find(letters[pos], src[pos]) == ranges::end(letters[pos]))
-//                 letters[pos].append(1, src[pos]);
-//         }
-//     }
-//     std::string res;
-//     for (const auto& let : letters) {
-//         if (let.empty())
-//             break;
-//         if (let.size() == 1)
-//             res.append(let);
-//         else {
-//             res.append(1, '[');
-//             res.append(let);
-//             res.append(1, ']');
-//         }
-//     }
-//     return res;
-// }
-
-// ----------------------------------------------------------------------
-
 using namespace acmacs::argv;
 struct Options : public argv
 {
@@ -124,8 +98,10 @@ int main(int argc, char* const argv[])
                 counter_not_aligned.count(*sc.fasta.type_subtype);
                 counter_not_aligned_h.count(sc.fasta.type_subtype.h_or_b());
             }
-            fmt::print(stderr, "NOT ALIGNED\n{}\n", counter_not_aligned_h.report_sorted_max_first());
-            // fmt::print(stderr, "NOT ALIGNED\n{}\n", counter_not_aligned.report_sorted_max_first());
+            if (counter_not_aligned_h.total())
+                fmt::print(stderr, "WARNING: NOT ALIGNED\n{}\n", counter_not_aligned_h.report_sorted_max_first());
+            else
+                fmt::print(stderr, "INFO: all aligned\n");
         }
 
         if (!opt.print_aa_for->empty()) {

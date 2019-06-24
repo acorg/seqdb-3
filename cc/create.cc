@@ -42,9 +42,14 @@ static void generate(std::string_view filename, const std::vector<acmacs::seqdb:
 void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<fasta::scan_result_t>& sequences)
 {
     acmacs::seqdb::fasta::sort_by_name(sequences);
-    generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
-    generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
-    generate(fmt::format("{}/seqdb.json.xz", prefix), sequences, filter_whocc_aligned{});
+#pragma omp parallel sections
+    {
+        generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
+#pragma omp section
+        generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
+#pragma omp section
+        generate(fmt::format("{}/seqdb.json.xz", prefix), sequences, filter_whocc_aligned{});
+    }
 
 } // acmacs::seqdb::create
 
