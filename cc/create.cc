@@ -115,9 +115,9 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta:
                 if (!seq.nuc().empty())
                     entry_seq << to_json::key_val("n", seq.nuc_format_not_aligned());
                 if (seq.shift_aa() != 0)
-                    entry_seq << to_json::key_val("s", seq.shift_aa());
+                    entry_seq << to_json::key_val("s", - seq.shift_aa());
                 if (seq.shift_nuc() != 0)
-                    entry_seq << to_json::key_val("t", seq.shift_nuc());
+                    entry_seq << to_json::key_val("t", - seq.shift_nuc());
                 if (!seq.clades().empty())
                     entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
                 if (!seq.lab().empty()) {
