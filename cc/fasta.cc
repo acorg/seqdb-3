@@ -185,7 +185,7 @@ std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta:
     if (!result.fasta.lineage.empty() && result.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"})
         result.sequence.lineage(result.fasta.lineage);
 
-    return std::move(result);
+    return result;
 
 } // acmacs::seqdb::v3::fasta::name_gisaid_spaces
 
@@ -211,7 +211,7 @@ std::optional<acmacs::seqdb::v3::fasta::scan_result_t> acmacs::seqdb::v3::fasta:
     result.sequence.lab(hints.lab);
     result.fasta.type_subtype = acmacs::virus::type_subtype_t{hints.subtype};
     result.fasta.lineage = acmacs::virus::lineage_t{hints.lineage};
-    return std::move(result);
+    return result;
 
 } // acmacs::seqdb::v3::fasta::name_plain
 
