@@ -89,9 +89,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta:
         const auto& seq = en.sequence;
         const auto name = make_seq_name(seq);
         if (filter.good(seq)) { //  && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
-            if (name == previous) {
-            }
-            else {
+            if (name != previous) {
                 flush();
                 entry = to_json::object(to_json::key_val("N", name), to_json::key_val("v", *seq.type_subtype()));
                 if (!seq.lineage().empty())
@@ -100,6 +98,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta:
                     entry << to_json::key_val("c", seq.country());
                 if (!seq.continent().empty())
                     entry << to_json::key_val("C", seq.continent());
+                previous = name;
             }
 
             {
