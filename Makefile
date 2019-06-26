@@ -5,9 +5,12 @@ TARGETS = \
   $(SEQDB_LIB) \
   $(SEQDB_PY_LIB) \
   $(DIST)/seqdb3-scan \
+  $(DIST)/seqdb3 \
   $(DIST)/test-insertions-deletions
 
-SEQDB_SOURCES = fasta.cc sequence.cc align.cc insertions.cc clades.cc match-hidb.cc create.cc
+SEQDB_SOURCES = \
+  fasta.cc sequence.cc align.cc insertions.cc clades.cc match-hidb.cc create.cc \
+  seqdb.cc seqdb-parse.cc
 
 SEQDB_LIB_MAJOR = 3
 SEQDB_LIB_MINOR = 0
