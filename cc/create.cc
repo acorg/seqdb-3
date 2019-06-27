@@ -44,9 +44,9 @@ void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<fasta::scan_
     acmacs::seqdb::fasta::sort_by_name(sequences);
 #pragma omp parallel sections
     {
-        generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
-#pragma omp section
-        generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
+//         generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
+// #pragma omp section
+//         generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
 #pragma omp section
         generate(fmt::format("{}/seqdb.json.xz", prefix), sequences, filter_whocc_aligned{});
     }
@@ -113,10 +113,10 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta:
                     entry_seq << to_json::key_val("a", seq.aa_format_not_aligned());
                 if (!seq.nuc().empty())
                     entry_seq << to_json::key_val("n", seq.nuc_format_not_aligned());
-                if (seq.shift_aa() != 0)
-                    entry_seq << to_json::key_val("s", - seq.shift_aa());
-                if (seq.shift_nuc() != 0)
-                    entry_seq << to_json::key_val("t", - seq.shift_nuc());
+                if (seq.shift_aa() != acmacs::seqdb::sequence_t::shift_t{0})
+                    entry_seq << to_json::key_val("s", - static_cast<ssize_t>(*seq.shift_aa()));
+                if (seq.shift_nuc() != acmacs::seqdb::sequence_t::shift_t{0})
+                    entry_seq << to_json::key_val("t", - static_cast<ssize_t>(*seq.shift_nuc()));
                 if (!seq.clades().empty())
                     entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
                 if (!seq.lab().empty()) {

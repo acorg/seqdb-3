@@ -3,6 +3,7 @@
 #include <string>
 
 #include "acmacs-base/date.hh"
+#include "acmacs-base/named-type.hh"
 #include "acmacs-virus/virus-name.hh"
 
 // ----------------------------------------------------------------------
@@ -78,14 +79,16 @@ namespace acmacs::seqdb
             sequence_t() = default;
             static sequence_t from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source);
 
-            using shift_t = int;
-            constexpr static const shift_t not_aligned = -99999;
+            using shift_t = named_size_t<struct shift_t_tag>;
+            constexpr static const shift_t not_aligned{99999};
 
             void import(std::string_view source);
             void translate();
 
             std::string_view aa() const { return aa_; }
+            constexpr auto aa_shift() const { return shift_aa_; }
             std::string_view nuc() const { return nuc_; }
+            constexpr auto nuc_shift() const { return shift_nuc_; }
             constexpr const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
             constexpr const acmacs::virus::lineage_t& lineage() const { return lineage_; }
             std::optional<std::string> date() const { if (dates_.empty()) return std::nullopt; else return dates_.front(); }
@@ -112,47 +115,21 @@ namespace acmacs::seqdb
             std::string nuc_format_not_aligned() const;
 
             // without applying deletions
-            std::string aa_aligned() const
+            std::string_view aa_aligned() const
             {
-                if (const auto [aa, prefix_size] = aa_shifted(); prefix_size == 0)
-                    return std::string(aa);
-                else
-                    return fmt::format("{:X>{}s}{}", "", prefix_size, aa);
+                std::string_view aa{aa_};
+                aa.remove_prefix(*shift_aa_);
+                return aa;
             }
 
             auto aa_aligned_length() const
             {
-                return static_cast<size_t>(static_cast<decltype(shift_aa_)>(aa_.size()) - shift_aa_);
-            }
-
-            // returns tuple(aligned aa, prefix size)
-            // if shift >=0, aligned sequence is returned
-            // if shift is negative, sequence must be prepended with 'X's
-            std::tuple<std::string_view, size_t> aa_shifted() const
-            {
-                if (shift_aa_ >= 0) {
-                    std::string_view res(aa_);
-                    res.remove_prefix(static_cast<size_t>(shift_aa_));
-                    return {res, 0};
-                }
-                else
-                    return {std::string_view(aa_), static_cast<size_t>(-shift_aa_)};
-            }
-
-            std::string_view aa_aligned_fast() const
-            {
-                const auto [aligned, prefix_size] = aa_shifted();
-                if (prefix_size == 0)
-                    return aligned;
-                throw std::runtime_error("internal in sequence_t::aa_aligned_fast");
+                return aa_.size() - *shift_aa_;
             }
 
             std::string_view aa_aligned_substr(size_t pos, size_t num) const
             {
-                if (const auto offset = static_cast<ssize_t>(pos) + shift_aa_; offset >= 0 && offset < static_cast<ssize_t>(aa_.size()))
-                    return std::string_view(aa_.data() + offset, num);
-                else
-                    return {};
+                return std::string_view(aa_.data() + *shift_aa_ + pos, num);
             }
 
             // pos is 0 based
@@ -163,11 +140,10 @@ namespace acmacs::seqdb
                 const auto [deleted, pos_with_deletions] = deletions_.apply_deletions(pos);
                 if (deleted)
                     return '-';
-                const auto [aa, prefix_size] = aa_shifted();
-                const ssize_t shifted = static_cast<ssize_t>(pos_with_deletions) - static_cast<ssize_t>(prefix_size);
-                if (shifted < 0 || shifted >= static_cast<ssize_t>(aa.size()))
+                else if ((pos_with_deletions + *shift_aa_) > aa_.size())
                     return 0;
-                return aa[pos];
+                else
+                    return aa_[pos_with_deletions + *shift_aa_];
             }
 
             // pos is 1 based
@@ -180,36 +156,20 @@ namespace acmacs::seqdb
             {
                 if (aa_.empty())
                     throw std::runtime_error("internal in sequence_t::aa_number_of_X");
-                return static_cast<size_t>(std::count(aa_.begin() + (shift_aa_ > 0 ? shift_aa_ : 0), aa_.end(), 'X'));
+                return static_cast<size_t>(std::count(aa_.begin() + static_cast<ssize_t>(*shift_aa_), aa_.end(), 'X'));
             }
 
             size_t aa_number_of_not_X() const
             {
-                const auto size  = shift_aa_ > 0 ? aa_.size() - static_cast<size_t>(shift_aa_) : aa_.size();
-                return size - aa_number_of_X();
+                return aa_.size() - *shift_aa_ - aa_number_of_X();
             }
 
             // without applying deletions
-            std::string nuc_aligned() const
+            std::string_view nuc_aligned() const
             {
-                if (const auto [nuc, prefix_size] = nuc_shifted(); prefix_size == 0)
-                    return std::string(nuc);
-                else
-                    return fmt::format("{:->{}s}{}", "", prefix_size, nuc);
-            }
-
-            // returns tuple(aligned aa, prefix size)
-            // if shift >=0, aligned sequence is returned
-            // if shift is negative, sequence must be prepended with '-'s
-            std::tuple<std::string_view, size_t> nuc_shifted() const
-            {
-                if (shift_nuc_ >= 0) {
-                    std::string_view res(nuc_);
-                    res.remove_prefix(static_cast<size_t>(shift_nuc_));
-                    return {res, 0};
-                }
-                else
-                    return {std::string_view(nuc_), static_cast<size_t>(-shift_nuc_)};
+                std::string_view nuc{nuc_};
+                nuc.remove_prefix(*shift_nuc_);
+                return nuc;
             }
 
             constexpr const acmacs::virus::virus_name_t& name() const { return name_; }

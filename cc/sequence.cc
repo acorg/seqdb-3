@@ -66,14 +66,14 @@ std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
 std::string acmacs::seqdb::v3::sequence_t::aa_format() const
 {
     fmt::memory_buffer out;
-    auto [aa, pos] = aa_shifted();
-    if (pos)
-        fmt::format_to(out, "{:X>{}s}", "", pos);
+    const auto aa = aa_aligned();
+    size_t pos = 0;
     for (const auto& en : deletions_.deletions) {
         fmt::format_to(out, "{}{:->{}s}", aa.substr(pos, en.pos - pos), "", en.num);
         pos = en.pos;
     }
     fmt::format_to(out, "{}", aa.substr(pos));
+    // fmt::print(stderr, "aa_format s:{}\n  {}\n  {}\n", pos, aa, fmt::to_string(out));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::sequence_t::aa_format
@@ -82,13 +82,19 @@ std::string acmacs::seqdb::v3::sequence_t::aa_format() const
 
 std::string acmacs::seqdb::v3::sequence_t::aa_format_not_aligned() const
 {
+    std::string_view aav{aa_};
     fmt::memory_buffer out;
+    if (shift_aa_ > shift_t{0}) {
+        fmt::format_to(out, "{}", aav.substr(0, *shift_aa_));
+        aav.remove_prefix(*shift_aa_);
+    }
     size_t pos = 0;
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", aa_.substr(pos, static_cast<size_t>(static_cast<ssize_t>(en.pos) + shift_aa_)), "", en.num);
+        fmt::format_to(out, "{}{:->{}s}", aav.substr(pos, en.pos - pos), "", en.num);
         pos = en.pos;
     }
-    fmt::format_to(out, "{}", aa_.substr(pos));
+    fmt::format_to(out, "{}", aav.substr(pos));
+    // fmt::print(stderr, "aa_format_not_aligned s:{}\n  {}\n  {}\n", shift_aa_, aa_, fmt::to_string(out));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::sequence_t::aa_format_not_aligned
@@ -98,9 +104,8 @@ std::string acmacs::seqdb::v3::sequence_t::aa_format_not_aligned() const
 std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
 {
     fmt::memory_buffer out;
-    auto [nuc, pos] = nuc_shifted();
-    if (pos)
-        fmt::format_to(out, "{:->{}s}", "", pos);
+    const auto nuc = nuc_aligned();
+    size_t pos = 0;
     for (const auto& en : deletions_.deletions) {
         fmt::format_to(out, "{}{:->{}s}", nuc.substr(pos, en.pos * 3 - pos), "", en.num * 3);
         pos = en.pos * 3;
@@ -114,13 +119,18 @@ std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
 
 std::string acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned() const
 {
+    std::string_view nucv{nuc_};
     fmt::memory_buffer out;
+    if (shift_nuc_ > shift_t{0}) {
+        fmt::format_to(out, "{}", nucv.substr(0, *shift_nuc_));
+        nucv.remove_prefix(*shift_nuc_);
+    }
     size_t pos = 0;
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", nuc_.substr(pos, static_cast<size_t>(static_cast<ssize_t>(en.pos * 3) + shift_nuc_)), "", en.num * 3);
+        fmt::format_to(out, "{}{:->{}s}", nucv.substr(pos, en.pos * 3 - pos), "", en.num * 3);
         pos = en.pos * 3;
     }
-    fmt::format_to(out, "{}", nuc_.substr(pos));
+    fmt::format_to(out, "{}", nucv.substr(pos));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned
@@ -306,7 +316,7 @@ acmacs::seqdb::v3::sequence_t acmacs::seqdb::v3::sequence_t::from_aligned_aa(con
     sequence_t result;
     result.name_ = name;
     result.aa_ = source;
-    result.shift_aa_ = 0;
+    result.shift_aa_ = shift_t{0};
     return result;
 
 } // acmacs::seqdb::v3::sequence_t::from_aligned_aa
@@ -330,8 +340,16 @@ std::vector<std::pair<char, size_t>> local::symbol_frequences(std::string_view s
 
 void acmacs::seqdb::v3::sequence_t::set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype)
 {
-    shift_aa_ = shift_aa;
-    shift_nuc_ = nuc_translation_offset_ + shift_aa_ * 3;
+    if (shift_aa < 0) {
+        aa_.insert(0, static_cast<size_t>(-shift_aa), 'X');
+        shift_aa_ = shift_t{0};
+        nuc_.insert(0, static_cast<size_t>(-shift_aa) * 3, '-');
+        shift_nuc_ = shift_t{nuc_translation_offset_};
+    }
+    else {
+        shift_aa_ = shift_t{shift_aa};
+        shift_nuc_ = shift_t{nuc_translation_offset_ + shift_aa * 3};
+    }
     if (type_subtype.has_value()) {
         type_subtype_ = *type_subtype;
         acmacs::virus::set_type_subtype(name_, type_subtype_);

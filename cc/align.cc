@@ -82,9 +82,9 @@ namespace local
       public:
         Aligner() = default;
 
-        void update(std::string_view amino_acids, size_t prefix_size, const acmacs::virus::type_subtype_t& type_subtype)
+        void update(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype)
         {
-            tables_.try_emplace(std::string(type_subtype.h_or_b())).first->second.update(amino_acids, prefix_size);
+            tables_.try_emplace(std::string(type_subtype.h_or_b())).first->second.update(amino_acids, 0);
         }
 
         std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint) const
@@ -159,8 +159,7 @@ void acmacs::seqdb::v3::translate_align(std::vector<fasta::scan_result_t>& seque
 
     local::Aligner aligner;
     for (const auto& entry : sequences | ranges::view::filter(fasta::is_aligned)) {
-        const auto [aa, prefix_size] = entry.sequence.aa_shifted();
-        aligner.update(aa, prefix_size, entry.sequence.type_subtype());
+        aligner.update(entry.sequence.aa_aligned(), entry.sequence.type_subtype());
     }
     // aligner.report();
 

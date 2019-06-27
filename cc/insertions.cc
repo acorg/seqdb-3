@@ -98,21 +98,8 @@ void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_
     // if (to_align.full_name() == "A(H3N2)/PIAUI/4751/2011")
     //     dbg = acmacs::debug::yes;
 
-    const auto [master_aligned, master_prefix_size] = master.aa_shifted();
-    const auto [to_align_aligned, to_align_prefix_size] = to_align.aa_shifted();
     try {
-        if (master_prefix_size == 0) {
-            if (to_align_prefix_size == 0)
-                to_align.deletions() = deletions_insertions(master_aligned, to_align_aligned, dbg);
-            else
-                to_align.deletions() = deletions_insertions(master_aligned, to_align.aa_aligned(), dbg);
-        }
-        else {
-            if (to_align_prefix_size == 0)
-                to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align_aligned, dbg);
-            else
-                to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
-        }
+        to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
     }
     catch (local::not_verified& err) {
         fmt::print(stderr, "-------------------- NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
