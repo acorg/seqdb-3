@@ -372,14 +372,14 @@ namespace local::H3
 
     struct clade_desc_t
     {
-        struct pos_aa_t
+        struct pos1_aa_t
         {
-            size_t pos;
+            size_t pos1;
             char aa;
         };
 
         acmacs::seqdb::clade_t clade;
-        std::vector<pos_aa_t> pos_aa;
+        std::vector<pos1_aa_t> pos1_aa;
     };
 
 #pragma GCC diagnostic push
@@ -389,33 +389,34 @@ namespace local::H3
 #endif
 
     static const std::array sClades{
-        clade_desc_t{acmacs::seqdb::clade_t{"3C.3"}, {{159, 'N'}, {160, 'F'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{139, 'S'}, {160, 'S'}, {226, 'D'}, {327, 'R'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"3B"},   {{63, 'K'}, {84, 'R'}, {262, 'Q'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A"},   {{159, 'N'}, {160, 'Y'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1"},  {{159, 'N'}, {160, 'Y'}, {172, 'K'}, {407, 'V'}, {485, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1A"}, {{122, 'K'}, {136, 'K'}, {159, 'N'}, {160, 'Y'}, {172, 'K'}, {407, 'V'}, {480, 'E'}, {485, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1B"}, {{93, 'R'}, {122, 'K'}, {159, 'N'}, {160, 'Y'}, {172, 'K'}, {312, 'Q'}, {407, 'V'}, {485, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A2"},  {{132, 'K'}, {143, 'K'}, {159, 'N'}, {160, 'Y'}, {262, 'Q'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A3"},  {{122, 'K'}, {136, 'K'}, {145, 'K'}, {151, 'K'}, {159, 'N'}, {160, 'Y'}, {262, 'Q'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A4"},  {{32, 'S'}, {54, 'N'}, {143, 'G'}, {145, 'R'}, {159, 'N'}, {160, 'Y'}, {172, 'K'}, {193, 'T'}, {198, 'H'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{161, 'S'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{161, 'T'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"159S"}, {{160, 'S'}}}, // explicit Derek's request on 2019-04-18
-        clade_desc_t{acmacs::seqdb::clade_t{"159F"}, {{160, 'F'}}}, // explicit Derek's request on 2019-04-18
-        clade_desc_t{acmacs::seqdb::clade_t{"159Y"}, {{160, 'Y'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"3C.3"}, {{158, 'N'}, {159, 'F'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{138, 'S'}, {159, 'S'}, {225, 'D'}, {326, 'R'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3B"},   {{ 62, 'K'}, { 83, 'R'}, {261, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A"},   {{158, 'N'}, {159, 'Y'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1"},  {{158, 'N'}, {159, 'Y'}, {171, 'K'}, {406, 'V'}, {484, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1A"}, {{121, 'K'}, {135, 'K'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {406, 'V'}, {479, 'E'}, {484, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1B"}, {{ 92, 'R'}, {121, 'K'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {311, 'Q'}, {406, 'V'}, {484, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A2"},  {{131, 'K'}, {142, 'K'}, {158, 'N'}, {159, 'Y'}, {261, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A3"},  {{121, 'K'}, {135, 'K'}, {144, 'K'}, {150, 'K'}, {158, 'N'}, {159, 'Y'}, {261, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A4"},  {{ 31, 'S'}, { 53, 'N'}, {142, 'G'}, {144, 'R'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {192, 'T'}, {197, 'H'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'S'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'T'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"159S"}, {{159, 'S'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"159F"}, {{159, 'F'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"159Y"}, {{159, 'Y'}}}, // explicit Derek's request on 2019-04-18
     };
 
 #pragma GCC diagnostic pop
 
     void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
-        const auto has_aa = [&](const auto& pos_aa) -> bool { return sequence.aa_at_pos1(pos_aa.pos) == pos_aa.aa; };
+        const auto has_aa = [&](const auto& pos1_aa) -> bool { return sequence.aa_at_pos1(pos1_aa.pos1) == pos1_aa.aa; };
 
         for (const auto& clade_desc : sClades) {
-            if (std::all_of(clade_desc.pos_aa.begin(), clade_desc.pos_aa.end(), has_aa))
+            if (std::all_of(clade_desc.pos1_aa.begin(), clade_desc.pos1_aa.end(), has_aa))
                 sequence.add_clade(clade_desc.clade);
         }
+
     } // clade
 
 } // namespace local::H3
