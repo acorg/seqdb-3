@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 
 #include "acmacs-base/date.hh"
 #include "acmacs-virus/virus-name.hh"
@@ -144,12 +145,10 @@ namespace acmacs::seqdb
                 }
 
                 constexpr const acmacs::virus::virus_name_t& name() const { return name_; }
+                std::string_view annotations() const { return annotations_; }
                 // const acmacs::virus::host_t& host() const { return host_; }
                 constexpr const acmacs::virus::Reassortant& reassortant() const { return reassortant_; }
-                std::string_view annotations() const { return annotations_; }
-                constexpr const acmacs::virus::Passage& passage() const { return passage_; }
-                std::string_view lab_id() const { return lab_id_; }
-                std::string_view lab() const { return lab_; }
+                constexpr const auto& passages() const { return passages_; }
                 std::string full_name() const;
                 constexpr auto shift_aa() const { return shift_aa_; }
                 constexpr auto shift_nuc() const { return shift_nuc_; }
@@ -163,41 +162,52 @@ namespace acmacs::seqdb
 
                 void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt);
 
-                void add_date(const std::string& a_date);
+                void add_date(const std::string& date) { if (!date.empty()) dates_.add_and_sort(date); }
                 void add_date(const Date& a_date) { add_date(a_date.display()); }
-                void passage(acmacs::virus::Passage&& a_passage) { passage_ = std::move(a_passage); }
+                void add_passage(acmacs::virus::Passage&& a_passage) { passages_.add(std::move(a_passage)); }
                 void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
-                void lab_id(std::string&& a_lab_id) { lab_id_ = std::move(a_lab_id); }
-                void lab_id(const std::string& a_lab_id) { lab_id_ = a_lab_id; }
-                void lab(std::string_view a_lab) { lab_ = a_lab; }
                 void name(acmacs::virus::virus_name_t&& a_name) { name_ = std::move(a_name); }
                 // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
                 void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
                 void remove_annotations() { annotations_.clear(); }
                 void lineage(const acmacs::virus::lineage_t& lin) { lineage_ = lin; }
-                void add_clade(const clade_t& clade) { clades_.add_to_set(clade); }
+                void add_clade(const clade_t& clade) { clades_.add(clade); }
                 // void (const & a_) { _ = a_; }
                 // void country(const std::string& country) { country_ = country; }
                 void country(std::string&& country) { country_ = std::move(country); }
                 // void continent(const std::string& continent) { continent_ = continent; }
                 void continent(std::string&& continent) { continent_ = std::move(continent); }
-                void add_hi_name(const std::string& hi_name);
+                void add_hi_name(const std::string& hi_name) { hi_names_.add(hi_name); }
+
+                void add_lab_id(std::string_view lab, std::string_view lab_id);
+                void add_lab_id(const std::string& lab);
+                bool lab_in(std::initializer_list<std::string_view> labs) const;
+                const auto& lab_ids() const { return lab_ids_; }
 
                 constexpr deletions_insertions_t& deletions() { return deletions_; }
                 constexpr const deletions_insertions_t& deletions() const { return deletions_; }
+
+                std::string name_with_annotations() const
+                {
+                    if (annotations_.empty())
+                        return *name_;
+                    else
+                        return fmt::format("{} {}", name_, annotations_);
+                }
+
+                void merge_from(const sequence_t& source);
 
               private:
                 acmacs::virus::virus_name_t name_;
                 // acmacs::virus::host_t host_;
                 std::string country_;
                 std::string continent_;
-                std::vector<std::string> dates_;
+                flat_set_t<std::string> dates_;
                 acmacs::virus::Reassortant reassortant_;
-                acmacs::virus::Passage passage_;
-                std::vector<std::string> hi_names_;
+                flat_set_t<acmacs::virus::Passage> passages_;
+                flat_set_t<std::string> hi_names_;
                 std::string annotations_;
-                std::string lab_id_;
-                std::string lab_;
+                flat_map_t<std::string, flat_set_t<std::string>> lab_ids_;
                 std::string aa_;
                 std::string nuc_;
                 int nuc_translation_offset_{0};
@@ -211,6 +221,12 @@ namespace acmacs::seqdb
                 void aa_trim_absent(); // remove leading and trailing X and - from aa
 
             }; // class sequence_t
+
+            inline auto designation(const sequence_t& seq)
+            {
+                return std::tuple{seq.name(), seq.annotations(), seq.reassortant()};
+            }
+
 
         } // namespace scan
 

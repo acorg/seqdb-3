@@ -106,8 +106,11 @@ Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPLi
         size_t found_no = 0;
         for (auto f : found) {
             if (seq.reassortant() == f->reassortant()) {
-                if (const auto f_passage = f->passage(), s_passage = seq.passage(); acmacs::virus::passages_match(f_passage, s_passage))
-                    matching_for_seq.emplace_back(score_size_t{string_match::match(*s_passage, *f_passage), std::min(s_passage.size(), f_passage.size())}, seq_no, found_no);
+                const auto f_passage = f->passage();
+                for (const auto& s_passage : seq.passages()) {
+                    if (acmacs::virus::passages_match(f_passage, s_passage))
+                        matching_for_seq.emplace_back(score_size_t{string_match::match(*s_passage, *f_passage), std::min(s_passage.size(), f_passage.size())}, seq_no, found_no);
+                }
             }
             ++found_no;
         }
@@ -184,13 +187,15 @@ void find_by_lab_id(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_i
 {
     for (; first != last; ++first) {
         const auto& sequence = first->sequence;
-        if (sequence.lab() == "CDC" && !sequence.lab_id().empty()) {
-            const auto cdcid = fmt::format("CDC#{}", sequence.lab_id());
-            auto [hidb_first, hidb_last] = std::equal_range(std::begin(hidb_ref.lab_id_index), std::end(hidb_ref.lab_id_index), lab_id_index_entry_t{std::string_view(cdcid), nullptr},
-                                                  [](const auto& e1, const auto& e2) { return e1.first < e2.first; });
-            // fmt::print(stderr, "find_by_lab_id {} {}\n", cdcid, last - first);
-            for (; hidb_first != hidb_last; ++hidb_first)
-                found.push_back(hidb_ref.antigens->make(hidb_first->second));
+        if (const auto cdcids = sequence.lab_ids().find("CDC"); cdcids != sequence.lab_ids().end() && !cdcids->second.empty()) {
+            for (const auto& cdcid_raw : cdcids->second) {
+                const auto cdcid = fmt::format("CDC#{}", cdcid_raw);
+                auto [hidb_first, hidb_last] = std::equal_range(std::begin(hidb_ref.lab_id_index), std::end(hidb_ref.lab_id_index), lab_id_index_entry_t{std::string_view(cdcid), nullptr},
+                                                                [](const auto& e1, const auto& e2) { return e1.first < e2.first; });
+                // fmt::print(stderr, "find_by_lab_id {} {}\n", cdcid, last - first);
+                for (; hidb_first != hidb_last; ++hidb_first)
+                    found.push_back(hidb_ref.antigens->make(hidb_first->second));
+            }
         }
     }
 

@@ -31,7 +31,7 @@ struct filter_whocc_aligned : public filter_h1_h3_b_aligned
 {
     bool good(const acmacs::seqdb::scan::sequence_t& seq) const override
     {
-        return filter_h1_h3_b_aligned::good(seq) && (seq.lab() == "CDC" || seq.lab() == "Crick" || seq.lab() == "NIID" || seq.lab() == "VIDRL");
+        return filter_h1_h3_b_aligned::good(seq) && seq.lab_in({"CDC", "Crick", "NIID", "VIDRL"});
     }
 };
 
@@ -77,17 +77,10 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
         entry_seqs = to_json::array{};
     };
 
-    const auto make_seq_name = [](const auto& seq) {
-        if (seq.annotations().empty())
-            return std::string{seq.name()};
-        else
-            return fmt::format("{} {}", *seq.name(), seq.annotations());
-    };
-
     size_t num_sequences = 0;
     for (const auto& en : sequences) {
         const auto& seq = en.sequence;
-        const auto name = make_seq_name(seq);
+        const auto name = seq.name_with_annotations();
         if (filter.good(seq)) { //  && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
             if (name != previous) {
                 flush();
@@ -105,8 +98,8 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                 to_json::object entry_seq;
                 if (!seq.reassortant().empty())
                     entry_seq << to_json::key_val("r", to_json::array(*seq.reassortant(), to_json::json::compact_output::yes));
-                if (!seq.passage().empty())
-                    entry_seq << to_json::key_val("p", to_json::array(*seq.passage(), to_json::json::compact_output::yes));
+                if (!seq.passages().empty())
+                    entry_seq << to_json::key_val("p", to_json::array(seq.passages().begin(), seq.passages().end(), [](const auto& passage) { return *passage; }, to_json::json::compact_output::yes));
                 if (!seq.hi_names().empty())
                     entry_seq << to_json::key_val("h", to_json::array(seq.hi_names().begin(), seq.hi_names().end(), to_json::json::compact_output::yes));
                 if (!seq.aa().empty())
@@ -119,11 +112,12 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                     entry_seq << to_json::key_val("t", - static_cast<ssize_t>(*seq.shift_nuc()));
                 if (!seq.clades().empty())
                     entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
-                if (!seq.lab().empty()) {
-                    if (!seq.lab_id().empty())
-                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{seq.lab_id()}), to_json::json::compact_output::yes));
-                    else
-                        entry_seq << to_json::key_val("l", to_json::object(to_json::key_val(seq.lab(), to_json::array{}), to_json::json::compact_output::yes));
+                if (!seq.lab_ids().empty()) {
+                    to_json::object lab_ids;
+                    for (const auto& [lab, ids] : seq.lab_ids()) {
+                        lab_ids << to_json::key_val(lab, to_json::array(std::begin(ids), std::end(ids), to_json::json::compact_output::yes));
+                    }
+                    entry_seq << to_json::key_val("l", lab_ids);
                 }
                 // "g": "gene: HA|NA", // HA if omitted
                 entry_seqs << std::move(entry_seq);

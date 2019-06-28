@@ -88,26 +88,37 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::fasta::sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept
+void acmacs::seqdb::v3::scan::fasta::merge_duplicates(std::vector<fasta::scan_result_t>& sequences)
 {
-    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
-        return e1.sequence.date_simulated() < e2.sequence.date_simulated();
-    });
+    sort_by_name(sequences);
 
-} // acmacs::seqdb::v3::scan::fasta::sort_by_date
+    const auto merge = [](auto first, auto last) {
+        if ((last - first) > 1 && !first->sequence.nuc().empty()) {
+            std::vector<decltype(first)> entries(static_cast<size_t>(last - first));
+            std::generate(std::begin(entries), std::end(entries), [it = first]() mutable { return it++; });
+            std::sort(std::begin(entries), std::end(entries), [](const auto& it1, const auto& it2) { return it1->sequence.nuc() < it2->sequence.nuc(); });
+            auto master = entries.front();
+            for (auto it = std::next(entries.begin()); it != entries.end(); ++it) {
+                if (master->sequence.nuc() == (*it)->sequence.nuc()) {
+                    master->sequence.merge_from((*it)->sequence);
+                    (*it)->remove = true;
+                }
+            }
+        }
+    };
 
-// ----------------------------------------------------------------------
+    auto start = sequences.begin();
+    for (auto it = std::next(start); it != sequences.end(); ++it) {
+        if (designation(it->sequence) != designation(start->sequence)) {
+            merge(start, it);
+            start = it;
+        }
+    }
+    merge(start, sequences.end());
 
-void acmacs::seqdb::v3::scan::fasta::sort_by_name(std::vector<fasta::scan_result_t>& sequences) noexcept
-{
-    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
-        if (e1.sequence.name() == e2.sequence.name())
-            return e1.sequence.annotations() < e2.sequence.annotations();
-        else
-            return e1.sequence.name() < e2.sequence.name();
-    });
+    sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& sr) { return sr.remove; }), std::end(sequences));
 
-} // acmacs::seqdb::v3::scan::fasta::sort_by_name
+} // acmacs::seqdb::v3::scan::fasta::merge_duplicates
 
 // ----------------------------------------------------------------------
 
@@ -176,10 +187,8 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     result.sequence.add_date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no).display());
     if (fields.size() > 2)
         result.fasta.passage = ::string::upper(::string::strip(fields[2]));
-    if (fields.size() > 3)
-        result.sequence.lab_id(::string::upper(::string::strip(fields[3])));
     if (fields.size() > 4)
-        result.sequence.lab(parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no));
+        result.sequence.add_lab_id(parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no), ::string::upper(::string::strip(fields[3])));
     if (fields.size() > 5)
         result.fasta.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
     if (fields.size() > 6)
@@ -211,7 +220,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
 {
     scan_result_t result;
     result.fasta.entry_name = result.fasta.name = name;
-    result.sequence.lab(hints.lab);
+    result.sequence.add_lab_id(hints.lab);
     result.fasta.type_subtype = acmacs::virus::type_subtype_t{hints.subtype};
     result.fasta.lineage = acmacs::virus::lineage_t{hints.lineage};
     return result;
@@ -256,15 +265,15 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     if (!passage_extra.empty()) {
         if (passage.empty()) {
             result.messages.emplace_back(acmacs::virus::parse_result_t::message_t::unrecognized_passage, passage_extra);
-            source.sequence.passage(acmacs::virus::Passage{passage_extra});
+            source.sequence.add_passage(acmacs::virus::Passage{passage_extra});
         }
         else {
-            source.sequence.passage(acmacs::virus::Passage{passage});
+            source.sequence.add_passage(acmacs::virus::Passage{passage});
             source.sequence.annotations(::string::join(" ", {source.sequence.annotations(), passage_extra}));
         }
     }
-    else
-        source.sequence.passage(acmacs::virus::Passage{passage});
+    else if (!passage.empty())
+        source.sequence.add_passage(acmacs::virus::Passage{passage});
 
     // adjust subtype
     // parse lineage

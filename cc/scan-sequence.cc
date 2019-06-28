@@ -2,6 +2,7 @@
 #include <map>
 #include <tuple>
 #include <array>
+#include <algorithm>
 
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/range-v3.hh"
@@ -15,7 +16,7 @@
 
 namespace local
 {
-    static std::vector<std::pair<char, size_t>> symbol_frequences(std::string_view seq);
+    static acmacs::flat_map_t<char, size_t> symbol_frequences(std::string_view seq);
     static std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset);
 }
 
@@ -209,30 +210,37 @@ void acmacs::seqdb::v3::scan::sequence_t::aa_trim_absent()
 
 std::string acmacs::seqdb::v3::scan::sequence_t::full_name() const
 {
-    return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage(), *lineage()});
+    return ::string::join(" ", {*name(), *reassortant(), annotations(), passages_.empty() ? std::string{} : *passages_.front(), *lineage()});
 
 } // acmacs::seqdb::v3::scan::sequence_t::full_name
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::sequence_t::add_date(const std::string& date)
+void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(std::string_view lab, std::string_view lab_id)
 {
-    if (!date.empty()) {
-        auto insertion_pos = std::lower_bound(dates_.begin(), dates_.end(), date);
-        if (insertion_pos == dates_.end() || date != *insertion_pos)
-            dates_.insert(insertion_pos, date);
-    }
+    if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
+        lab_ids_.emplace(std::string{lab}, flat_set_t<std::string>{std::string{lab_id}});
+    else
+        found->second.add(std::string{lab_id});
 
-} // acmacs::seqdb::v3::scan::sequence_t::add_date
+} // acmacs::seqdb::v3::scan::sequence_t::add_lab_id
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::sequence_t::add_hi_name(const std::string& hi_name)
+void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const std::string& lab)
 {
-    if (std::find(std::begin(hi_names_), std::end(hi_names_), hi_name) == std::end(hi_names_))
-        hi_names_.push_back(hi_name);
+    if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
+        lab_ids_.emplace(std::move(lab), flat_set_t<std::string>{});
 
-} // acmacs::seqdb::v3::scan::sequence_t::add_hi_name
+} // acmacs::seqdb::v3::scan::sequence_t::add_lab_id
+
+// ----------------------------------------------------------------------
+
+bool acmacs::seqdb::v3::scan::sequence_t::lab_in(std::initializer_list<std::string_view> labs) const
+{
+    return std::any_of(std::begin(labs), std::end(labs), [this](const auto lab) { return lab_ids_.find(lab) != lab_ids_.end(); });
+
+} // acmacs::seqdb::v3::scan::sequence_t::lab_in
 
 // ----------------------------------------------------------------------
 
@@ -285,8 +293,7 @@ void acmacs::seqdb::v3::scan::sequence_t::import(std::string_view source)
     std::transform(std::begin(source), std::end(source), std::begin(nuc_), [](char c) { return std::toupper(c); });
 
     auto freq = local::symbol_frequences(nuc_);
-    ranges::sort(freq, [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
-    // std::sort(freq.begin(), freq.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; }); // most frequent first
+    freq.sort_by_value_reverse(); // most frequent first
 
     const auto most_freq_are_acgnt = [](const auto& frq) {
         const auto most_frequent_symbols_size = std::min(5UL, frq.size());
@@ -323,14 +330,14 @@ acmacs::seqdb::v3::scan::sequence_t acmacs::seqdb::v3::scan::sequence_t::from_al
 
 // ----------------------------------------------------------------------
 
-std::vector<std::pair<char, size_t>> local::symbol_frequences(std::string_view seq)
+acmacs::flat_map_t<char, size_t> local::symbol_frequences(std::string_view seq)
 {
-    std::vector<std::pair<char, size_t>> result;
+    acmacs::flat_map_t<char, size_t> result;
     for (auto cc : seq) {
-        if (auto found = std::find_if(std::begin(result), std::end(result), [cc](const auto& en) { return en.first == cc; }); found != std::end(result))
+        if (auto found = result.find(cc); found != std::end(result))
             ++found->second;
         else
-            result.emplace_back(cc, 1UL);
+            result.emplace(cc, 1);
     }
     return result;
 
@@ -356,6 +363,33 @@ void acmacs::seqdb::v3::scan::sequence_t::set_shift(int shift_aa, std::optional<
     }
 
 } // acmacs::seqdb::v3::scan::sequence_t::set_shift
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
+{
+    if (!source.country_.empty()) {
+        if (country_.empty())
+            country_ = source.country_;
+        else if (country_ != source.country_)
+            fmt::print(stderr, "WARNING: sequence_t::merge_from: {}: countrys differ: \"{}\" vs. \"{}\"\n", name_with_annotations(), country_, source.country_);
+    }
+
+    if (!source.continent_.empty()) {
+        if (continent_.empty())
+            continent_ = source.continent_;
+        else if (continent_ != source.continent_)
+            fmt::print(stderr, "WARNING: sequence_t::merge_from: {}: continents differ: \"{}\" vs. \"{}\"\n", name_with_annotations(), continent_, source.continent_);
+    }
+
+    dates_.merge_from(source.dates_);
+    passages_.merge_from(source.passages_);
+    hi_names_.merge_from(source.hi_names_);
+
+                // std::string lab_id_;
+                // std::string lab_;
+
+} // acmacs::seqdb::v3::scan::sequence_t::merge_from
 
 // ----------------------------------------------------------------------
 /// Local Variables:

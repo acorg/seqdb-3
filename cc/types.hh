@@ -1,6 +1,8 @@
 #pragma once
 
 #include "acmacs-base/named-type.hh"
+#include "acmacs-base/flat-set.hh"
+#include "acmacs-base/flat-map.hh"
 
 // ----------------------------------------------------------------------
 
@@ -9,7 +11,7 @@ namespace acmacs::seqdb
     inline namespace v3
     {
         using clade_t = named_string_t<struct clade_tag>;
-        using clades_t = named_vector_t<clade_t>;
+        using clades_t = flat_set_t<clade_t>;
     }
 }
 

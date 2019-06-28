@@ -20,9 +20,9 @@
 
 // ----------------------------------------------------------------------
 
-static inline bool whocc_lab(std::string_view lab)
+static inline bool whocc_lab(const acmacs::seqdb::scan::sequence_t& seq)
 {
-    return lab == "CDC" || lab == "Crick" || lab == "NIID" || lab == "VIDRL"; // || lab == "CNIC"
+    return seq.lab_in({"CDC", "Crick", "NIID", "VIDRL"}); // "CNIC"
 }
 
 static inline bool our_subtype(std::string_view type_subtype)
@@ -66,6 +66,7 @@ int main(int argc, char* const argv[])
         // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }),
         // std::end(all_sequences)); fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
 
+        acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::translate_align(all_sequences);
         acmacs::seqdb::scan::detect_insertions_deletions(all_sequences);
@@ -142,10 +143,10 @@ int main(int argc, char* const argv[])
 
 // ----------------------------------------------------------------------
 
-template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted_by_count(const std::map<Key, size_t>& source)
+template <typename Key> static inline acmacs::flat_map_t<Key, size_t> sorted_by_count(const std::map<Key, size_t>& source)
 {
-    std::vector<std::pair<Key, size_t>> result(std::begin(source), std::end(source));
-    std::sort(result.begin(), result.end(), [](const auto& e1, const auto& e2) { return e1.second > e2.second; });
+    acmacs::flat_map_t<Key, size_t> result(std::begin(source), std::end(source));
+    result.sort_by_value_reverse();
     return result;
 }
 
@@ -163,7 +164,7 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
     // };
 
     for (const auto& entry : sequences) {
-        labs.count(entry.sequence.lab());
+        ranges::for_each(entry.sequence.lab_ids(), [&labs](const auto& en) { labs.count(en.first); });
 
         subtypes.count(entry.sequence.type_subtype());
         // if (entry.sequence.type_subtype().empty())
@@ -174,7 +175,7 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
         lineages.count_if(!entry.sequence.lineage().empty(), entry.sequence.lineage());
         ranges::for_each(entry.sequence.clades(), [&clades](const auto& clade) { clades.count(clade); });
 
-        if ((opt.all_lab_messages || whocc_lab(entry.sequence.lab())) && (opt.all_subtypes_messages || our_subtype(entry.sequence.type_subtype()))) {
+        if ((opt.all_lab_messages || whocc_lab(entry.sequence)) && (opt.all_subtypes_messages || our_subtype(entry.sequence.type_subtype()))) {
             for (const auto& msg : entry.fasta.messages) {
                 if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
                     if (msg.value == "CRIE")

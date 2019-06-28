@@ -32,6 +32,7 @@ namespace acmacs::seqdb
                 {
                     data_t fasta;
                     sequence_t sequence;
+                    bool remove{false};
                 };
 
                 constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
@@ -79,11 +80,20 @@ namespace acmacs::seqdb
                 // ----------------------------------------------------------------------
 
                 std::vector<scan_result_t> scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
-                void sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept;
-                void sort_by_name(std::vector<fasta::scan_result_t>& sequences) noexcept;
 
-                std::string report_false_positive(const std::vector<scan_result_t>& sequences,
-                                                  size_t sequence_cutoff = std::string::npos); // report aligned having type_subtype that differs from provided with fasta
+                inline void sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept
+                {
+                    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) { return e1.sequence.date_simulated() < e2.sequence.date_simulated(); });
+                }
+
+                inline void sort_by_name(std::vector<fasta::scan_result_t>& sequences) noexcept
+                {
+                    std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) { return designation(e1.sequence) < designation(e2.sequence); });
+                }
+
+                void merge_duplicates(std::vector<fasta::scan_result_t>& sequences);
+
+                std::string report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos); // report aligned having type_subtype that differs from provided with fasta
                 std::string report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff = std::string::npos);
                 std::string report_aa(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff = std::string::npos);
                 std::string report_aa_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff = std::string::npos);
