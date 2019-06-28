@@ -153,7 +153,7 @@ template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted
 
 int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, const Options& opt)
 {
-    acmacs::Counter<std::string> location_not_found, unrecognized_passage, labs, subtypes, lineages;
+    acmacs::Counter<std::string> location_not_found, unrecognized_passage, labs, subtypes, lineages, clades;
     std::map<std::string, std::map<size_t, size_t>> subtypes_sequence_length;
     int errors = 0;
 
@@ -172,6 +172,7 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
             ++iter->second;
 
         lineages.count_if(!entry.sequence.lineage().empty(), entry.sequence.lineage());
+        ranges::for_each(entry.sequence.clades(), [&clades](const auto& clade) { clades.count(clade); });
 
         if ((opt.all_lab_messages || whocc_lab(entry.sequence.lab())) && (opt.all_subtypes_messages || our_subtype(entry.sequence.type_subtype()))) {
             for (const auto& msg : entry.fasta.messages) {
@@ -211,6 +212,7 @@ int report(const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, co
     fmt::print(stderr, "TOTAL: {}\n\n", sequences.size());
     report_by_count(subtypes, "SUBTYPES");
     report_by_count(lineages, "LINEAGES");
+    report_by_count(clades, "CLADES");
     report_by_count(labs, "LABS");
 
     fmt::print(stderr, "SUBTYPES and sequence lengths (count:seq-length)\n");
