@@ -36,7 +36,7 @@ LDLIBS = \
 
 install: install-headers $(TARGETS)
 	$(call install_lib,$(SEQDB_LIB))
-	$(call symbolic_link_wildcard,$(DIST)/seqdb3-*,$(AD_BIN))
+	$(call symbolic_link_wildcard,$(DIST)/seqdb*,$(AD_BIN))
 
 test: install
 	test/test

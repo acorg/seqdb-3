@@ -4,8 +4,6 @@
 #include <string_view>
 #include <vector>
 
-// #include "acmacs-base/in-json.hh"
-
 // ----------------------------------------------------------------------
 
 namespace seqdb
@@ -15,15 +13,18 @@ namespace seqdb
 
         struct SeqdbSeq
         {
+            using lab_ids_t = std::vector<std::string_view>;
+            using labs_t = std::vector<std::pair<std::string_view, lab_ids_t>>;
+
             std::string_view amino_acids;
             std::string_view a_shift;
-            std::string_view nucs_;
+            std::string_view nucs;
             std::string_view n_shift;
             std::vector<std::string_view> passages;
             std::vector<std::string_view> reassortants;
             std::vector<std::string_view> clades;
             std::vector<std::string_view> hi_names;
-            std::vector<std::pair<std::string_view, std::vector<std::string_view>>> lab_ids;
+            labs_t lab_ids;
         };
 
         struct SeqdbEntry
@@ -41,7 +42,7 @@ namespace seqdb
         {
           public:
             Seqdb(const std::string& filename);
-            Seqdb(std::string&& source);
+            // Seqdb(std::string&& source);
 
           private:
             std::string json_text_;

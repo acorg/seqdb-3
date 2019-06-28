@@ -13,12 +13,12 @@ seqdb::v3::Seqdb::Seqdb(const std::string& filename)
 
 // ----------------------------------------------------------------------
 
-seqdb::v3::Seqdb::Seqdb(std::string&& source)
-    : json_text_(std::move(source))
-{
-    parse(json_text_, entries_);
+// seqdb::v3::Seqdb::Seqdb(std::string&& source)
+//     : json_text_(std::move(source))
+// {
+//     parse(json_text_, entries_);
 
-} // seqdb::v3::Seqdb::Seqdb
+// } // seqdb::v3::Seqdb::Seqdb
 
 // ----------------------------------------------------------------------
 
