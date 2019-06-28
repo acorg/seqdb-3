@@ -1,5 +1,5 @@
 // #include "acmacs-base/fmt.hh"
-#include "seqdb-3/insertions.hh"
+#include "seqdb-3/scan-deletions.hh"
 
 // ----------------------------------------------------------------------
 
@@ -13,8 +13,8 @@ int main(int argc, char* const argv[])
         return 1;
     }
 
-    const auto res = acmacs::seqdb::deletions_insertions(argv[1], argv[2], acmacs::debug::yes);
-    fmt::print("{}\n{}\n", acmacs::seqdb::format_aa(res.insertions, argv[1], '.'), acmacs::seqdb::format_aa(res.deletions, argv[2], '.'));
+    const auto res = acmacs::seqdb::scan::deletions_insertions(argv[1], argv[2], acmacs::debug::yes);
+    fmt::print("{}\n{}\n", acmacs::seqdb::scan::format_aa(res.insertions, argv[1], '.'), acmacs::seqdb::scan::format_aa(res.deletions, argv[2], '.'));
 }
 
 // ----------------------------------------------------------------------

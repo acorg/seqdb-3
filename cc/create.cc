@@ -3,24 +3,24 @@
 #include "acmacs-base/to-json.hh"
 #include "acmacs-base/read-file.hh"
 #include "seqdb-3/create.hh"
-#include "seqdb-3/fasta.hh"
+#include "seqdb-3/scan-fasta.hh"
 
 // ----------------------------------------------------------------------
 
 struct filter_base
 {
     virtual ~filter_base() = default;
-    virtual bool good(const acmacs::seqdb::sequence_t& seq) const = 0;
+    virtual bool good(const acmacs::seqdb::scan::sequence_t& seq) const = 0;
 };
 
 struct filter_all_aligned : public filter_base
 {
-    bool good(const acmacs::seqdb::sequence_t& seq) const override { return seq.aligned(); }
+    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override { return seq.aligned(); }
 };
 
 struct filter_h1_h3_b_aligned : public filter_all_aligned
 {
-    bool good(const acmacs::seqdb::sequence_t& seq) const override
+    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override
     {
         return filter_all_aligned::good(seq) && (seq.type_subtype() == acmacs::virus::type_subtype_t{"B"} || seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H1N1)"} ||
                                                  seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"});
@@ -29,19 +29,19 @@ struct filter_h1_h3_b_aligned : public filter_all_aligned
 
 struct filter_whocc_aligned : public filter_h1_h3_b_aligned
 {
-    bool good(const acmacs::seqdb::sequence_t& seq) const override
+    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override
     {
         return filter_h1_h3_b_aligned::good(seq) && (seq.lab() == "CDC" || seq.lab() == "Crick" || seq.lab() == "NIID" || seq.lab() == "VIDRL");
     }
 };
 
-static void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, const filter_base& filter);
+static void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const filter_base& filter);
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<scan::fasta::scan_result_t>& sequences)
 {
-    acmacs::seqdb::fasta::sort_by_name(sequences);
+    acmacs::seqdb::scan::fasta::sort_by_name(sequences);
 #pragma omp parallel sections
     {
         generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
@@ -55,7 +55,7 @@ void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<fasta::scan_
 
 // ----------------------------------------------------------------------
 
-void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta::scan_result_t>& sequences, const filter_base& filter)
+void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const filter_base& filter)
 {
     to_json::array seqdb_data;
     to_json::object entry;
@@ -113,9 +113,9 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::fasta:
                     entry_seq << to_json::key_val("a", seq.aa_format_not_aligned());
                 if (!seq.nuc().empty())
                     entry_seq << to_json::key_val("n", seq.nuc_format_not_aligned());
-                if (seq.shift_aa() != acmacs::seqdb::sequence_t::shift_t{0})
+                if (seq.shift_aa() != acmacs::seqdb::scan::sequence_t::shift_t{0})
                     entry_seq << to_json::key_val("s", - static_cast<ssize_t>(*seq.shift_aa()));
-                if (seq.shift_nuc() != acmacs::seqdb::sequence_t::shift_t{0})
+                if (seq.shift_nuc() != acmacs::seqdb::scan::sequence_t::shift_t{0})
                     entry_seq << to_json::key_val("t", - static_cast<ssize_t>(*seq.shift_nuc()));
                 if (!seq.clades().empty())
                     entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));

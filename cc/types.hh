@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include "acmacs-base/named-type.hh"
 
 // ----------------------------------------------------------------------
 
@@ -8,9 +8,8 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        namespace fasta { struct scan_result_t; }
-
-        void detect_lineages_clades(std::vector<fasta::scan_result_t>& sequences);
+        using clade_t = named_string_t<struct clade_tag>;
+        using clades_t = named_vector_t<clade_t>;
     }
 }
 

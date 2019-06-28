@@ -1,7 +1,7 @@
 #include "acmacs-base/string-matcher.hh"
 #include "hidb-5/hidb.hh"
-#include "seqdb-3/match-hidb.hh"
-#include "seqdb-3/fasta.hh"
+#include "seqdb-3/scan-match-hidb.hh"
+#include "seqdb-3/scan-fasta.hh"
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ struct score_seq_found_t : public score_size_t
 
 using Matching = std::vector<std::vector<score_seq_found_t>>;
 
-using seq_iter_t = std::vector<acmacs::seqdb::fasta::scan_result_t>::iterator;
+using seq_iter_t = std::vector<acmacs::seqdb::scan::fasta::scan_result_t>::iterator;
 
 static bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::string_view subtype);
 static void find_by_lab_id(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
@@ -43,7 +43,7 @@ static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, cons
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::match_hidb(std::vector<fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequences)
 {
         // sequences msut be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
@@ -63,7 +63,7 @@ void acmacs::seqdb::v3::match_hidb(std::vector<fasta::scan_result_t>& sequences)
     }
     fmt::print("INFO: matched against hidb: {}\n", matched);
 
-} // acmacs::seqdb::v3::match_hidb
+} // acmacs::seqdb::v3::scan::match_hidb
 
 // ----------------------------------------------------------------------
 

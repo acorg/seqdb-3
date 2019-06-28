@@ -8,8 +8,8 @@
 #include "acmacs-base/string.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/algorithm.hh"
-#include "seqdb-3/sequence.hh"
-#include "seqdb-3/align.hh"
+#include "seqdb-3/scan-sequence.hh"
+#include "seqdb-3/scan-align.hh"
 
 // ----------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::format_aa(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol)
+std::string acmacs::seqdb::v3::scan::format_aa(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol)
 {
     fmt::memory_buffer out;
     size_t pos = 0;
@@ -32,11 +32,11 @@ std::string acmacs::seqdb::v3::format_aa(const std::vector<deletions_insertions_
     fmt::format_to(out, "{}", sequence.substr(pos));
     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::format
+} // acmacs::seqdb::v3::scan::format
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
+std::string acmacs::seqdb::v3::scan::format(const deletions_insertions_t& deletions)
 {
     fmt::memory_buffer out;
     const auto frmt = [&out](const char* prefix, const auto& num_pos) {
@@ -59,11 +59,11 @@ std::string acmacs::seqdb::v3::format(const deletions_insertions_t& deletions)
     fmt::format_to(out, "<pos-1-based>");
     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::format
+} // acmacs::seqdb::v3::scan::format
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::sequence_t::aa_format() const
+std::string acmacs::seqdb::v3::scan::sequence_t::aa_format() const
 {
     fmt::memory_buffer out;
     const auto aa = aa_aligned();
@@ -76,11 +76,11 @@ std::string acmacs::seqdb::v3::sequence_t::aa_format() const
     // fmt::print(stderr, "aa_format s:{}\n  {}\n  {}\n", pos, aa, fmt::to_string(out));
     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::sequence_t::aa_format
+} // acmacs::seqdb::v3::scan::sequence_t::aa_format
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::sequence_t::aa_format_not_aligned() const
+std::string acmacs::seqdb::v3::scan::sequence_t::aa_format_not_aligned() const
 {
     std::string_view aav{aa_};
     fmt::memory_buffer out;
@@ -97,11 +97,11 @@ std::string acmacs::seqdb::v3::sequence_t::aa_format_not_aligned() const
     // fmt::print(stderr, "aa_format_not_aligned s:{}\n  {}\n  {}\n", shift_aa_, aa_, fmt::to_string(out));
     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::sequence_t::aa_format_not_aligned
+} // acmacs::seqdb::v3::scan::sequence_t::aa_format_not_aligned
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
+std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format() const
 {
     fmt::memory_buffer out;
     const auto nuc = nuc_aligned();
@@ -113,11 +113,11 @@ std::string acmacs::seqdb::v3::sequence_t::nuc_format() const
     fmt::format_to(out, "{}", nuc.substr(pos));
     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::sequence_t::nuc_format
+} // acmacs::seqdb::v3::scan::sequence_t::nuc_format
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned() const
+std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned() const
 {
     std::string_view nucv{nuc_};
     fmt::memory_buffer out;
@@ -133,7 +133,7 @@ std::string acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned() const
     fmt::format_to(out, "{}", nucv.substr(pos));
     return fmt::to_string(out);
 
-} // acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned
+} // acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned
 
 // ----------------------------------------------------------------------
 
@@ -143,7 +143,7 @@ std::string acmacs::seqdb::v3::sequence_t::nuc_format_not_aligned() const
 // (0, 1, 2) and not stoppoing at stop codons, then try to align all
 // of them. Most probably just one offset leads to finding correct
 // align shift.
-void acmacs::seqdb::v3::sequence_t::translate()
+void acmacs::seqdb::v3::scan::sequence_t::translate()
 {
     constexpr size_t MINIMUM_SEQUENCE_AA_LENGTH = 400; // throw away everything shorter
 
@@ -169,11 +169,11 @@ void acmacs::seqdb::v3::sequence_t::translate()
 
     aa_trim_absent();
 
-} // acmacs::seqdb::v3::sequence_t::translate
+} // acmacs::seqdb::v3::scan::sequence_t::translate
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::sequence_t::date_simulated() const noexcept
+std::string acmacs::seqdb::v3::scan::sequence_t::date_simulated() const noexcept
 {
     if (!dates_.empty())
         return dates_.front();
@@ -182,11 +182,11 @@ std::string acmacs::seqdb::v3::sequence_t::date_simulated() const noexcept
     else
         return "1800-01-01";
 
-} // acmacs::seqdb::v3::sequence_t::date_simulated
+} // acmacs::seqdb::v3::scan::sequence_t::date_simulated
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::sequence_t::aa_trim_absent()
+void acmacs::seqdb::v3::scan::sequence_t::aa_trim_absent()
 {
     if (!aa_.empty()) {
         // remove trailing X and - in aa
@@ -203,19 +203,19 @@ void acmacs::seqdb::v3::sequence_t::aa_trim_absent()
         }
     }
 
-} // acmacs::seqdb::v3::sequence_t::aa_trim_absent
+} // acmacs::seqdb::v3::scan::sequence_t::aa_trim_absent
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::sequence_t::full_name() const
+std::string acmacs::seqdb::v3::scan::sequence_t::full_name() const
 {
     return ::string::join(" ", {*name(), *reassortant(), annotations(), *passage(), *lineage()});
 
-} // acmacs::seqdb::v3::sequence_t::full_name
+} // acmacs::seqdb::v3::scan::sequence_t::full_name
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::sequence_t::add_date(const std::string& date)
+void acmacs::seqdb::v3::scan::sequence_t::add_date(const std::string& date)
 {
     if (!date.empty()) {
         auto insertion_pos = std::lower_bound(dates_.begin(), dates_.end(), date);
@@ -223,16 +223,16 @@ void acmacs::seqdb::v3::sequence_t::add_date(const std::string& date)
             dates_.insert(insertion_pos, date);
     }
 
-} // acmacs::seqdb::v3::sequence_t::add_date
+} // acmacs::seqdb::v3::scan::sequence_t::add_date
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::sequence_t::add_hi_name(const std::string& hi_name)
+void acmacs::seqdb::v3::scan::sequence_t::add_hi_name(const std::string& hi_name)
 {
     if (std::find(std::begin(hi_names_), std::end(hi_names_), hi_name) == std::end(hi_names_))
         hi_names_.push_back(hi_name);
 
-} // acmacs::seqdb::v3::sequence_t::add_hi_name
+} // acmacs::seqdb::v3::scan::sequence_t::add_hi_name
 
 // ----------------------------------------------------------------------
 
@@ -279,7 +279,7 @@ std::string local::translate_nucleotides_to_amino_acids(std::string_view nucleot
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
+void acmacs::seqdb::v3::scan::sequence_t::import(std::string_view source)
 {
     nuc_.resize(source.size(), '-');
     std::transform(std::begin(source), std::end(source), std::begin(nuc_), [](char c) { return std::toupper(c); });
@@ -307,11 +307,11 @@ void acmacs::seqdb::v3::sequence_t::import(std::string_view source)
         nuc_.clear();
     }
 
-} // acmacs::seqdb::v3::sequence_t::import
+} // acmacs::seqdb::v3::scan::sequence_t::import
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::sequence_t acmacs::seqdb::v3::sequence_t::from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source)
+acmacs::seqdb::v3::scan::sequence_t acmacs::seqdb::v3::scan::sequence_t::from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source)
 {
     sequence_t result;
     result.name_ = name;
@@ -319,7 +319,7 @@ acmacs::seqdb::v3::sequence_t acmacs::seqdb::v3::sequence_t::from_aligned_aa(con
     result.shift_aa_ = shift_t{0};
     return result;
 
-} // acmacs::seqdb::v3::sequence_t::from_aligned_aa
+} // acmacs::seqdb::v3::scan::sequence_t::from_aligned_aa
 
 // ----------------------------------------------------------------------
 
@@ -338,7 +338,7 @@ std::vector<std::pair<char, size_t>> local::symbol_frequences(std::string_view s
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::sequence_t::set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype)
+void acmacs::seqdb::v3::scan::sequence_t::set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype)
 {
     if (shift_aa < 0) {
         aa_.insert(0, static_cast<size_t>(-shift_aa), 'X');
@@ -355,7 +355,7 @@ void acmacs::seqdb::v3::sequence_t::set_shift(int shift_aa, std::optional<acmacs
         acmacs::virus::set_type_subtype(name_, type_subtype_);
     }
 
-} // acmacs::seqdb::v3::sequence_t::set_shift
+} // acmacs::seqdb::v3::scan::sequence_t::set_shift
 
 // ----------------------------------------------------------------------
 /// Local Variables:

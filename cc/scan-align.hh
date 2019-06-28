@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <string_view>
 
 // ----------------------------------------------------------------------
 
@@ -9,9 +8,16 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        namespace scan::fasta { struct scan_result_t; }
+        namespace scan
+        {
+            namespace fasta
+            {
+                struct scan_result_t;
+            }
 
-        void create(std::string_view prefix, std::vector<scan::fasta::scan_result_t>& sequences);
+            // removes not translated
+            void translate_align(std::vector<fasta::scan_result_t>& sequences);
+        } // namespace scan
 
     } // namespace v3
 } // namespace acmacs::seqdb

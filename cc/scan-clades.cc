@@ -1,7 +1,7 @@
 #include <array>
 
-#include "seqdb-3/clades.hh"
-#include "seqdb-3/fasta.hh"
+#include "seqdb-3/scan-clades.hh"
+#include "seqdb-3/scan-fasta.hh"
 
 // ----------------------------------------------------------------------
 
@@ -9,27 +9,27 @@ namespace local
 {
     namespace B
     {
-        static void lineage(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref);
-        static void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref);
+        static void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
+        static void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
     } // namespace B
 
     namespace H1
     {
-        static void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref);
-        static void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref);
+        static void deletions(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
+        static void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
     } // namespace H1
 
     namespace H3
     {
-        static void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref);
-        static void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref);
+        static void deletions(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
+        static void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
     } // namespace H3
 
 } // namespace local
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::detect_lineages_clades(std::vector<fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::scan::detect_lineages_clades(std::vector<fasta::scan_result_t>& sequences)
 {
 #pragma omp parallel for default(shared) schedule(static, 256)
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
@@ -53,7 +53,7 @@ void acmacs::seqdb::v3::detect_lineages_clades(std::vector<fasta::scan_result_t>
         // detect B lineage and VIC deletion mutants, adjust deletions
         // detect clades
 
-} // acmacs::seqdb::v3::detect_lineages_clades
+} // acmacs::seqdb::v3::scan::detect_lineages_clades
 
 // ****************************************************************************************************
 // B
@@ -61,34 +61,34 @@ void acmacs::seqdb::v3::detect_lineages_clades(std::vector<fasta::scan_result_t>
 
 namespace local::B
 {
-    inline bool is_victoria(const acmacs::seqdb::v3::deletions_insertions_t& deletions) { return deletions.empty(); }
+    inline bool is_victoria(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions) { return deletions.empty(); }
 
-    inline bool is_victoria_del2017(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_del2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_tripledel2017(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_tripledel2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_tripledel2017_pos_shifted_163_164(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_tripledel2017_pos_shifted_163_164(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && (deletions.deletions.front().pos == 162 || deletions.deletions.front().pos == 163) && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_sixdel2019(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_sixdel2019(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 6 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_deletions_at_the_end(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_deletions_at_the_end(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos > 500 && deletions.insertions.empty();
     }
 
-    inline bool is_yamagata_shifted(acmacs::seqdb::v3::sequence_t& sequence)
+    inline bool is_yamagata_shifted(acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
         const auto& deletions = sequence.deletions().deletions;
         return ((deletions.size() == 1 && deletions.front().pos == 158 && deletions.front().num == 1 && sequence.aa_aligned_substr(155, 6) == "MAWVIP") ||
@@ -98,25 +98,25 @@ namespace local::B
                sequence.deletions().insertions.empty();
     }
 
-    inline bool is_yamagata(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_yamagata(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return !deletions.deletions.empty() && deletions.deletions.front().pos == 162 && deletions.deletions.front().num == 1 &&
                (deletions.deletions.size() == 1 || deletions.deletions[1].pos > 500) && deletions.insertions.empty();
     }
 
-    inline bool is_yamagata_doubledel(acmacs::seqdb::v3::sequence_t& sequence)
+    inline bool is_yamagata_doubledel(acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
         const auto& deletions = sequence.deletions().deletions;
         return deletions.size() == 1 && deletions.front().pos == 162 && deletions.front().num == 2 && sequence.year() <= 2013 && sequence.deletions().insertions.empty();
     }
 
     // 12 sequences from TAIWAN 2010 have deletions 169:2
-    inline bool is_taiwan_169_2(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_taiwan_169_2(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 168 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
     }
 
-    inline bool is_semi_ignored(acmacs::seqdb::v3::sequence_t& sequence)
+    inline bool is_semi_ignored(acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
         return *sequence.name() == "B/MIE/1/2019" // DEL[1](162:4)<pos-1-based>  NIID:20190314   -- B/MIE/1/2019 |  2019-01-22 | MDCK 1 +1 |  18/19-498 | National Institute of Infectious Diseases
                                                   // (NIID) | B / H0N0 |  Victoria
@@ -125,7 +125,7 @@ namespace local::B
             ;
     }
 
-    inline bool is_ignored(acmacs::seqdb::v3::sequence_t& sequence)
+    inline bool is_ignored(acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
         return *sequence.name() ==
                    "B/ONTARIO/RV1769/2019" // DEL[1](163:3)<pos-1-based>  B/Ontario/RV1769/2019 |  2019-04-11 | P1 |  RV1769/19 | Public Health Agency of Canada (PHAC) | B / H0N0 |  Victoria
@@ -146,11 +146,11 @@ namespace local::B
     // David Burke 2017-08-17: deletions ( and insertions) of amino acids usually occur in regions of the protein structure where it changes direction ( loops ).
     // In the case of HA, this is after VPK and before NKTAT/YKNAT.
 
-    void lineage(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
+    void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref)
     {
         const auto warn = [&](const char* infix, const char* prefix = "WARNING") {
             fmt::print(stderr, "{}: {} lineage {} and {} deletions {} {}\n{}\n{}\n", prefix, sequence.year(), *sequence.lineage(), infix, sequence.full_name(),
-                       acmacs::seqdb::format(sequence.deletions()), fasta_ref, sequence.aa_format());
+                       acmacs::seqdb::scan::format(sequence.deletions()), fasta_ref, sequence.aa_format());
         };
 
         // const auto rep = [&]() {
@@ -200,7 +200,7 @@ namespace local::B
                 sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
                 warn("yamagata-shifted");
-            deletions.deletions = std::vector<acmacs::seqdb::deletions_insertions_t::pos_num_t>{{162, 1}};
+            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{162, 1}};
         }
         else if (is_yamagata(deletions)) {
             if (sequence.lineage().empty())
@@ -220,7 +220,7 @@ namespace local::B
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TAIWAN2010"});
         }
         else if (is_semi_ignored(sequence)) {
-            fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::format(deletions));
+            fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
         }
         else if (is_ignored(sequence)) {
             // do not issue warning
@@ -233,7 +233,7 @@ namespace local::B
 
     // ----------------------------------------------------------------------
 
-    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/)
+    void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
         if (sequence.lineage() == acmacs::virus::lineage_t{"VICTORIA"}) {
             // 2018-09-03, Sarah: clades should (technically) be defined by a phylogenetic tree rather than a set of amino acids
@@ -274,10 +274,10 @@ namespace local::H1
     //     return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 126 && deletions.deletions.front().num == 1 && deletions.insertions.empty();
     // }
 
-    void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
+    void deletions(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref)
     {
         const auto warn = [&](const char* prefix = "WARNING") {
-            fmt::print(stderr, "{}: {} {} {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.date_simulated(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
+            fmt::print(stderr, "{}: {} {} {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.date_simulated(), sequence.full_name(), acmacs::seqdb::scan::format(sequence.deletions()), fasta_ref,
                        sequence.aa_format());
         };
 
@@ -291,7 +291,7 @@ namespace local::H1
             else if (del1.pos == 126 && del1.num == 1 && (year < 2018 || fasta_ref.find("seasonal") != std::string_view::npos))
                 sequence.add_clade(acmacs::seqdb::clade_t{"*DEL-127:1"});
             else if (del1.pos == 159 && del1.num == 4 && sequence.name() == acmacs::virus::virus_name_t{"A(H1N1)/NEWPORT/323/2019"})
-                fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::format(deletions));
+                fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
             else if (del1.pos > 400)
                 ; // ignore
             else
@@ -324,7 +324,7 @@ namespace local::H1
     // 6B1: 162N, 163Q
     // 6B2: 152T, 163Q
 
-    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/)
+    void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
         if (sequence.aa_at_pos1(163) == 'Q') {
             sequence.add_clade(acmacs::seqdb::clade_t{"6B"});
@@ -345,10 +345,10 @@ namespace local::H1
 namespace local::H3
 {
 
-    void deletions(acmacs::seqdb::v3::sequence_t& sequence, std::string_view fasta_ref)
+    void deletions(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref)
     {
         const auto warn = [&](const char* prefix = "WARNING") {
-            fmt::print(stderr, "{}: {} <{}> {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.aa_aligned_length(), sequence.full_name(), acmacs::seqdb::format(sequence.deletions()), fasta_ref,
+            fmt::print(stderr, "{}: {} <{}> {} {} :: {}\n{}\n", prefix, sequence.year(), sequence.aa_aligned_length(), sequence.full_name(), acmacs::seqdb::scan::format(sequence.deletions()), fasta_ref,
                        sequence.aa_format());
         };
 
@@ -408,7 +408,7 @@ namespace local::H3
 
 #pragma GCC diagnostic pop
 
-    void clade(acmacs::seqdb::v3::sequence_t& sequence, std::string_view /*fasta_ref*/)
+    void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
         const auto has_aa = [&](const auto& pos1_aa) -> bool { return sequence.aa_at_pos1(pos1_aa.pos1) == pos1_aa.aa; };
 

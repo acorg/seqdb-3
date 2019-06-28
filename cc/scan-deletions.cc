@@ -5,7 +5,7 @@
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/date.hh"
 #include "acmacs-base/range-v3.hh"
-#include "seqdb-3/insertions.hh"
+#include "seqdb-3/scan-deletions.hh"
 
 // ----------------------------------------------------------------------
 
@@ -13,14 +13,14 @@ namespace local
 {
     struct not_verified : public std::runtime_error { using std::runtime_error::runtime_error; };
 
-    using subtype_master_t = std::map<std::string, const acmacs::seqdb::sequence_t*, std::less<>>;
+    using subtype_master_t = std::map<std::string, const acmacs::seqdb::scan::sequence_t*, std::less<>>;
 
-    subtype_master_t masters_per_subtype(const std::vector<acmacs::seqdb::v3::fasta::scan_result_t>& sequences);
+    subtype_master_t masters_per_subtype(const std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t>& sequences);
 
 #include "acmacs-base/global-constructors-push.hh"
     static const std::array master_sequences_for_insertions = {
-        std::pair{std::string{"B"},  acmacs::seqdb::sequence_t::from_aligned_aa(acmacs::virus::virus_name_t{"B/BRISBANE/60/2008 VICTORIA (master_sequences_for_insertions)"}, "DRICTGITSSNSPHVVKTATQGEVNVTGVIPLTTTPTKSHFANLKGTETRGKLCPKCLNCTDLDVALGRPKCTGKIPSARVSILHEVRPVTSGCFPIMHDRTKIRQLPNLLRGYEHIRLSTHNVINAENAPGGPYKIGTSGSCPNITNGNGFFATMAWAVPKNDKNKTATNPLTIEVPYICTEGEDQITVWGFHSDNETQMAKLYGDSKPQKFTSSANGVTTHYVSQIGGFPNQTEDGGLPQSGRIVVDYMVQKSGKTGTITYQRGILLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLKLANGTKYRPPAKLLKERGFFGAIAGFLEGGWEGMIAGWHGYTSHGAHGVAVAADLKSTQEAINKITKNLNSLSELEVKNLQRLSGAMDELHNEILELDEKVDDLRADTISSQIELAVLLSNEGIINSEDEHLLALERKLKKMLGPSAVEIGNGCFETKHKCNQTCLDRIAAGTFDAGEFSLPTFDSLNITAASLNDDGLDNHTILLYYSTAASSLAVTLMIAIFVVYMVSRDNVSCSICL")},
-        std::pair{std::string{"H1"}, acmacs::seqdb::sequence_t::from_aligned_aa(acmacs::virus::virus_name_t{"A(H1N1)/CALIFORNIA/7/2009 (master_sequences_for_insertions)"},   "DTLCIGYHANNSTDTVDTVLEKNVTVTHSVNLLEDKHNGKLCKLRGVAPLHLGKCNIAGWILGNPECESLSTASSWSYIVETPSSDNGTCYPGDFIDYEELREQLSSVSSFERFEIFPKTSSWPNHDSNKGVTAACPHAGAKSFYKNLIWLVKKGNSYPKLSKSYINDKGKEVLVLWGIHHPSTSADQQSLYQNADAYVFVGSSRYSKKFKPEIAIRPKVRDQEGRMNYYWTLVEPGDKITFEATGNLVVPRYAFAMERNAGSGIIISDTPVHDCNTTCQTPKGAINTSLPFQNIHPITIGKCPKYVKSTKLRLATGLRNIPSIQSRGLFGAIAGFIEGGWTGMVDGWYGYHHQNEQGSGYAADLKSTQNAIDEITNKVNSVIEKMNTQFTAVGKEFNHLEKRIENLNKKVDDGFLDIWTYNAELLVLLENERTLDYHDSNVKNLYEKVRSQLKNNAKEIGNGCFEFYHKCDNTCMESVKNGTYDYPKYSEEAKLNREEIDGVKLESTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI")},
+        std::pair{std::string{"B"},  acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::virus_name_t{"B/BRISBANE/60/2008 VICTORIA (master_sequences_for_insertions)"}, "DRICTGITSSNSPHVVKTATQGEVNVTGVIPLTTTPTKSHFANLKGTETRGKLCPKCLNCTDLDVALGRPKCTGKIPSARVSILHEVRPVTSGCFPIMHDRTKIRQLPNLLRGYEHIRLSTHNVINAENAPGGPYKIGTSGSCPNITNGNGFFATMAWAVPKNDKNKTATNPLTIEVPYICTEGEDQITVWGFHSDNETQMAKLYGDSKPQKFTSSANGVTTHYVSQIGGFPNQTEDGGLPQSGRIVVDYMVQKSGKTGTITYQRGILLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLKLANGTKYRPPAKLLKERGFFGAIAGFLEGGWEGMIAGWHGYTSHGAHGVAVAADLKSTQEAINKITKNLNSLSELEVKNLQRLSGAMDELHNEILELDEKVDDLRADTISSQIELAVLLSNEGIINSEDEHLLALERKLKKMLGPSAVEIGNGCFETKHKCNQTCLDRIAAGTFDAGEFSLPTFDSLNITAASLNDDGLDNHTILLYYSTAASSLAVTLMIAIFVVYMVSRDNVSCSICL")},
+        std::pair{std::string{"H1"}, acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::virus_name_t{"A(H1N1)/CALIFORNIA/7/2009 (master_sequences_for_insertions)"},   "DTLCIGYHANNSTDTVDTVLEKNVTVTHSVNLLEDKHNGKLCKLRGVAPLHLGKCNIAGWILGNPECESLSTASSWSYIVETPSSDNGTCYPGDFIDYEELREQLSSVSSFERFEIFPKTSSWPNHDSNKGVTAACPHAGAKSFYKNLIWLVKKGNSYPKLSKSYINDKGKEVLVLWGIHHPSTSADQQSLYQNADAYVFVGSSRYSKKFKPEIAIRPKVRDQEGRMNYYWTLVEPGDKITFEATGNLVVPRYAFAMERNAGSGIIISDTPVHDCNTTCQTPKGAINTSLPFQNIHPITIGKCPKYVKSTKLRLATGLRNIPSIQSRGLFGAIAGFIEGGWTGMVDGWYGYHHQNEQGSGYAADLKSTQNAIDEITNKVNSVIEKMNTQFTAVGKEFNHLEKRIENLNKKVDDGFLDIWTYNAELLVLLENERTLDYHDSNVKNLYEKVRSQLKNNAKEIGNGCFEFYHKCDNTCMESVKNGTYDYPKYSEEAKLNREEIDGVKLESTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI")},
     };
 #include "acmacs-base/diagnostics-pop.hh"
 
@@ -28,7 +28,7 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::detect_insertions_deletions(std::vector<fasta::scan_result_t>& sequence_data)
+void acmacs::seqdb::v3::scan::detect_insertions_deletions(std::vector<fasta::scan_result_t>& sequence_data)
 {
     const auto masters = local::masters_per_subtype(sequence_data);
     // fmt::print(stderr, "masters_per_subtype {}\n", masters.size());
@@ -45,15 +45,15 @@ void acmacs::seqdb::v3::detect_insertions_deletions(std::vector<fasta::scan_resu
 
 // ----------------------------------------------------------------------
 
-local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seqdb::v3::fasta::scan_result_t>& sequences)
+local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t>& sequences)
 {
     std::map<std::string, acmacs::Counter<size_t>> aligned_lengths;
-    for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::fasta::is_aligned))
+    for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::scan::fasta::is_aligned))
         aligned_lengths.try_emplace(std::string(sc.sequence.type_subtype().h_or_b())).first->second.count(sc.sequence.aa_aligned_length());
 
     subtype_master_t masters;
     for (const auto& [subtype, counter] : aligned_lengths) {
-        const acmacs::seqdb::v3::sequence_t* master = nullptr;
+        const acmacs::seqdb::v3::scan::sequence_t* master = nullptr;
         if (const auto found = std::find_if(std::begin(master_sequences_for_insertions), std::end(master_sequences_for_insertions), [subtype=subtype](const auto& en) { return en.first == subtype; }); found != std::end(master_sequences_for_insertions)) {
             master = &found->second;
         }
@@ -65,7 +65,7 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
                     master_length = vt.first;
             }
             size_t num_X = 0;
-            for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::fasta::is_aligned)) {
+            for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::scan::fasta::is_aligned)) {
                 if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
                     if (master == nullptr) {
                         master = &sc.sequence;
@@ -81,7 +81,7 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
             }
         }
         if (master == nullptr)
-            throw std::runtime_error("internal in acmacs::seqdb::v3::masters_per_subtype");
+            throw std::runtime_error("internal in acmacs::seqdb::v3::scan::masters_per_subtype");
         masters.emplace(subtype, master);
     }
 
@@ -91,7 +91,7 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_t& to_align)
+void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, sequence_t& to_align)
 {
     acmacs::debug dbg = acmacs::debug::no;
     // fmt::print(stderr, "{}\n", to_align.full_name());
@@ -111,7 +111,7 @@ void acmacs::seqdb::v3::deletions_insertions(const sequence_t& master, sequence_
         fmt::print(stderr, "\n");
     }
 
-} // acmacs::seqdb::v3::deletions_insertions
+} // acmacs::seqdb::v3::scan::deletions_insertions
 
 // ----------------------------------------------------------------------
 
@@ -235,16 +235,16 @@ namespace local
         return common;
     }
 
-    inline size_t number_of_common(std::string_view master, std::string_view to_align, acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline size_t number_of_common(std::string_view master, std::string_view to_align, acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
-        return number_of_common(acmacs::seqdb::v3::format_aa(deletions.insertions, master), acmacs::seqdb::v3::format_aa(deletions.deletions, to_align));
+        return number_of_common(acmacs::seqdb::v3::scan::format_aa(deletions.insertions, master), acmacs::seqdb::v3::scan::format_aa(deletions.deletions, to_align));
     }
 
 }
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertions(std::string_view master, std::string_view to_align, acmacs::debug dbg)
+acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletions_insertions(std::string_view master, std::string_view to_align, acmacs::debug dbg)
 {
     if (dbg == acmacs::debug::yes)
         fmt::print(stderr, "initial:\n{}\n{}\n\n", master, to_align);
@@ -288,7 +288,7 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
 
     // // sanity check (remove)
     // if (const auto nc = local::number_of_common(master, to_align, deletions); nc != common)
-    //     fmt::print(stderr, "common diff: {} vs. number_of_common:{} {}\n{}\n{}\n", common, nc, format(deletions), acmacs::seqdb::v3::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::format(deletions.deletions, to_align, '.'));
+    //     fmt::print(stderr, "common diff: {} vs. number_of_common:{} {}\n{}\n{}\n", common, nc, format(deletions), acmacs::seqdb::v3::scan::format(deletions.insertions, master, '.'), acmacs::seqdb::v3::scan::format(deletions.deletions, to_align, '.'));
 
     // verify
     const auto get_num_non_x = [](std::string_view seq) { return seq.size() - static_cast<size_t>(std::count(std::begin(seq), std::end(seq), 'X')); };
@@ -296,12 +296,12 @@ acmacs::seqdb::v3::deletions_insertions_t acmacs::seqdb::v3::deletions_insertion
     if (common < num_common_threshold) {
         throw local::not_verified(fmt::format("common:{} vs size:{} num_common_threshold:{:.2f}\n{}\n{}\n{}\n{}\n",
                                               common, to_align.size(), num_common_threshold, master, to_align,
-                                              acmacs::seqdb::v3::format_aa(deletions.insertions, master, '.'), acmacs::seqdb::v3::format_aa(deletions.deletions, to_align, '.')));
+                                              acmacs::seqdb::v3::scan::format_aa(deletions.insertions, master, '.'), acmacs::seqdb::v3::scan::format_aa(deletions.deletions, to_align, '.')));
     }
 
     return deletions;
 
-} // acmacs::seqdb::v3::deletions_insertions
+} // acmacs::seqdb::v3::scan::deletions_insertions
 
 // ----------------------------------------------------------------------
 /// Local Variables:

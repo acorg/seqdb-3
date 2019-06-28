@@ -8,12 +8,18 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        namespace fasta { struct scan_result_t; }
+        namespace scan
+        {
+            namespace fasta
+            {
+                struct scan_result_t;
+            }
 
-        // removes not translated
-        void translate_align(std::vector<fasta::scan_result_t>& sequences);
+            // sequences msut be sorted by name!
+            void match_hidb(std::vector<fasta::scan_result_t>& sequences);
 
-    } // namespace v3
+        } // namespace scan
+    }     // namespace v3
 } // namespace acmacs::seqdb
 
 // ----------------------------------------------------------------------

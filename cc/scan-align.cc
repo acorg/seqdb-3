@@ -6,9 +6,9 @@
 #include "acmacs-base/named-type.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/fmt.hh"
-#include "seqdb-3/align.hh"
-#include "seqdb-3/fasta.hh"
-#include "seqdb-3/insertions.hh"
+#include "seqdb-3/scan-align.hh"
+#include "seqdb-3/scan-fasta.hh"
+#include "seqdb-3/scan-deletions.hh"
 #include "seqdb-3/hamming-distance.hh"
 
 // http://signalpeptide.com
@@ -16,7 +16,7 @@
 namespace local
 {
     // returns if it was aligned
-    static bool align(acmacs::seqdb::v3::sequence_t& sequence, const acmacs::virus::type_subtype_t& type_subtype_hint);
+    static bool align(acmacs::seqdb::v3::scan::sequence_t& sequence, const acmacs::virus::type_subtype_t& type_subtype_hint);
     static std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> align(std::string_view amino_acids, const acmacs::virus::type_subtype_t& type_subtype_hint);
 
     // ----------------------------------------------------------------------
@@ -143,7 +143,7 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::translate_align(std::vector<fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::scan::translate_align(std::vector<fasta::scan_result_t>& sequences)
 {
 #pragma omp parallel for default(shared) schedule(static, 256)
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
@@ -175,11 +175,11 @@ void acmacs::seqdb::v3::translate_align(std::vector<fasta::scan_result_t>& seque
 
     // fmt::print(stderr, "translate_align aligned 2: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), current_date_time());
 
-} // acmacs::seqdb::v3::translate_align_clade
+} // acmacs::seqdb::v3::scan::translate_align_clade
 
 // ----------------------------------------------------------------------
 
-bool local::align(acmacs::seqdb::v3::sequence_t& sequence, const acmacs::virus::type_subtype_t& type_subtype_hint)
+bool local::align(acmacs::seqdb::v3::scan::sequence_t& sequence, const acmacs::virus::type_subtype_t& type_subtype_hint)
 {
     if (const auto shift_type = align(sequence.aa(), type_subtype_hint); shift_type.has_value()) {
         const auto [shift, type_subtype] = *shift_type;
@@ -189,7 +189,7 @@ bool local::align(acmacs::seqdb::v3::sequence_t& sequence, const acmacs::virus::
     else
         return false;
 
-} // acmacs::seqdb::v3::align
+} // acmacs::seqdb::v3::scan::align
 
 // ----------------------------------------------------------------------
 
@@ -459,7 +459,7 @@ std::optional<std::tuple<int, acmacs::virus::type_subtype_t>> local::align(std::
 
     return std::nullopt;
 
-} // acmacs::seqdb::v3::align
+} // acmacs::seqdb::v3::scan::align
 
 // ----------------------------------------------------------------------
 
