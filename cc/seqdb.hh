@@ -44,10 +44,16 @@ namespace seqdb
             Seqdb(const std::string& filename);
             // Seqdb(std::string&& source);
 
+            using seq_ref_t = std::pair<const SeqdbEntry*, size_t>;
+            using refs_t = std::vector<seq_ref_t>;
+
+            refs_t select_by_name(std::string_view name) const;
+
           private:
             std::string json_text_;
             std::vector<SeqdbEntry> entries_;
         };
+
     } // namespace v3
 } // namespace seqdb
 

@@ -287,7 +287,7 @@ void seqdb::v3::parse(std::string_view source, std::vector<SeqdbEntry>& entries)
 {
     local::sink sink{entries};
     in_json::parse(sink, std::begin(source), std::end(source));
-    fmt::print("INFO: seqdb entries read: {}\n", entries.size());
+    // fmt::print("INFO: seqdb entries read: {}\n", entries.size());
 
 } // seqdb::v3::parse
 
