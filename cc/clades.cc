@@ -73,9 +73,9 @@ namespace local::B
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_tripledel2017_pos_shifted_164(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
+    inline bool is_victoria_tripledel2017_pos_shifted_163_164(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
     {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
+        return deletions.deletions.size() == 1 && (deletions.deletions.front().pos == 162 || deletions.deletions.front().pos == 163) && deletions.deletions.front().num == 3 && deletions.insertions.empty();
     }
 
     inline bool is_victoria_sixdel2019(const acmacs::seqdb::v3::deletions_insertions_t& deletions)
@@ -178,7 +178,7 @@ namespace local::B
                 warn("victoria tripledel2017");
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
         }
-        else if (is_victoria_tripledel2017_pos_shifted_164(deletions)) {
+        else if (is_victoria_tripledel2017_pos_shifted_163_164(deletions)) {
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
