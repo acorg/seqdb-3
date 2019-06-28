@@ -386,8 +386,12 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
     passages_.merge_from(source.passages_);
     hi_names_.merge_from(source.hi_names_);
 
-                // std::string lab_id_;
-                // std::string lab_;
+    for (const auto& [lab, ids] : source.lab_ids()) {
+        if (const auto found = lab_ids_.find(lab); found != lab_ids_.end())
+            found->second.merge_from(ids);
+        else
+            lab_ids_.emplace(lab, ids);
+    }
 
 } // acmacs::seqdb::v3::scan::sequence_t::merge_from
 
