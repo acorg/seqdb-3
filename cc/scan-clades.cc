@@ -238,11 +238,11 @@ namespace local::B
         if (sequence.lineage() == acmacs::virus::lineage_t{"VICTORIA"}) {
             // 2018-09-03, Sarah: clades should (technically) be defined by a phylogenetic tree rather than a set of amino acids
             if (sequence.aa_at_pos1(75) == 'K' && sequence.aa_at_pos1(172) == 'P' && sequence.aa_at_pos1(58) != 'P')
-                sequence.add_clade(acmacs::seqdb::v3::clade_t{"1A"});
+                sequence.add_clade(acmacs::seqdb::v3::clade_t{"V1A"});
             else if (sequence.aa_at_pos1(58) == 'P')
-                sequence.add_clade(acmacs::seqdb::v3::clade_t{"1B"});
+                sequence.add_clade(acmacs::seqdb::v3::clade_t{"V1B"});
             else
-                sequence.add_clade(acmacs::seqdb::v3::clade_t{"1"});
+                sequence.add_clade(acmacs::seqdb::v3::clade_t{"V1"});
         }
         else if (sequence.lineage() == acmacs::virus::lineage_t{"YAMAGATA"}) {
             // 165N -> Y2, 165Y -> Y3 (yamagata numeration, 163 is not -)
@@ -330,6 +330,8 @@ namespace local::H1
             sequence.add_clade(acmacs::seqdb::clade_t{"6B"});
             if (sequence.aa_at_pos1(162) == 'N')
                 sequence.add_clade(acmacs::seqdb::clade_t{"6B1"});
+            if (sequence.aa_at_pos1(74) == 'R' && sequence.aa_at_pos1(164) == 'T' && sequence.aa_at_pos1(295) == 'V')
+                sequence.add_clade(acmacs::seqdb::clade_t{"6B1.A"});
             if (sequence.aa_at_pos1(152) == 'T')
                 sequence.add_clade(acmacs::seqdb::clade_t{"6B2"});
         }
