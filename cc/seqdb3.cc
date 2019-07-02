@@ -13,6 +13,32 @@ struct Options : public argv
     option<str>  name{*this, 'n', "name", dflt{""}};
 };
 
+// export
+//   fasta (phylip?)
+//   aligned
+//   aa/nuc
+//   with deletions inserted
+//   wrapped
+//   Truncate or extend with - all sequences to make them all of the same length, most common among original sequences.
+//   sort by date or name
+//   name format: {seq_id} {hi_name_or_seq_name_with_passage} {name} {date} {lab_id} {passage} {lab}
+//   name encode
+// select
+//   subtype
+//   lineage
+//   date range
+//   lab
+//   continent/country
+//   host (h1 swine)
+//   clade
+//   aa at pos, not aa at pos
+//   random N
+//   recent N
+//   with-hi-name
+//   name matches regex (multiple regex possible, export all matching)
+//   Base sequence to export together with other sequences (regex -> to select just one sequence)
+//   HAMMING_DISTANCE_THRESHOLD - relative to base seq
+
 int main(int argc, char* const argv[])
 {
     try {
