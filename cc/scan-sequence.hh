@@ -50,6 +50,9 @@ namespace acmacs::seqdb
             std::string format(const deletions_insertions_t& deletions);
             std::string format_date(const date::year_month_day& a_date);
 
+            static const auto empty_month_or_day = [](const auto& date) { return date.find("-00") != std::string::npos; };
+            static const auto not_empty_month_or_day = [](const auto& date) { return date.find("-00") == std::string::npos; };
+
             // ----------------------------------------------------------------------
 
             class sequence_t
@@ -172,7 +175,6 @@ namespace acmacs::seqdb
 
                 void add_date(const std::string& date);
                 void add_date(const date::year_month_day& a_date) { add_date(format_date(a_date)); }
-                void remove_invalid_dates();
                 void add_passage(acmacs::virus::Passage&& a_passage) { passages_.add(std::move(a_passage)); }
                 void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
                 void name(acmacs::virus::virus_name_t&& a_name) { name_ = std::move(a_name); }

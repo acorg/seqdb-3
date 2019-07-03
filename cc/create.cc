@@ -60,15 +60,17 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
     to_json::array seqdb_data;
     to_json::object entry;
     to_json::array entry_seqs;
-    std::vector<std::string> dates;
+    acmacs::flat_set_t<std::string> dates;
     std::string previous;
 
     const auto flush = [&]() {
         if (!entry.empty()) {
             if (!dates.empty()) {
-                std::sort(std::begin(dates), std::end(dates));
-                const auto end = std::unique(std::begin(dates), std::end(dates));
-                entry << to_json::key_val("d", to_json::array(std::begin(dates), end, to_json::json::compact_output::yes));
+                if (dates.size() > 1 && std::any_of(std::begin(dates), std::end(dates), acmacs::seqdb::scan::not_empty_month_or_day))
+                    dates.erase_if(acmacs::seqdb::scan::empty_month_or_day);
+                dates.sort(); // std::sort(std::begin(dates), std::end(dates));
+                // const auto end = std::unique(std::begin(dates), std::end(dates));
+                entry << to_json::key_val("d", to_json::array(std::begin(dates), std::end(dates), to_json::json::compact_output::yes));
             }
             entry << to_json::key_val("s", entry_seqs);
             seqdb_data << std::move(entry);
@@ -123,7 +125,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                 entry_seqs << std::move(entry_seq);
             }
 
-            std::copy(std::begin(seq.dates()), std::end(seq.dates()), std::back_inserter(dates));
+            dates.merge_from(seq.dates()); // std::copy(std::begin(seq.dates()), std::end(seq.dates()), std::back_inserter(dates));
             ++num_sequences;
             // if (num_sequences > 5)
             //     break;

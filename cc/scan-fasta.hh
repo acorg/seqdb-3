@@ -92,7 +92,6 @@ namespace acmacs::seqdb
                 }
 
                 void merge_duplicates(std::vector<fasta::scan_result_t>& sequences);
-                void remove_invalid_dates(std::vector<fasta::scan_result_t>& sequences);
 
                 std::string report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos); // report aligned having type_subtype that differs from provided with fasta
                 std::string report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff = std::string::npos);

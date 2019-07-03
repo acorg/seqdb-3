@@ -144,6 +144,8 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Match
     for (const auto& e: antigen_to_matching) {
         const auto name = found[e.first]->full_name();
         std::next(first, static_cast<ssize_t>(e.second.seq_no))->sequence.add_hi_name(name);
+        if (const auto& date = found[e.first]->date(); !date.empty())
+            first->sequence.add_date(date);
         matched = true;
     }
     return matched;
