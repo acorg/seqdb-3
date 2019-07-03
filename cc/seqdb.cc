@@ -22,14 +22,27 @@ seqdb::v3::Seqdb::Seqdb(const std::string& filename)
 
 // ----------------------------------------------------------------------
 
-seqdb::v3::Seqdb::refs_t seqdb::v3::Seqdb::select_by_name(std::string_view name) const
+seqdb::v3::subset seqdb::v3::Seqdb::all() const
 {
-    refs_t refs;
+    subset ss;
+    for (const auto& entry : entries_) {
+        for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no)
+            ss.refs_.emplace_back(&entry, seq_no);
+    }
+    return ss;
+
+} // seqdb::v3::Seqdb::all
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset seqdb::v3::Seqdb::select_by_name(std::string_view name) const
+{
+    subset ss;
     if (const auto found = std::lower_bound(std::begin(entries_), std::end(entries_), name, [](const auto& entry, std::string_view nam) { return entry.name < nam; }); found != std::end(entries_) && found->name == name) {
         for (size_t seq_no = 0; seq_no < found->seqs.size(); ++seq_no)
-            refs.emplace_back(&*found, seq_no);
+            ss.refs_.emplace_back(&*found, seq_no);
     }
-    return refs;
+    return ss;
 
 } // seqdb::v3::Seqdb::select_by_name
 
