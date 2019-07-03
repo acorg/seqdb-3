@@ -26,10 +26,10 @@ namespace acmacs::seqdb
         {
             namespace fasta
             {
-                static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
-                static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
-                static acmacs::virus::type_subtype_t parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
-                static std::string_view parse_lineage(std::string_view source, std::string_view filename, size_t line_no);
+                static date::year_month_day parse_date(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+                static std::string_view parse_lab(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+                static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+                static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
 
             } // namespace fasta
@@ -184,15 +184,15 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     result.fasta.name = fields[0];
     result.fasta.filename = filename;
     result.fasta.line_no = line_no;
-    result.sequence.add_date(seqdb::scan::format_date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no)));
+    result.sequence.add_date(seqdb::scan::format_date(parse_date(::string::strip(fields[1]), filename, line_no)));
     if (fields.size() > 2)
-        result.fasta.passage = ::string::upper(::string::strip(fields[2]));
+        result.fasta.passage = ::string::strip(fields[2]);
     if (fields.size() > 4)
-        result.sequence.add_lab_id(parse_lab(::string::upper(::string::strip(fields[4])), filename, line_no), ::string::upper(::string::strip(fields[3])));
+        result.sequence.add_lab_id(parse_lab(::string::strip(fields[4]), filename, line_no), ::string::strip(fields[3]));
     if (fields.size() > 5)
-        result.fasta.type_subtype = parse_subtype(::string::upper(::string::strip(fields[5])), filename, line_no);
+        result.fasta.type_subtype = parse_subtype(::string::strip(fields[5]), filename, line_no);
     if (fields.size() > 6)
-        result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(::string::upper(::string::strip(fields[6])), filename, line_no)};
+        result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(::string::strip(fields[6]), filename, line_no)};
 
     if (!result.fasta.lineage.empty() && result.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"})
         result.sequence.lineage(result.fasta.lineage);
@@ -306,11 +306,12 @@ bool acmacs::seqdb::v3::scan::fasta::import_sequence(std::string_view raw_sequen
 
 // ----------------------------------------------------------------------
 
-date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view source, std::string_view filename, size_t line_no)
+date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(const acmacs::uppercase& src, std::string_view filename, size_t line_no)
 {
     date::year_month_day result;
+    const std::string_view source = src;
 
-    const auto month_and_day_unknown = [&source,&result]() -> bool {
+    const auto month_and_day_unknown = [source,&result]() -> bool {
         if (source.size() > 25 && source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
             result = date::year_from_string(source.substr(0, 4))/0/0;
             return true;
@@ -319,7 +320,7 @@ date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view
             return false;
     };
 
-    const auto day_unknown = [&source,&result]() -> bool {
+    const auto day_unknown = [source,&result]() -> bool {
         if (source.size() > 15 && source.substr(7) == " (DAY UNKNOWN)") {
             result = date::year_from_string(source.substr(0, 4))/date::month_from_string(source.substr(5, 2))/0;
             return true;
@@ -328,7 +329,7 @@ date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view
             return false;
     };
 
-    const auto extract_date = [&source,&result]() -> bool {
+    const auto extract_date = [source,&result]() -> bool {
         result = date::from_string(source, date::throw_on_error::no);
         return result.ok();
     };
@@ -353,7 +354,7 @@ static const std::map<std::string_view, std::string_view> sLabs{
 };
 #include "acmacs-base/diagnostics-pop.hh"
 
-std::string_view acmacs::seqdb::v3::scan::fasta::parse_lab(std::string_view source, std::string_view /*filename*/, size_t /*line_no*/)
+std::string_view acmacs::seqdb::v3::scan::fasta::parse_lab(const acmacs::uppercase& source, std::string_view /*filename*/, size_t /*line_no*/)
 {
     if (const auto found = sLabs.find(source); found != sLabs.end())
         return found->second;
@@ -363,13 +364,13 @@ std::string_view acmacs::seqdb::v3::scan::fasta::parse_lab(std::string_view sour
 
 // ----------------------------------------------------------------------
 
-acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(std::string_view source, std::string_view filename, size_t line_no)
+acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
 {
     if (source.empty())
         fmt::print(stderr, "WARNING: {}:{}: no subtype\n", filename, line_no, source);
-    if (source.size() >= 8 && source[0] == 'A')
-        return acmacs::virus::type_subtype_t{fmt::format("A({})", source.substr(4))};
-    else if (!source.empty() && source[0] == 'B')
+    if (source.size() >= 8 && source->front() == 'A')
+        return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(4))};
+    else if (!source.empty() && source->front() == 'B')
         return acmacs::virus::type_subtype_t{"B"};
     return {};
 
@@ -377,7 +378,7 @@ acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(std:
 
 // ----------------------------------------------------------------------
 
-std::string_view acmacs::seqdb::v3::scan::fasta::parse_lineage(std::string_view source, std::string_view /*filename*/, size_t /*line_no*/)
+std::string_view acmacs::seqdb::v3::scan::fasta::parse_lineage(const acmacs::uppercase& source, std::string_view /*filename*/, size_t /*line_no*/)
 {
     return source;
 
@@ -390,7 +391,7 @@ acmacs::seqdb::v3::scan::fasta::hint_t acmacs::seqdb::v3::scan::fasta::find_hint
     const auto stem = fs::path{filename}.stem().stem().string();
     const auto fields = acmacs::string::split(stem, "-");
     hint_t hints;
-    hints.lab = ::string::upper(fields[0]);
+    hints.lab = fields[0];
     if (fields[1] == "h1pdm" || fields[1] == "h1seas" || fields[1] == "h1")
         hints.subtype = "A(H1N1)";
     else if (fields[1] == "h3")

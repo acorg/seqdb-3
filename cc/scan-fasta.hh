@@ -22,7 +22,7 @@ namespace acmacs::seqdb
                     std::string name;
                     acmacs::virus::type_subtype_t type_subtype;
                     acmacs::virus::lineage_t lineage;
-                    std::string passage;
+                    acmacs::uppercase passage;
                     std::string filename;
                     size_t line_no; // of the sequence name in filename
                     std::vector<acmacs::virus::parse_result_t::message_t> messages;
@@ -72,9 +72,9 @@ namespace acmacs::seqdb
 
                 struct hint_t
                 {
-                    std::string lab;
-                    std::string subtype;
-                    std::string lineage;
+                    acmacs::uppercase lab;
+                    acmacs::uppercase subtype;
+                    acmacs::uppercase lineage;
                 };
 
                 // ----------------------------------------------------------------------

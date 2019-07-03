@@ -187,7 +187,7 @@ void find_by_lab_id(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_i
 {
     for (; first != last; ++first) {
         const auto& sequence = first->sequence;
-        if (const auto cdcids = sequence.lab_ids().find("CDC"); cdcids != sequence.lab_ids().end() && !cdcids->second.empty()) {
+        if (const auto cdcids = sequence.lab_ids().find(acmacs::uppercase{"CDC"}); cdcids != sequence.lab_ids().end() && !cdcids->second.empty()) {
             for (const auto& cdcid_raw : cdcids->second) {
                 const auto cdcid = fmt::format("CDC#{}", cdcid_raw);
                 auto [hidb_first, hidb_last] = std::equal_range(std::begin(hidb_ref.lab_id_index), std::end(hidb_ref.lab_id_index), lab_id_index_entry_t{std::string_view(cdcid), nullptr},

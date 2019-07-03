@@ -6,6 +6,7 @@
 
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/string.hh"
+#include "acmacs-base/uppercase.hh"
 
 // ----------------------------------------------------------------------
 
@@ -86,6 +87,7 @@ namespace seqdb
             auto end() const { return refs_.end(); }
 
             subset& multiple_dates();
+            subset& subtype(const acmacs::uppercase& virus_type);
 
           private:
             refs_t refs_;

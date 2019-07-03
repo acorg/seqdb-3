@@ -187,8 +187,8 @@ namespace acmacs::seqdb
                 void continent(std::string&& continent) { continent_ = std::move(continent); }
                 void add_hi_name(const std::string& hi_name) { hi_names_.add(hi_name); }
 
-                void add_lab_id(std::string_view lab, std::string_view lab_id);
-                void add_lab_id(const std::string& lab);
+                void add_lab_id(const acmacs::uppercase& lab, const acmacs::uppercase& lab_id);
+                void add_lab_id(const acmacs::uppercase& lab);
                 bool lab_in(std::initializer_list<std::string_view> labs) const;
                 const auto& lab_ids() const { return lab_ids_; }
 
@@ -215,7 +215,7 @@ namespace acmacs::seqdb
                 flat_set_t<acmacs::virus::Passage> passages_;
                 flat_set_t<std::string> hi_names_;
                 std::string annotations_;
-                flat_map_t<std::string, flat_set_t<std::string>> lab_ids_;
+                flat_map_t<acmacs::uppercase, flat_set_t<acmacs::uppercase>> lab_ids_;
                 std::string aa_;
                 std::string nuc_;
                 int nuc_translation_offset_{0};

@@ -59,6 +59,15 @@ seqdb::v3::subset& seqdb::v3::subset::multiple_dates()
 
 // ----------------------------------------------------------------------
 
+seqdb::v3::subset& seqdb::v3::subset::subtype(const acmacs::uppercase& virus_type)
+{
+    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [virus_type=static_cast<std::string_view>(virus_type)](const auto& en) { return en.entry->virus_type != virus_type; }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::subtype
+
+// ----------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------
 /// Local Variables:

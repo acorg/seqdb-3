@@ -232,21 +232,21 @@ std::string acmacs::seqdb::v3::scan::sequence_t::full_name() const
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(std::string_view lab, std::string_view lab_id)
+void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& lab, const acmacs::uppercase& lab_id)
 {
     if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
-        lab_ids_.emplace(std::string{lab}, flat_set_t<std::string>{std::string{lab_id}});
+        lab_ids_.emplace(lab, flat_set_t<acmacs::uppercase>{lab_id});
     else
-        found->second.add(std::string{lab_id});
+        found->second.add(lab_id);
 
 } // acmacs::seqdb::v3::scan::sequence_t::add_lab_id
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const std::string& lab)
+void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& lab)
 {
     if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
-        lab_ids_.emplace(std::move(lab), flat_set_t<std::string>{});
+        lab_ids_.emplace(lab, flat_set_t<acmacs::uppercase>{});
 
 } // acmacs::seqdb::v3::scan::sequence_t::add_lab_id
 

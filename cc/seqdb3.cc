@@ -12,7 +12,7 @@ struct Options : public argv
 
     option<str>  db{*this, "db", dflt{""}};
 
-    option<str>  subtype{*this, "flu", dflt{""}};
+    option<str>  subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
     option<str>  host{*this, "host", dflt{""}};
     option<str>  lab{*this, "lab", dflt{""}};
     option<str>  lineage{*this, "lineage", dflt{""}};
@@ -79,6 +79,8 @@ int main(int argc, char* const argv[])
         };
 
         auto subset = init();
+        if (opt.subtype.has_value())
+            subset.subtype(acmacs::uppercase{*opt.subtype});
         if (opt.multiple_dates)
             subset.multiple_dates();
 
