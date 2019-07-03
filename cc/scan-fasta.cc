@@ -26,7 +26,7 @@ namespace acmacs::seqdb
         {
             namespace fasta
             {
-                static Date parse_date(std::string_view source, std::string_view filename, size_t line_no);
+                static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
                 static std::string_view parse_lab(std::string_view source, std::string_view filename, size_t line_no);
                 static acmacs::virus::type_subtype_t parse_subtype(std::string_view source, std::string_view filename, size_t line_no);
                 static std::string_view parse_lineage(std::string_view source, std::string_view filename, size_t line_no);
@@ -184,7 +184,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     result.fasta.name = fields[0];
     result.fasta.filename = filename;
     result.fasta.line_no = line_no;
-    result.sequence.add_date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no).display());
+    result.sequence.add_date(seqdb::scan::format_date(parse_date(::string::upper(::string::strip(fields[1])), filename, line_no)));
     if (fields.size() > 2)
         result.fasta.passage = ::string::upper(::string::strip(fields[2]));
     if (fields.size() > 4)
@@ -306,27 +306,34 @@ bool acmacs::seqdb::v3::scan::fasta::import_sequence(std::string_view raw_sequen
 
 // ----------------------------------------------------------------------
 
-Date acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view source, std::string_view filename, size_t line_no)
+date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view source, std::string_view filename, size_t line_no)
 {
-    Date result;
+    date::year_month_day result;
 
-    const auto month_and_day_unknown = [&]() -> bool {
+    const auto month_and_day_unknown = [&source,&result]() -> bool {
         if (source.size() > 25 && source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
-            return result.from_string(::string::concat(source.substr(0, 4), "-01-01"), acmacs::throw_on_error::no);
+            result = date::year_from_string(source.substr(0, 4))/0/0;
+            return true;
         }
         else
             return false;
     };
 
-    const auto day_unknown = [&]() -> bool {
+    const auto day_unknown = [&source,&result]() -> bool {
         if (source.size() > 15 && source.substr(7) == " (DAY UNKNOWN)") {
-            return result.from_string(::string::concat(source.substr(0, 7), "-01"), acmacs::throw_on_error::no);
+            result = date::year_from_string(source.substr(0, 4))/date::month_from_string(source.substr(5, 2))/0;
+            return true;
         }
         else
             return false;
     };
 
-    if (!source.empty() && !result.from_string(source, acmacs::throw_on_error::no) && !month_and_day_unknown() && !day_unknown())
+    const auto extract_date = [&source,&result]() -> bool {
+        result = date::from_string(source, date::throw_on_error::no);
+        return result.ok();
+    };
+
+    if (!source.empty() && !month_and_day_unknown() && !day_unknown() && !extract_date())
         fmt::print(stderr, "ERROR: {}:{}: cannot parse date: [{}]\n", filename, line_no, source);
     return result;
 

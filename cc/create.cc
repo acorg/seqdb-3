@@ -131,7 +131,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
     }
     flush();
 
-    const auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"), to_json::key_val("  version", "sequence-database-v2"), to_json::key_val("  date", current_date_time()),
+    const auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"), to_json::key_val("  version", "sequence-database-v2"), to_json::key_val("  date", date::current_date_time()),
                               to_json::key_val("data", std::move(seqdb_data)));
     acmacs::file::write(filename, fmt::format("{:1}\n", js));
     fmt::print("INFO: {} sequences written to {}\n", num_sequences, filename);

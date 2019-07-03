@@ -48,6 +48,7 @@ namespace acmacs::seqdb
             std::string format_aa(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
             // std::string format_nuc(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
             std::string format(const deletions_insertions_t& deletions);
+            std::string format_date(const date::year_month_day& a_date);
 
             // ----------------------------------------------------------------------
 
@@ -87,8 +88,15 @@ namespace acmacs::seqdb
                         else
                             return 0;
                     }
-                    else
-                        return std::stoul(dates_.front().substr(0, 4));
+                    else {
+                        try {
+                            return std::stoul(dates_.front().substr(0, 4));
+                        }
+                        catch (std::exception&) {
+                            fmt::print(stderr, "WARNING: cannot read year from {}\n", dates_.front());
+                            return 0;
+                        }
+                    }
                 }
 
                 // aligned, deletions inserted
@@ -163,7 +171,7 @@ namespace acmacs::seqdb
                 void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt);
 
                 void add_date(const std::string& date) { if (!date.empty()) dates_.add_and_sort(date); }
-                void add_date(const Date& a_date) { add_date(a_date.display()); }
+                void add_date(const date::year_month_day& a_date) { add_date(format_date(a_date)); }
                 void add_passage(acmacs::virus::Passage&& a_passage) { passages_.add(std::move(a_passage)); }
                 void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
                 void name(acmacs::virus::virus_name_t&& a_name) { name_ = std::move(a_name); }
