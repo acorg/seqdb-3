@@ -73,6 +73,7 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::scan::detect_lineages_clades(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_name(all_sequences);
         acmacs::seqdb::scan::match_hidb(all_sequences);
+        acmacs::seqdb::scan::fasta::remove_invalid_dates(all_sequences);
         if (!opt.output_seqdb->empty())
             acmacs::seqdb::create(opt.output_seqdb, all_sequences);
 

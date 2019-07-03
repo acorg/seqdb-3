@@ -122,6 +122,15 @@ void acmacs::seqdb::v3::scan::fasta::merge_duplicates(std::vector<fasta::scan_re
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::scan::fasta::remove_invalid_dates(std::vector<fasta::scan_result_t>& sequences)
+{
+    for (auto& en : sequences)
+        en.sequence.remove_invalid_dates();
+
+} // acmacs::seqdb::v3::scan::fasta::remove_invalid_dates
+
+// ----------------------------------------------------------------------
+
 std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan::fasta::scan_output_t> acmacs::seqdb::v3::scan::fasta::scan(scan_input_t input)
 {
     for (; !input.done() && (*input.first == '\r' || *input.first == '\n'); ++input.first) {

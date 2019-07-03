@@ -252,6 +252,31 @@ void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& la
 
 // ----------------------------------------------------------------------
 
+static const auto empty_month_or_day = [](const auto& date) { return date.find("-00") != std::string::npos; };
+static const auto not_empty_month_or_day = [](const auto& date) { return date.find("-00") == std::string::npos; };
+
+void acmacs::seqdb::v3::scan::sequence_t::add_date(const std::string& date)
+{
+    if (!date.empty() && (dates_.empty() || !empty_month_or_day(date))) {
+        dates_.add_and_sort(date);
+    }
+
+} // acmacs::seqdb::v3::scan::sequence_t::add_date
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::sequence_t::remove_invalid_dates()
+{
+    if (dates_.size() > 1 && std::any_of(std::begin(dates_), std::end(dates_), not_empty_month_or_day)) {
+        // fmt::print(stderr, "WARNING remove from dates: {} --> ", dates_);
+        dates_.erase_if(empty_month_or_day);
+        // fmt::print(stderr, "{}\n", dates_);
+    }
+
+} // acmacs::seqdb::v3::scan::sequence_t::remove_invalid_dates
+
+// ----------------------------------------------------------------------
+
 bool acmacs::seqdb::v3::scan::sequence_t::lab_in(std::initializer_list<std::string_view> labs) const
 {
     return std::any_of(std::begin(labs), std::end(labs), [this](const auto lab) { return lab_ids_.find(lab) != lab_ids_.end(); });
