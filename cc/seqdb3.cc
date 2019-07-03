@@ -10,6 +10,8 @@ struct Options : public argv
 {
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
+    option<str>  db{*this, "db", dflt{""}};
+
     option<str>  subtype{*this, "flu", dflt{""}};
     option<str>  host{*this, "host", dflt{""}};
     option<str>  lab{*this, "lab", dflt{""}};
@@ -19,7 +21,6 @@ struct Options : public argv
     option<str>  continent{*this, "continent", dflt{""}};
     option<str>  country{*this, "country", dflt{""}};
     option<str>  clade{*this, "clade", dflt{""}};
-    option<str>  db{*this, "db", dflt{""}};
 
 //   aa at pos, not aa at pos
 //   random N
@@ -28,6 +29,8 @@ struct Options : public argv
 //   name matches regex (multiple regex possible, export all matching)
 //   Base sequence to export together with other sequences (regex -> to select just one sequence)
 //   HAMMING_DISTANCE_THRESHOLD - relative to base seq
+
+    option<bool>  multiple_dates{*this, "multiple-dates"};
 
     option<str>  name{*this, 'n', "name", dflt{""}};
 };
@@ -75,7 +78,10 @@ int main(int argc, char* const argv[])
                 return seqdb.all();
         };
 
-        const auto subset = init();
+        auto subset = init();
+        if (opt.multiple_dates)
+            subset.multiple_dates();
+
         for (const auto& ref : subset)
             fmt::print("{} {}\n", ref.seq_id(), ref.entry->dates);
 

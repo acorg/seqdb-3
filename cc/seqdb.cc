@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "acmacs-base/read-file.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
@@ -45,6 +47,15 @@ seqdb::v3::subset seqdb::v3::Seqdb::select_by_name(std::string_view name) const
     return ss;
 
 } // seqdb::v3::Seqdb::select_by_name
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::multiple_dates()
+{
+    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.entry->dates.size() < 2; }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::multiple_dates
 
 // ----------------------------------------------------------------------
 

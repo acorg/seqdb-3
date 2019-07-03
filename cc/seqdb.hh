@@ -85,6 +85,8 @@ namespace seqdb
             auto begin() const { return refs_.begin(); }
             auto end() const { return refs_.end(); }
 
+            subset& multiple_dates();
+
           private:
             refs_t refs_;
 
