@@ -31,7 +31,7 @@ struct filter_whocc_aligned : public filter_h1_h3_b_aligned
 {
     bool good(const acmacs::seqdb::scan::sequence_t& seq) const override
     {
-        return filter_h1_h3_b_aligned::good(seq) && seq.lab_in({"CDC", "Crick", "NIID", "VIDRL"});
+        return filter_h1_h3_b_aligned::good(seq) && seq.lab_in({"CDC", "CRICK", "NIID", "VIDRL"}); // must be all uppercase because lab and lab_id are acmacs::uppercase
     }
 };
 
