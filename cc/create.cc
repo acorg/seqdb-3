@@ -39,14 +39,16 @@ static void generate(std::string_view filename, const std::vector<acmacs::seqdb:
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<scan::fasta::scan_result_t>& sequences)
+void acmacs::seqdb::v3::create(std::string_view prefix, std::vector<scan::fasta::scan_result_t>& sequences, create_dbs cdb)
 {
     acmacs::seqdb::scan::fasta::sort_by_name(sequences);
 #pragma omp parallel sections
     {
-        generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
+        if (cdb == create_dbs::all)
+            generate(fmt::format("{}/seqdb-all.json.xz", prefix), sequences, filter_all_aligned{});
 #pragma omp section
-        generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
+        if (cdb == create_dbs::all)
+            generate(fmt::format("{}/seqdb-h1-h3-b.json.xz", prefix), sequences, filter_h1_h3_b_aligned{});
 #pragma omp section
         generate(fmt::format("{}/seqdb.json.xz", prefix), sequences, filter_whocc_aligned{});
     }
@@ -68,8 +70,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
             if (!dates.empty()) {
                 if (dates.size() > 1 && std::any_of(std::begin(dates), std::end(dates), acmacs::seqdb::scan::not_empty_month_or_day))
                     dates.erase_if(acmacs::seqdb::scan::empty_month_or_day);
-                dates.sort(); // std::sort(std::begin(dates), std::end(dates));
-                // const auto end = std::unique(std::begin(dates), std::end(dates));
+                dates.sort();
                 entry << to_json::key_val("d", to_json::array(std::begin(dates), std::end(dates), to_json::json::compact_output::yes));
             }
             entry << to_json::key_val("s", entry_seqs);
@@ -125,7 +126,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                 entry_seqs << std::move(entry_seq);
             }
 
-            dates.merge_from(seq.dates()); // std::copy(std::begin(seq.dates()), std::end(seq.dates()), std::back_inserter(dates));
+            dates.merge_from(seq.dates());
             ++num_sequences;
             // if (num_sequences > 5)
             //     break;
