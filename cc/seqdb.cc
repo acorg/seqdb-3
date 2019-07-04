@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <random>
 
 #include "acmacs-base/read-file.hh"
 #include "acmacs-virus/virus-name.hh"
@@ -156,13 +157,29 @@ seqdb::v3::subset& seqdb::v3::subset::clade(const acmacs::uppercase& clade)
 
 seqdb::v3::subset& seqdb::v3::subset::recent(size_t recent)
 {
-    if (recent > 0) {
+    if (recent > 0 && refs_.size() > recent) {
         sort_by_date_recent_first();
         refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent)), std::end(refs_));
     }
     return *this;
 
 } // seqdb::v3::subset::recent
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::random(size_t random)
+{
+    if (random > 0 && refs_.size() > random) {
+        std::mt19937 generator{std::random_device()()};
+        std::uniform_int_distribution<size_t> distribution(0, refs_.size() - 1);
+        for (size_t no = 0; no < random; ++no)
+            refs_[distribution(generator)].selected = true;
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return !en.selected; }), std::end(refs_));
+        std::for_each(std::begin(refs_), std::end(refs_), [](auto& en) { en.selected = false; });
+    }
+    return *this;
+
+} // seqdb::v3::subset::random
 
 // ----------------------------------------------------------------------
 

@@ -74,6 +74,7 @@ namespace seqdb
         {
             const SeqdbEntry* entry;
             size_t seq_index;
+            bool selected{false}; // for choosing at random
 
             ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
 
@@ -103,6 +104,7 @@ namespace seqdb
             subset& country(const acmacs::uppercase& country);
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
+            subset& random(size_t random);
 
             subset& print();
 

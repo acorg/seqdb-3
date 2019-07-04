@@ -23,10 +23,9 @@ struct Options : public argv
     option<str>  country{*this, "country", dflt{""}};
     option<str>  clade{*this, "clade", dflt{""}};
     option<size_t> recent{*this, "recent", dflt{0UL}};
+    option<size_t> random{*this, "random", dflt{0UL}};
 
 //   aa at pos, not aa at pos
-//   random N
-//   recent N
 //   with-hi-name
 //   name matches regex (multiple regex possible, export all matching)
 //   Base sequence to export together with other sequences (regex -> to select just one sequence)
@@ -94,6 +93,7 @@ int main(int argc, char* const argv[])
                 .clade(acmacs::uppercase{*opt.clade})
                 .multiple_dates(opt.multiple_dates)
                 .recent(opt.recent)
+                .random(opt.random)
                 .print();
 
         return 0;
