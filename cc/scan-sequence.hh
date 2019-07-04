@@ -93,7 +93,7 @@ namespace acmacs::seqdb
                     }
                     else {
                         try {
-                            return std::stoul(dates_.front().substr(0, 4));
+                            return ::string::from_chars<size_t>(dates_.front().substr(0, 4));
                         }
                         catch (std::exception&) {
                             fmt::print(stderr, "WARNING: cannot read year from {}\n", dates_.front());

@@ -29,7 +29,6 @@ struct Options : public argv
     option<size_t> random{*this, "random", dflt{0UL}};
     option<bool>   with_hi_name{*this, "with-hi-name"};
 
-//   aa at pos, not aa at pos
 //   name matches regex (multiple regex possible, export all matching)
 //   Base sequence to export together with other sequences (regex -> to select just one sequence)
 //   HAMMING_DISTANCE_THRESHOLD - relative to base seq
@@ -50,7 +49,6 @@ struct Options : public argv
 //   name format: {seq_id} {hi_name_or_seq_name_with_passage} {name} {date} {lab_id} {passage} {lab}
 //   name encode
 // select
-//   aa at pos, not aa at pos
 //   name matches regex (multiple regex possible, export all matching)
 //   Base sequence to export together with other sequences (regex -> to select just one sequence)
 //   HAMMING_DISTANCE_THRESHOLD - relative to base seq
@@ -89,9 +87,9 @@ int main(int argc, char* const argv[])
             const auto fields = acmacs::string::split(*opt.aa_at_pos, ",");
             aa_at_pos = fields | ranges::view::transform([](const auto& source) -> seqdb::subset::amino_acid_at_pos0_t {
                 if (source.size() >= 2 && source.size() <= 4 && std::isdigit(source.front()) && std::isalpha(source.back()))
-                    return {std::stoul(source.substr(0, source.size() - 1)) - 1, source.back(), true};
+                    return {string::from_chars<size_t>(source.substr(0, source.size() - 1)) - 1, source.back(), true};
                 else if (source.size() >= 3 && source.size() <= 5 && source.front() == '!' && std::isdigit(source[1]) && std::isalpha(source.back()))
-                    return {std::stoul(source.substr(1, source.size() - 2)) - 1, source.back(), false};
+                    return {string::from_chars<size_t>(source.substr(1, source.size() - 2)) - 1, source.back(), false};
                 else
                     throw std::runtime_error{fmt::format("--aa-at: cannot parse entry: {}", source)};
             });
