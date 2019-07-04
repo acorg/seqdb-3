@@ -51,6 +51,17 @@ namespace seqdb
 
             bool has_lab(std::string_view lab) const { return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; }); }
             bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
+            char aa_at(size_t pos0) const
+            {
+                const auto shift = string::from_chars<int>(a_shift);
+                const auto shifted = static_cast<decltype(shift)>(pos0) - shift;
+                if (shifted < 0)
+                    return 'X';
+                else if (static_cast<size_t>(shifted) >= amino_acids.size())
+                    return '?';
+                else
+                    return amino_acids[static_cast<size_t>(shifted)];
+            }
         };
 
         struct SeqdbEntry
@@ -88,6 +99,7 @@ namespace seqdb
         {
           public:
             using refs_t = std::vector<ref>;
+            using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
 
             auto empty() const { return refs_.empty(); }
             auto size() const { return refs_.size(); }
@@ -106,6 +118,7 @@ namespace seqdb
             subset& recent(size_t recent);
             subset& random(size_t random);
             subset& with_hi_name(bool with_hi_name);
+            subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
 
             subset& print();
 

@@ -193,6 +193,28 @@ seqdb::v3::subset& seqdb::v3::subset::with_hi_name(bool with_hi_name)
 
 // ----------------------------------------------------------------------
 
+seqdb::v3::subset& seqdb::v3::subset::aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0)
+{
+    if (!aa_at_pos0.empty()) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
+                                   [&aa_at_pos0](const auto& en) {
+                                       constexpr bool keep = false, remove = true;
+                                       if (en.seq().amino_acids.empty())
+                                           return remove;
+                                       for (const auto& [pos0, aa, equal] : aa_at_pos0) {
+                                           if ((en.seq().aa_at(pos0) == aa) != equal)
+                                               return remove;
+                                       }
+                                       return keep;
+                                   }),
+                    std::end(refs_));
+    }
+    return *this;
+
+} // seqdb::v3::subset::aa_at_pos
+
+// ----------------------------------------------------------------------
+
 seqdb::v3::subset& seqdb::v3::subset::dates(std::string_view start, std::string_view end)
 {
     if (!start.empty() || !end.empty())
