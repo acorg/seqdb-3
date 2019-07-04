@@ -11,7 +11,9 @@ namespace acmacs::seqdb
     {
         namespace scan::fasta { struct scan_result_t; }
 
-        void create(std::string_view prefix, std::vector<scan::fasta::scan_result_t>& sequences);
+        enum class create_dbs { all, whocc_only };
+
+        void create(std::string_view prefix, std::vector<scan::fasta::scan_result_t>& sequences, create_dbs cdb = create_dbs::all);
 
     } // namespace v3
 } // namespace acmacs::seqdb

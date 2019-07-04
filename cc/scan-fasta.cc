@@ -103,6 +103,8 @@ void acmacs::seqdb::v3::scan::fasta::merge_duplicates(std::vector<fasta::scan_re
                     master->sequence.merge_from((*it)->sequence);
                     (*it)->remove = true;
                 }
+                else
+                    master = *it;
             }
         }
     };
@@ -330,7 +332,7 @@ date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(const acmacs::up
     };
 
     const auto extract_date = [source,&result]() -> bool {
-        result = date::from_string(source, date::throw_on_error::no);
+        result = date::from_string(source, date::allow_incomplete::no, date::throw_on_error::no);
         return result.ok();
     };
 

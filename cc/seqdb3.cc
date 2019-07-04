@@ -1,5 +1,6 @@
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/date.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "seqdb-3/seqdb.hh"
 
@@ -78,21 +79,16 @@ int main(int argc, char* const argv[])
                 return seqdb.all();
         };
 
-        auto subset = init();
-        if (opt.subtype.has_value())
-            subset.subtype(acmacs::uppercase{*opt.subtype});
-        if (opt.multiple_dates)
-            subset.multiple_dates();
+        const auto fix_date = [](std::string_view source) -> std::string { return date::display(date::from_string(source, date::allow_incomplete::yes), date::allow_incomplete::yes); };
 
-        for (const auto& ref : subset)
-            fmt::print("{} {}\n", ref.seq_id(), ref.entry->dates);
-
-        // size_t selected = 0;
-        // for (const auto& [entry, seq_no] : refs) {
-        //     fmt::print("{} <{}> [{}] {} {} {}\n", entry->name, entry->lineage, entry->dates, entry->seqs[seq_no].reassortants, entry->seqs[seq_no].passages, entry->seqs[seq_no].clades);
-        //     ++selected;
-        // }
-        // fmt::print("INFO: selected: {}\n", selected);
+        init()
+            .subtype(acmacs::uppercase{*opt.subtype})
+            .lineage(acmacs::uppercase{*opt.lineage})
+            .lab(acmacs::uppercase{*opt.lab})
+            .host(acmacs::uppercase{*opt.host})
+            .dates(fix_date(opt.start_date), fix_date(opt.end_date))
+            .multiple_dates(opt.multiple_dates)
+            .print();
 
         return 0;
     }

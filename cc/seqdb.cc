@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "acmacs-base/read-file.hh"
+#include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
 
@@ -50,9 +51,21 @@ seqdb::v3::subset seqdb::v3::Seqdb::select_by_name(std::string_view name) const
 
 // ----------------------------------------------------------------------
 
-seqdb::v3::subset& seqdb::v3::subset::multiple_dates()
+std::string_view seqdb::v3::SeqdbEntry::host() const
 {
-    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.entry->dates.size() < 2; }), std::end(refs_));
+    if (const auto ho = acmacs::virus::host(acmacs::virus::v2::virus_name_t{name}); !ho.empty())
+        return ho;
+    else
+        return "HUMAN";
+
+} // seqdb::v3::SeqdbEntry::host
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::multiple_dates(bool do_filter)
+{
+    if (do_filter)
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.entry->dates.size() < 2; }), std::end(refs_));
     return *this;
 
 } // seqdb::v3::subset::multiple_dates
@@ -61,10 +74,73 @@ seqdb::v3::subset& seqdb::v3::subset::multiple_dates()
 
 seqdb::v3::subset& seqdb::v3::subset::subtype(const acmacs::uppercase& virus_type)
 {
-    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [virus_type=static_cast<std::string_view>(virus_type)](const auto& en) { return en.entry->virus_type != virus_type; }), std::end(refs_));
+    if (!virus_type.empty()) {
+        std::string_view vt = virus_type;
+        if (vt == "H1")
+            vt = "A(H1N1)";
+        else if (vt == "H3")
+            vt = "A(H3N2)";
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [vt](const auto& en) { return en.entry->virus_type != vt; }), std::end(refs_));
+    }
     return *this;
 
 } // seqdb::v3::subset::subtype
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::lineage(const acmacs::uppercase& lineage)
+{
+    if (!lineage.empty()) {
+        std::string_view lin = lineage;
+        switch (lin[0]) {
+          case 'V': lin = "VICTORIA"; break;
+          case 'Y': lin = "YAMAGATA"; break;
+        }
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [lin](const auto& en) { return en.entry->lineage != lin; }), std::end(refs_));
+    }
+    return *this;
+
+} // seqdb::v3::subset::lineage
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::lab(const acmacs::uppercase& lab)
+{
+    if (!lab.empty())
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [lab=static_cast<std::string_view>(lab)](const auto& en) { return !en.has_lab(lab); }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::lab
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::host(const acmacs::uppercase& host)
+{
+    if (!host.empty())
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [host=static_cast<std::string_view>(host)](const auto& en) { return en.entry->host() != host; }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::host
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::dates(std::string_view start, std::string_view end)
+{
+    if (!start.empty() || !end.empty())
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [start,end](const auto& en) { return !en.entry->date_within(start, end); }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::dates
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::print()
+{
+    for (const auto& ref : *this)
+        fmt::print("{}{}{} {}\n", ref.seq_id(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates);
+    return *this;
+
+} // seqdb::v3::subset::print
 
 // ----------------------------------------------------------------------
 

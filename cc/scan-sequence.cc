@@ -255,7 +255,7 @@ void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& la
 void acmacs::seqdb::v3::scan::sequence_t::add_date(const std::string& date)
 {
     if (!date.empty() && (dates_.empty() || !empty_month_or_day(date))) {
-        dates_.add_and_sort(date);
+        dates_.add(date, flat_set_sort_afterwards::yes);
     }
 
 } // acmacs::seqdb::v3::scan::sequence_t::add_date
@@ -409,7 +409,7 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
     }
 
     dates_.merge_from(source.dates_);
-    passages_.merge_from(source.passages_);
+    passages_.merge_from(source.passages_, flat_set_sort_afterwards::yes);
     hi_names_.merge_from(source.hi_names_);
 
     for (const auto& [lab, ids] : source.lab_ids()) {

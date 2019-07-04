@@ -48,6 +48,8 @@ namespace seqdb
             std::vector<std::string_view> clades;
             std::vector<std::string_view> hi_names;
             labs_t lab_ids;
+
+            bool has_lab(std::string_view lab) const { return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; }); }
         };
 
         struct SeqdbEntry
@@ -59,6 +61,9 @@ namespace seqdb
             std::string_view lineage;
             std::string_view virus_type;
             std::vector<SeqdbSeq> seqs;
+
+            std::string_view host() const;
+            bool date_within(std::string_view start, std::string_view end) const { return !dates.empty() && (start.empty() || dates.front() >= start) && (end.empty() || dates.front() < end); }
         };
 
         // ----------------------------------------------------------------------
@@ -69,11 +74,10 @@ namespace seqdb
             size_t seq_index;
 
             ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
-            std::string seq_id() const
-            {
-                const auto& seq = entry->seqs[seq_index];
-                return string::join(" ", {entry->name, string::join(" ", seq.reassortants), seq.passages.empty() ? std::string_view{} : seq.passages.front()});
-            }
+
+            const auto& seq() const { return entry->seqs[seq_index]; }
+            std::string seq_id() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
         };
 
         class subset
@@ -86,8 +90,14 @@ namespace seqdb
             auto begin() const { return refs_.begin(); }
             auto end() const { return refs_.end(); }
 
-            subset& multiple_dates();
+            subset& multiple_dates(bool do_filter = true);
             subset& subtype(const acmacs::uppercase& virus_type);
+            subset& lineage(const acmacs::uppercase& lineage);
+            subset& lab(const acmacs::uppercase& lab);
+            subset& host(const acmacs::uppercase& host);
+            subset& dates(std::string_view start, std::string_view end);
+
+            subset& print();
 
           private:
             refs_t refs_;

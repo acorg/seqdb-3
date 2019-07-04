@@ -41,6 +41,7 @@ struct Options : public argv
     option<bool> all_subtypes_messages{*this, "all-subtypes-messages", desc{"otherwise show messages for H1, H3, B only"}};
 
     option<str>  output_seqdb{*this, 'o', "output-dir", dflt{""}};
+    option<bool> whocc_only{*this, "whocc-only", desc{"create whocc only db (seqdb.json.xz)"}};
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
@@ -60,11 +61,7 @@ int main(int argc, char* const argv[])
         Options opt(argc, argv);
 
         auto all_sequences = acmacs::seqdb::scan::fasta::scan(opt.filenames, {});
-        fmt::print(stderr, "TOTAL sequences upon scanning fasta: {:7d}\n", all_sequences.size());
-
-        // // keep just A(H3
-        // all_sequences.erase(std::remove_if(std::begin(all_sequences), std::end(all_sequences), [](const auto& e1) { return e1.fasta.type_subtype.substr(0, 4) != "A(H3"; }),
-        // std::end(all_sequences)); fmt::print(stderr, "before aligned (H3 only): {}\n", all_sequences.size());
+        fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
@@ -74,9 +71,9 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::scan::fasta::sort_by_name(all_sequences);
         acmacs::seqdb::scan::match_hidb(all_sequences);
         if (!opt.output_seqdb->empty())
-            acmacs::seqdb::create(opt.output_seqdb, all_sequences);
+            acmacs::seqdb::create(opt.output_seqdb, all_sequences, opt.whocc_only ? acmacs::seqdb::create_dbs::whocc_only : acmacs::seqdb::create_dbs::all);
 
-        fmt::print(stderr, "TOTAL sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::scan::fasta::is_aligned));
+        fmt::print(stderr, "INFO: Total sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::scan::fasta::is_aligned));
         fmt::print(stderr, "\n");
 
         if (!opt.print_counter_for->empty()) {
@@ -91,7 +88,7 @@ int main(int argc, char* const argv[])
         }
 
         if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
-            fmt::print(stderr, "FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
+            fmt::print(stderr, "ERROR: FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
 
         if (opt.print_counter_for->empty()) {
             acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
