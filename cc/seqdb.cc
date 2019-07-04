@@ -124,6 +124,36 @@ seqdb::v3::subset& seqdb::v3::subset::host(const acmacs::uppercase& host)
 
 // ----------------------------------------------------------------------
 
+seqdb::v3::subset& seqdb::v3::subset::continent(const acmacs::uppercase& continent)
+{
+    if (!continent.empty())
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [continent=static_cast<std::string_view>(continent)](const auto& en) { return en.entry->continent != continent; }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::continent
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::country(const acmacs::uppercase& country)
+{
+    if (!country.empty())
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [country=static_cast<std::string_view>(country)](const auto& en) { return en.entry->country != country; }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::country
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::clade(const acmacs::uppercase& clade)
+{
+    if (!clade.empty())
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [clade=static_cast<std::string_view>(clade)](const auto& en) { return !en.has_clade(clade); }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::clade
+
+// ----------------------------------------------------------------------
+
 seqdb::v3::subset& seqdb::v3::subset::dates(std::string_view start, std::string_view end)
 {
     if (!start.empty() || !end.empty())

@@ -47,13 +47,6 @@ struct Options : public argv
 //   name format: {seq_id} {hi_name_or_seq_name_with_passage} {name} {date} {lab_id} {passage} {lab}
 //   name encode
 // select
-//   subtype
-//   lineage
-//   date range
-//   lab
-//   continent/country
-//   host (h1 swine)
-//   clade
 //   aa at pos, not aa at pos
 //   random N
 //   recent N
@@ -79,16 +72,27 @@ int main(int argc, char* const argv[])
                 return seqdb.all();
         };
 
-        const auto fix_date = [](std::string_view source) -> std::string { return date::display(date::from_string(source, date::allow_incomplete::yes), date::allow_incomplete::yes); };
+        const auto fix_date = [](std::string_view source) -> std::string { return source.empty() ? std::string{} : date::display(date::from_string(source, date::allow_incomplete::yes), date::allow_incomplete::yes); };
+
+        const auto fix_country = [](std::string_view source) -> acmacs::uppercase {
+            if (source == "USA" || source == "US")
+                return "UNITED STATES OF AMERICA";
+            if (source == "UK" || source == "GB" || source == "GREAT BRITAIN")
+                return "UNITED KINGDOM";
+            return source;
+        };
 
         init()
-            .subtype(acmacs::uppercase{*opt.subtype})
-            .lineage(acmacs::uppercase{*opt.lineage})
-            .lab(acmacs::uppercase{*opt.lab})
-            .host(acmacs::uppercase{*opt.host})
-            .dates(fix_date(opt.start_date), fix_date(opt.end_date))
-            .multiple_dates(opt.multiple_dates)
-            .print();
+                .subtype(acmacs::uppercase{*opt.subtype})
+                .lineage(acmacs::uppercase{*opt.lineage})
+                .lab(acmacs::uppercase{*opt.lab})
+                .host(acmacs::uppercase{*opt.host})
+                .dates(fix_date(opt.start_date), fix_date(opt.end_date))
+                .continent(acmacs::uppercase{*opt.continent})
+                .country(fix_country(opt.country))
+                .clade(acmacs::uppercase{*opt.clade})
+                .multiple_dates(opt.multiple_dates)
+                .print();
 
         return 0;
     }

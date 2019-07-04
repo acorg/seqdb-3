@@ -50,6 +50,7 @@ namespace seqdb
             labs_t lab_ids;
 
             bool has_lab(std::string_view lab) const { return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; }); }
+            bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
         };
 
         struct SeqdbEntry
@@ -78,6 +79,7 @@ namespace seqdb
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
+            bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
         };
 
         class subset
@@ -96,6 +98,9 @@ namespace seqdb
             subset& lab(const acmacs::uppercase& lab);
             subset& host(const acmacs::uppercase& host);
             subset& dates(std::string_view start, std::string_view end);
+            subset& continent(const acmacs::uppercase& continent);
+            subset& country(const acmacs::uppercase& country);
+            subset& clade(const acmacs::uppercase& clade);
 
             subset& print();
 
