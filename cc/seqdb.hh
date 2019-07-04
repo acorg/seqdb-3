@@ -105,6 +105,7 @@ namespace seqdb
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
             subset& random(size_t random);
+            subset& with_hi_name(bool with_hi_name);
 
             subset& print();
 

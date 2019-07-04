@@ -183,6 +183,16 @@ seqdb::v3::subset& seqdb::v3::subset::random(size_t random)
 
 // ----------------------------------------------------------------------
 
+seqdb::v3::subset& seqdb::v3::subset::with_hi_name(bool with_hi_name)
+{
+    if (with_hi_name)
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.seq().hi_names.empty(); }), std::end(refs_));
+    return *this;
+
+} // seqdb::v3::subset::with_hi_name
+
+// ----------------------------------------------------------------------
+
 seqdb::v3::subset& seqdb::v3::subset::dates(std::string_view start, std::string_view end)
 {
     if (!start.empty() || !end.empty())

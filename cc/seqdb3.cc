@@ -13,17 +13,18 @@ struct Options : public argv
 
     option<str>  db{*this, "db", dflt{""}};
 
-    option<str>  subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
-    option<str>  host{*this, "host", dflt{""}};
-    option<str>  lab{*this, "lab", dflt{""}};
-    option<str>  lineage{*this, "lineage", dflt{""}};
-    option<str>  start_date{*this, "start-date", dflt{""}};
-    option<str>  end_date{*this, "end-date", dflt{""}};
-    option<str>  continent{*this, "continent", dflt{""}};
-    option<str>  country{*this, "country", dflt{""}};
-    option<str>  clade{*this, "clade", dflt{""}};
+    option<str>    subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
+    option<str>    host{*this, "host", dflt{""}};
+    option<str>    lab{*this, "lab", dflt{""}};
+    option<str>    lineage{*this, "lineage", dflt{""}};
+    option<str>    start_date{*this, "start-date", dflt{""}};
+    option<str>    end_date{*this, "end-date", dflt{""}};
+    option<str>    continent{*this, "continent", dflt{""}};
+    option<str>    country{*this, "country", dflt{""}};
+    option<str>    clade{*this, "clade", dflt{""}};
     option<size_t> recent{*this, "recent", dflt{0UL}};
     option<size_t> random{*this, "random", dflt{0UL}};
+    option<bool>   with_hi_name{*this, "with-hi-name"};
 
 //   aa at pos, not aa at pos
 //   with-hi-name
@@ -92,6 +93,7 @@ int main(int argc, char* const argv[])
                 .country(fix_country(opt.country))
                 .clade(acmacs::uppercase{*opt.clade})
                 .multiple_dates(opt.multiple_dates)
+                .with_hi_name(opt.with_hi_name)
                 .recent(opt.recent)
                 .random(opt.random)
                 .print();
