@@ -154,6 +154,18 @@ seqdb::v3::subset& seqdb::v3::subset::clade(const acmacs::uppercase& clade)
 
 // ----------------------------------------------------------------------
 
+seqdb::v3::subset& seqdb::v3::subset::recent(size_t recent)
+{
+    if (recent > 0) {
+        sort_by_date_recent_first();
+        refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent)), std::end(refs_));
+    }
+    return *this;
+
+} // seqdb::v3::subset::recent
+
+// ----------------------------------------------------------------------
+
 seqdb::v3::subset& seqdb::v3::subset::dates(std::string_view start, std::string_view end)
 {
     if (!start.empty() || !end.empty())

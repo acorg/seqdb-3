@@ -22,6 +22,7 @@ struct Options : public argv
     option<str>  continent{*this, "continent", dflt{""}};
     option<str>  country{*this, "country", dflt{""}};
     option<str>  clade{*this, "clade", dflt{""}};
+    option<size_t> recent{*this, "recent", dflt{0UL}};
 
 //   aa at pos, not aa at pos
 //   random N
@@ -92,6 +93,7 @@ int main(int argc, char* const argv[])
                 .country(fix_country(opt.country))
                 .clade(acmacs::uppercase{*opt.clade})
                 .multiple_dates(opt.multiple_dates)
+                .recent(opt.recent)
                 .print();
 
         return 0;

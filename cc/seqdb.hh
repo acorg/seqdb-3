@@ -65,6 +65,7 @@ namespace seqdb
 
             std::string_view host() const;
             bool date_within(std::string_view start, std::string_view end) const { return !dates.empty() && (start.empty() || dates.front() >= start) && (end.empty() || dates.front() < end); }
+            std::string_view date() const { return dates.empty() ? name.substr(name.size() - 4) : dates.front(); }
         };
 
         // ----------------------------------------------------------------------
@@ -101,6 +102,7 @@ namespace seqdb
             subset& continent(const acmacs::uppercase& continent);
             subset& country(const acmacs::uppercase& country);
             subset& clade(const acmacs::uppercase& clade);
+            subset& recent(size_t recent);
 
             subset& print();
 
@@ -108,6 +110,8 @@ namespace seqdb
             refs_t refs_;
 
             subset() = default;
+
+            void sort_by_date_recent_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); }); }
 
             friend class Seqdb;
         };
