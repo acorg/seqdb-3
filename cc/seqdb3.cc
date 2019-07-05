@@ -35,9 +35,12 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
 
+    // print
+    option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
+    option<bool>      print_seqid{*this, "seq-id", desc{"printing seq_id instead of detailed info"}};
+
     // export
     option<str>       fasta{*this, "fasta", dflt{""}, desc{"export to fasta, - for stdout"}};
-    option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
     option<bool>      wrap{*this, "wrap"};
     option<bool>      nucs{*this, "nucs", desc{"export nucleotide sequences instead of amino acid"}};
     option<bool>      not_aligned{*this, "not-aligned", desc{"do not align for exporting"}};
@@ -108,7 +111,7 @@ int main(int argc, char* const argv[])
             .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
             .export_sequences(opt.fasta, acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned))
-            .print(opt.print || opt.fasta->empty());
+            .print(opt.print_seqid ? acmacs::seqdb::subset::print_options::seq_id : acmacs::seqdb::subset::print_options::details, opt.print || opt.fasta->empty());
 
         return 0;
     }

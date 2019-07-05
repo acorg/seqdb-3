@@ -122,7 +122,7 @@ namespace acmacs::seqdb
             constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
 
             const auto& seq() const { return entry->seqs[seq_index]; }
-            std::string seq_id() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            std::string seq_id() const;
             std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
@@ -133,6 +133,7 @@ namespace acmacs::seqdb
           public:
             using refs_t = std::vector<ref>;
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
+            enum class print_options { details, seq_id };
 
             constexpr auto empty() const { return refs_.empty(); }
             constexpr auto size() const { return refs_.size(); }
@@ -158,7 +159,7 @@ namespace acmacs::seqdb
             subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
             subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
             subset& export_sequences(std::string_view filename, const export_options& options);
-            subset& print(bool do_print = true);
+            subset& print(print_options po, bool do_print = true);
 
           private:
             refs_t refs_;

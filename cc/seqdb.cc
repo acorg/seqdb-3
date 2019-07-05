@@ -3,6 +3,7 @@
 #include <regex>
 
 #include "acmacs-base/read-file.hh"
+#include "acmacs-base/range-v3.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
@@ -79,6 +80,59 @@ std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
         return "HUMAN";
 
 } // acmacs::seqdb::v3::SeqdbEntry::host
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::ref::seq_id() const
+{
+    const auto to_remove = [](char cc) {
+        switch (cc) {
+          case '(':
+          case ')':
+          case '[':
+          case ']':
+          case ':':
+          case '\'':
+          case ';':
+              // not in seqdb 2019-07-01, but remove them just in case
+          case '!':
+          case '#':
+          case '*':
+          case '@':
+          case '$':
+              return true;
+        }
+        return false;
+    };
+
+    const auto to_replace_with_underscore = [](char cc) {
+        switch (cc) {
+          case ' ':
+          case '&':
+          case '=':
+              return true;
+        }
+        return false;
+    };
+
+    const auto to_replace_with_slash = [](char cc) {
+        switch (cc) {
+          case ',':
+          case '+':
+              return true;
+        }
+        return false;
+    };
+
+    const auto source = ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()});
+    return source
+            | ranges::view::remove_if(to_remove)
+            | ranges::view::replace('?', 'x')
+            | ranges::view::replace_if(to_replace_with_slash, '/') // usually in passages
+            | ranges::view::replace_if(to_replace_with_underscore, '_')
+            ;
+
+} // acmacs::seqdb::v3::ref::seq_id
 
 // ----------------------------------------------------------------------
 
@@ -351,11 +405,27 @@ void acmacs::seqdb::v3::subset::export_fasta(const ref& entry, const export_opti
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(bool do_print)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(print_options po, bool do_print)
 {
+    const auto make_details = [](const auto& ref) {
+        fmt::print("{}{}{} {} {} {}\n", ref.full_name(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates, ref.entry->country, ref.seq().clades);
+    };
+
+    const auto make_seq_id = [](const auto& ref) {
+        fmt::print("{}\n", ref.seq_id());
+    };
+
     if (do_print) {
-        for (const auto& ref : *this)
-            fmt::print("{}{}{} {}\n", ref.seq_id(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates);
+        for (const auto& ref : *this) {
+            switch (po) {
+              case print_options::details:
+                  make_details(ref);
+                  break;
+              case print_options::seq_id:
+                  make_seq_id(ref);
+                  break;
+            }
+        }
     }
     return *this;
 
