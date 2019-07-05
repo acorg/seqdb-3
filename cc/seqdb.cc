@@ -295,10 +295,68 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print()
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const export_options& options)
 {
-    for (const auto& ref : *this)
-        fmt::print("{}{}{} {}\n", ref.seq_id(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates);
+    if (!filename.empty()) {
+        std::string output;
+        output.reserve(refs_.size() * static_cast<size_t>(refs_.front().seq_id().size() * 1.5 + refs_.front().seq().nucs.size()));
+        for (const auto& en : refs_) {
+            switch (options.e_format) {
+              case export_options::format::fasta_aa:
+              case export_options::format::fasta_nuc:
+                  export_fasta(en, options, output);
+                  break;
+            }
+        }
+        acmacs::file::write(filename, output);
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::export_sequences
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::subset::export_fasta(const ref& entry, const export_options& options, std::string& output)
+{
+    const auto get_seq = [&entry, &options] {
+        if (options.e_format == export_options::format::fasta_aa) {
+            if (options.e_aligned)
+                return entry.seq().aa_aligned();
+            else
+                return entry.seq().amino_acids;
+        }
+        else {
+            if (options.e_aligned)
+                return entry.seq().nuc_aligned();
+            else
+                return entry.seq().nucs;
+        }
+    };
+
+    output.append(entry.seq_id());
+    output.append(1, '\n');
+    const auto seq = get_seq();
+    if (options.e_wrap_at == 0 || options.e_wrap_at >= seq.size()) {
+        output.append(seq);
+        output.append(1, '\n');
+    }
+    else {
+        for (size_t start = 0; start < seq.size(); start += options.e_wrap_at) {
+            output.append(seq.substr(start, options.e_wrap_at));
+            output.append(1, '\n');
+        }
+    }
+
+} // acmacs::seqdb::v3::subset::export_fasta
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(bool do_print)
+{
+    if (do_print) {
+        for (const auto& ref : *this)
+            fmt::print("{}{}{} {}\n", ref.seq_id(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates);
+    }
     return *this;
 
 } // acmacs::seqdb::v3::subset::print

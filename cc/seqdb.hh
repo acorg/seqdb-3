@@ -35,6 +35,23 @@ namespace acmacs::seqdb
 
         // ----------------------------------------------------------------------
 
+        struct export_options
+        {
+            enum class format { fasta_aa, fasta_nuc };
+
+            format e_format{format::fasta_nuc};
+            size_t e_wrap_at{0};
+            bool   e_aligned{true};
+
+            export_options& fasta(bool nucs) { e_format = nucs ? format::fasta_nuc : format::fasta_aa; return *this; }
+            export_options& wrap(size_t wrap_at) { e_wrap_at = wrap_at; return *this; }
+            export_options& no_wrap() { e_wrap_at = 0; return *this; }
+            export_options& aligned(bool aligned = true) { e_aligned = aligned; return *this; }
+
+        };
+
+        // ----------------------------------------------------------------------
+
         struct SeqdbSeq
         {
             using lab_ids_t = std::vector<std::string_view>;
@@ -139,8 +156,9 @@ namespace acmacs::seqdb
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
             subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
             subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
-            subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter);
-            subset& print();
+            subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
+            subset& export_sequences(std::string_view filename, const export_options& options);
+            subset& print(bool do_print = true);
 
           private:
             refs_t refs_;
@@ -148,6 +166,7 @@ namespace acmacs::seqdb
             subset() = default;
 
             void sort_by_date_recent_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); }); }
+            void export_fasta(const ref& entry, const export_options& options, std::string& output);
 
             friend class Seqdb;
         };
