@@ -31,6 +31,7 @@ namespace acmacs::seqdb
                 static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
+                static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
 
             } // namespace fasta
         }     // namespace scan
@@ -263,7 +264,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     source.sequence.reassortant(result.reassortant);
     source.sequence.annotations(std::move(result.extra));
 
-    const auto [passage, passage_extra] = acmacs::virus::parse_passage(source.fasta.passage, acmacs::virus::passage_only::yes);
+    const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
         if (passage.empty()) {
             result.messages.emplace_back(acmacs::virus::parse_result_t::message_t::unrecognized_passage, passage_extra);
@@ -292,6 +293,33 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     return result.messages;
 
 } // acmacs::seqdb::v3::scan::fasta::normalize_name
+
+// ----------------------------------------------------------------------
+
+acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppercase& passage)
+{
+    const std::array to_remove{
+        std::string_view{"PASSAGE DETAILS:"},
+        std::string_view{"PASSAGE HISTORY:"},
+        std::string_view{"PASSAGE:"},
+        std::string_view{"YAMAGATA LINEAGE;"},
+        std::string_view{"YAMAGATA LINEAGE"},
+        std::string_view{"VICTORIA LINEAGE;"},
+        std::string_view{"VICTORIA LINEAGE"},
+        std::string_view{"LINEAGE: SWL;"},
+        std::string_view{"LINEAGE: A(H1N1)PDM09"},
+    };
+
+    std::string result{*passage};
+    for (const auto& en : to_remove) {
+        if (const auto found = result.find(en); found != std::string::npos)
+            result.erase(found, en.size());
+    }
+    return result
+            | ranges::view::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
+            | ranges::view::adjacent_filter([](char first, char second) { return !std::isspace(first) && !std::isspace(second); }); // collapse spaces
+
+} // acmacs::seqdb::v3::scan::fasta::fix_passage
 
 // ----------------------------------------------------------------------
 
