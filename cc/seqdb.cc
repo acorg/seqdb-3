@@ -395,8 +395,8 @@ void acmacs::seqdb::v3::subset::export_fasta(const ref& entry, const export_opti
         output.append(1, '\n');
     }
     else {
-        for (size_t start = 0; start < seq.size(); start += options.e_wrap_at) {
-            output.append(seq.substr(start, options.e_wrap_at));
+        for (const auto chunk : seq | ranges::view::chunk(options.e_wrap_at)) {
+            output.append(chunk);
             output.append(1, '\n');
         }
     }
