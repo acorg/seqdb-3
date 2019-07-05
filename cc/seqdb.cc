@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <random>
+#include <regex>
 
 #include "acmacs-base/read-file.hh"
 #include "acmacs-virus/virus-name.hh"
@@ -212,6 +213,24 @@ seqdb::v3::subset& seqdb::v3::subset::aa_at_pos(const std::vector<amino_acid_at_
     return *this;
 
 } // seqdb::v3::subset::aa_at_pos
+
+// ----------------------------------------------------------------------
+
+seqdb::v3::subset& seqdb::v3::subset::names_matching_regex(const std::vector<std::string_view>& regex_list)
+{
+    if (!regex_list.empty()) {
+        std::vector<std::regex> re_list(regex_list.size());
+        std::transform(std::begin(regex_list), std::end(regex_list), std::begin(re_list),
+                       [](const auto& regex_s) { return std::regex(std::begin(regex_s), std::end(regex_s), std::regex_constants::icase); });
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
+                                   [&re_list](const auto& en) {
+                                       return std::none_of(std::begin(re_list), std::end(re_list), [full_name = en.full_name()](const auto& re) { return std::regex_search(full_name, re); });
+                                   }),
+                    std::end(refs_));
+    }
+    return *this;
+
+} // seqdb::v3::subset::names_matching_regex
 
 // ----------------------------------------------------------------------
 

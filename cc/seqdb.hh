@@ -91,6 +91,7 @@ namespace seqdb
 
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            std::string full_name() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
         };
@@ -119,6 +120,8 @@ namespace seqdb
             subset& random(size_t random);
             subset& with_hi_name(bool with_hi_name);
             subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
+            subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
+            subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
 
             subset& print();
 
