@@ -133,7 +133,7 @@ namespace acmacs::seqdb
           public:
             using refs_t = std::vector<ref>;
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
-            enum class print_options { details, seq_id };
+            enum class print_options { details, seq_id, passage };
 
             constexpr auto empty() const { return refs_.empty(); }
             constexpr auto size() const { return refs_.size(); }

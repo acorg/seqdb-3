@@ -38,6 +38,7 @@ struct Options : public argv
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
     option<bool>      print_seqid{*this, "seq-id", desc{"printing seq_id instead of detailed info"}};
+    option<bool>      print_passage{*this, "passage", desc{"printing passage instead of detailed info (for debugging)"}};
 
     // export
     option<str>       fasta{*this, "fasta", dflt{""}, desc{"export to fasta, - for stdout"}};
@@ -80,6 +81,16 @@ int main(int argc, char* const argv[])
             return source;
         };
 
+        const auto make_print_options = [&opt]() -> acmacs::seqdb::subset::print_options {
+            using namespace acmacs::seqdb;
+            if (opt.print_seqid)
+                return subset::print_options::seq_id;
+            else if (opt.print_passage)
+                return subset::print_options::passage;
+            else
+                return subset::print_options::details;
+        };
+
         std::vector<acmacs::seqdb::subset::amino_acid_at_pos0_t> aa_at_pos;
         if (!opt.aa_at_pos->empty()) {
             const auto fields = acmacs::string::split(*opt.aa_at_pos, ",");
@@ -111,7 +122,7 @@ int main(int argc, char* const argv[])
             .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
             .export_sequences(opt.fasta, acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned))
-            .print(opt.print_seqid ? acmacs::seqdb::subset::print_options::seq_id : acmacs::seqdb::subset::print_options::details, opt.print || opt.fasta->empty());
+            .print(make_print_options(), opt.print || opt.fasta->empty());
 
         return 0;
     }

@@ -408,22 +408,25 @@ void acmacs::seqdb::v3::subset::export_fasta(const ref& entry, const export_opti
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(print_options po, bool do_print)
 {
     const auto make_details = [](const auto& ref) {
-        fmt::print("{}{}{} {} {} {}\n", ref.full_name(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates, ref.entry->country, ref.seq().clades);
+        fmt::print("{}{}{} {} {} {}\n", ref.full_name(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates,
+                   ref.entry->country, ref.seq().clades);
     };
 
-    const auto make_seq_id = [](const auto& ref) {
-        fmt::print("{}\n", ref.seq_id());
-    };
+    const auto make_seq_id = [](const auto& ref) { fmt::print("{}\n", ref.seq_id()); };
+    const auto make_passage = [](const auto& ref) { for (const auto& passage : ref.seq().passages) fmt::print("{}\n", passage); };
 
     if (do_print) {
         for (const auto& ref : *this) {
             switch (po) {
-              case print_options::details:
-                  make_details(ref);
-                  break;
-              case print_options::seq_id:
-                  make_seq_id(ref);
-                  break;
+                case print_options::details:
+                    make_details(ref);
+                    break;
+                case print_options::seq_id:
+                    make_seq_id(ref);
+                    break;
+                case print_options::passage:
+                    make_passage(ref);
+                    break;
             }
         }
     }
