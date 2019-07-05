@@ -308,6 +308,7 @@ acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppe
         std::string_view{"VICTORIA LINEAGE"},
         std::string_view{"LINEAGE: SWL;"},
         std::string_view{"LINEAGE: A(H1N1)PDM09"},
+        std::string_view{"LINEAGE:"},
     };
 
     std::string result{*passage};
@@ -317,7 +318,7 @@ acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppe
     }
     return result
             | ranges::view::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
-            | ranges::view::adjacent_filter([](char first, char second) { return !std::isspace(first) && !std::isspace(second); }); // collapse spaces
+            | ranges::view::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }); // collapse spaces
 
 } // acmacs::seqdb::v3::scan::fasta::fix_passage
 
