@@ -31,6 +31,7 @@ acmacs::seqdb::v3::Seqdb::Seqdb(const std::string& filename)
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::all() const
 {
     subset ss;
+    ss.refs_.reserve(entries_.size() * 2);
     for (const auto& entry : entries_) {
         for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no)
             ss.refs_.emplace_back(&entry, seq_no);
