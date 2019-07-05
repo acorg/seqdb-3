@@ -41,7 +41,7 @@ namespace local
     class labs : public stack_entry
     {
       public:
-        labs(seqdb::SeqdbSeq::labs_t& target) : target_{target} {}
+        labs(acmacs::seqdb::SeqdbSeq::labs_t& target) : target_{target} {}
         const char* injson_name() override { return "labs"; }
         std::unique_ptr<stack_entry> injson_put_object() override { throw error("labs: unexpected subobject"); }
         void injson_put_array() override {}
@@ -51,20 +51,20 @@ namespace local
         {
             if (key_.empty()) {
                 stack_entry::injson_put_string(data);
-                target_.emplace_back(data, seqdb::SeqdbSeq::lab_ids_t{});
+                target_.emplace_back(data, acmacs::seqdb::SeqdbSeq::lab_ids_t{});
             }
             else
                 target_.back().second.emplace_back(data);
         }
 
       private:
-        seqdb::SeqdbSeq::labs_t& target_;
+        acmacs::seqdb::SeqdbSeq::labs_t& target_;
     };
 
     class seq : public stack_entry
     {
       public:
-        seq(seqdb::SeqdbSeq& target) : target_{target} {}
+        seq(acmacs::seqdb::SeqdbSeq& target) : target_{target} {}
 
         const char* injson_name() override { return "seq"; }
 
@@ -151,13 +151,13 @@ namespace local
         }
 
       private:
-        seqdb::SeqdbSeq& target_;
+        acmacs::seqdb::SeqdbSeq& target_;
     };
 
     class entry : public stack_entry
     {
       public:
-        entry(seqdb::SeqdbEntry& target) : target_{target} {}
+        entry(acmacs::seqdb::SeqdbEntry& target) : target_{target} {}
 
         const char* injson_name() override { return "entry"; }
 
@@ -220,13 +220,13 @@ namespace local
         }
 
       private:
-        seqdb::SeqdbEntry& target_;
+        acmacs::seqdb::SeqdbEntry& target_;
     };
 
     class db : public stack_entry
     {
       public:
-        db(std::vector<seqdb::SeqdbEntry>& entries) : entries_{entries} {}
+        db(std::vector<acmacs::seqdb::SeqdbEntry>& entries) : entries_{entries} {}
 
         const char* injson_name() override { return "db"; }
 
@@ -251,13 +251,13 @@ namespace local
         void injson_pop_array() override { reset_key(); }
 
       private:
-        std::vector<seqdb::v3::SeqdbEntry>& entries_;
+        std::vector<acmacs::seqdb::v3::SeqdbEntry>& entries_;
     };
 
     class sink
     {
       public:
-        sink(std::vector<seqdb::SeqdbEntry>& entries) : entries_{entries} {}
+        sink(std::vector<acmacs::seqdb::SeqdbEntry>& entries) : entries_{entries} {}
 
         void injson_object_start()
         {
@@ -275,7 +275,7 @@ namespace local
         template <typename Iter> void injson_real(Iter /*first*/, Iter /*last*/) {}
 
       private:
-        std::vector<seqdb::v3::SeqdbEntry>& entries_;
+        std::vector<acmacs::seqdb::v3::SeqdbEntry>& entries_;
         std::stack<std::unique_ptr<stack_entry>> target_;
     };
 
@@ -283,13 +283,13 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-void seqdb::v3::parse(std::string_view source, std::vector<SeqdbEntry>& entries)
+void acmacs::seqdb::v3::parse(std::string_view source, std::vector<SeqdbEntry>& entries)
 {
     local::sink sink{entries};
     in_json::parse(sink, std::begin(source), std::end(source));
     // fmt::print("INFO: seqdb entries read: {}\n", entries.size());
 
-} // seqdb::v3::parse
+} // acmacs::seqdb::v3::parse
 
 // ----------------------------------------------------------------------
 

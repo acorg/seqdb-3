@@ -10,7 +10,7 @@
 
 // ----------------------------------------------------------------------
 
-namespace seqdb
+namespace acmacs::seqdb
 {
     inline namespace v3
     {
@@ -52,16 +52,27 @@ namespace seqdb
 
             bool has_lab(std::string_view lab) const { return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; }); }
             bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
+
+            size_t aa_nuc_shift(std::string_view shift_s) const
+            {
+                if (shift_s.empty())
+                    return 0;
+                const auto shift = ::string::from_chars<int>(shift_s);
+                if (shift > 0)
+                    throw std::runtime_error(fmt::format("unsupported shift {}, hi_names: {}", shift, hi_names));
+                return static_cast<size_t>(- shift);
+            }
+
+            std::string_view aa_aligned() const { return amino_acids.substr(aa_nuc_shift(a_shift)); }
+            std::string_view nuc_aligned() const { return nucs.substr(aa_nuc_shift(n_shift)); }
+
             char aa_at(size_t pos0) const
             {
-                const auto shift = string::from_chars<int>(a_shift);
-                const auto shifted = static_cast<decltype(shift)>(pos0) - shift;
-                if (shifted < 0)
-                    return 'X';
-                else if (static_cast<size_t>(shifted) >= amino_acids.size())
-                    return '?';
+                const auto aligned = aa_aligned();
+                if (pos0 < aligned.size())
+                    return aligned[pos0];
                 else
-                    return amino_acids[static_cast<size_t>(shifted)];
+                    return '?';
             }
         };
 
@@ -94,8 +105,8 @@ namespace seqdb
             constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
 
             const auto& seq() const { return entry->seqs[seq_index]; }
-            std::string seq_id() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
-            std::string full_name() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            std::string seq_id() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
         };
@@ -128,6 +139,7 @@ namespace seqdb
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
             subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
             subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
+            subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter);
             subset& print();
 
           private:

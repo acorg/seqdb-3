@@ -6,7 +6,7 @@
 
 // ----------------------------------------------------------------------
 
-namespace seqdb
+namespace acmacs::seqdb
 {
     inline namespace v3
     {
