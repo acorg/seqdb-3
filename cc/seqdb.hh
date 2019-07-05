@@ -26,6 +26,7 @@ namespace seqdb
 
             subset all() const;
             subset select_by_name(std::string_view name) const;
+            subset select_by_regex(std::string_view re) const;
 
           private:
             std::string json_text_;
@@ -89,6 +90,9 @@ namespace seqdb
 
             ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
 
+            constexpr bool operator==(const ref& rhs) const { return entry == rhs.entry && seq_index == rhs.seq_index; }
+            constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
+
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
             std::string full_name() const { return string::join(" ", {entry->name, string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
@@ -102,10 +106,11 @@ namespace seqdb
             using refs_t = std::vector<ref>;
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
 
-            auto empty() const { return refs_.empty(); }
-            auto size() const { return refs_.size(); }
-            auto begin() const { return refs_.begin(); }
-            auto end() const { return refs_.end(); }
+            constexpr auto empty() const { return refs_.empty(); }
+            constexpr auto size() const { return refs_.size(); }
+            constexpr auto begin() const { return refs_.begin(); }
+            constexpr auto end() const { return refs_.end(); }
+            constexpr const auto& front() const { return refs_.front(); }
 
             subset& multiple_dates(bool do_filter = true);
             subset& subtype(const acmacs::uppercase& virus_type);
@@ -122,7 +127,7 @@ namespace seqdb
             subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
             subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
-
+            subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
             subset& print();
 
           private:

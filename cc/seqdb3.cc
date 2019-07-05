@@ -29,8 +29,8 @@ struct Options : public argv
     option<size_t>    random{*this, "random", dflt{0UL}};
     option<bool>      with_hi_name{*this, "with-hi-name"};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
+    option<str>       base_seq_regex{*this, "base-seq", desc{"regex to select single base sequence, it is put the first in the output, other filters do not apply"}};
 
-//   Base sequence to export together with other sequences (regex -> to select just one sequence)
 //   HAMMING_DISTANCE_THRESHOLD - relative to base seq
 
     option<bool>  multiple_dates{*this, "multiple-dates"};
@@ -49,7 +49,6 @@ struct Options : public argv
 //   name format: {seq_id} {hi_name_or_seq_name_with_passage} {name} {date} {lab_id} {passage} {lab}
 //   name encode
 // select
-//   Base sequence to export together with other sequences (regex -> to select just one sequence)
 //   HAMMING_DISTANCE_THRESHOLD - relative to base seq
 
 int main(int argc, char* const argv[])
@@ -109,6 +108,7 @@ int main(int argc, char* const argv[])
             .names_matching_regex(opt.name_regex)
             .recent(opt.recent)
             .random(opt.random)
+            .prepend_single_matching(opt.base_seq_regex, seqdb)
             .print();
 
         return 0;
