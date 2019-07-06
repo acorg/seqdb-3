@@ -135,11 +135,11 @@ namespace acmacs::seqdb
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
             enum class print_options { details, seq_id, passage };
 
-            constexpr auto empty() const { return refs_.empty(); }
-            constexpr auto size() const { return refs_.size(); }
-            constexpr auto begin() const { return refs_.begin(); }
-            constexpr auto end() const { return refs_.end(); }
-            constexpr const auto& front() const { return refs_.front(); }
+            auto empty() const { return refs_.empty(); }
+            auto size() const { return refs_.size(); }
+            auto begin() const { return refs_.begin(); }
+            auto end() const { return refs_.end(); }
+            const auto& front() const { return refs_.front(); }
 
             subset& multiple_dates(bool do_filter = true);
             subset& subtype(const acmacs::uppercase& virus_type);
