@@ -413,8 +413,14 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
         }
     };
 
+    const auto get_name = [&options](const auto& entry) -> std::string {
+        return fmt::format(options.e_name_format, fmt::arg("seq_id", entry.seq_id()), fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
+                           fmt::arg("name", entry.entry->name), fmt::arg("date", entry.entry->date()), fmt::arg("lab_id", entry.seq().lab_id()), fmt::arg("passage", entry.seq().passage()),
+                           fmt::arg("lab", entry.seq().lab()), fmt::arg("country", entry.entry->country), fmt::arg("continent", entry.entry->continent));
+    };
+
     collected_t result(refs_.size()); // {seq_id, sequence}
-    std::transform(std::begin(refs_), std::end(refs_), std::begin(result), [&get_seq](const auto& en) -> collected_entry_t { return std::pair(en.seq_id(), std::string{get_seq(en)}); });
+    std::transform(std::begin(refs_), std::end(refs_), std::begin(result), [&get_name, &get_seq](const auto& en) -> collected_entry_t { return std::pair(get_name(en), std::string{get_seq(en)}); });
     return result;
 
 } // acmacs::seqdb::v3::subset::export_collect

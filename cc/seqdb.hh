@@ -43,12 +43,14 @@ namespace acmacs::seqdb
             size_t e_wrap_at{0};
             bool   e_aligned{true};
             bool   e_most_common_length{false};
+            std::string e_name_format{"{seq_id}"};
 
             export_options& fasta(bool nucs) { e_format = nucs ? format::fasta_nuc : format::fasta_aa; return *this; }
             export_options& wrap(size_t wrap_at) { e_wrap_at = wrap_at; return *this; }
             export_options& no_wrap() { e_wrap_at = 0; return *this; }
             export_options& aligned(bool aligned = true) { e_aligned = aligned; return *this; }
             export_options& most_common_length(bool most_common_length = true) { e_most_common_length = most_common_length; return *this; }
+            export_options& name_format(std::string_view name_format) { e_name_format = name_format; return *this; }
         };
 
         // ----------------------------------------------------------------------
@@ -92,6 +94,10 @@ namespace acmacs::seqdb
                 else
                     return '?';
             }
+
+            std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
+            std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
+            std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
         };
 
         struct SeqdbEntry
@@ -125,6 +131,7 @@ namespace acmacs::seqdb
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const;
             std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            std::string hi_name_or_full_name() const { if (seq().hi_names.empty()) return full_name(); else return std::string{seq().hi_names.front()}; }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
         };
