@@ -73,11 +73,19 @@ int main(int argc, char* const argv[])
             return source.empty() ? std::string{} : date::display(date::from_string(source, date::allow_incomplete::yes), date::allow_incomplete::yes);
         };
 
-        const auto fix_country = [](std::string_view source) -> acmacs::uppercase {
-            if (source == "USA" || source == "US")
+        const auto fix_country = [](const acmacs::uppercase& source) -> acmacs::uppercase {
+            if (*source == "USA" || *source == "US")
                 return "UNITED STATES OF AMERICA";
-            if (source == "UK" || source == "GB" || source == "GREAT BRITAIN")
+            if (*source == "UK" || *source == "GB" || *source == "GREAT BRITAIN")
                 return "UNITED KINGDOM";
+            return source;
+        };
+
+        const auto fix_lab = [](const acmacs::uppercase& source) -> acmacs::uppercase {
+            if (*source == "MELB")
+                return "VIDRL";
+            if (*source == "NIMR")
+                return "CRICK";
             return source;
         };
 
@@ -107,11 +115,11 @@ int main(int argc, char* const argv[])
         init()
             .subtype(acmacs::uppercase{*opt.subtype})
             .lineage(acmacs::uppercase{*opt.lineage})
-            .lab(acmacs::uppercase{*opt.lab})
+            .lab(fix_lab(acmacs::uppercase{*opt.lab}))
             .host(acmacs::uppercase{*opt.host})
             .dates(fix_date(opt.start_date), fix_date(opt.end_date))
             .continent(acmacs::uppercase{*opt.continent})
-            .country(fix_country(opt.country))
+            .country(fix_country(acmacs::uppercase{*opt.country}))
             .clade(acmacs::uppercase{*opt.clade})
             .aa_at_pos(aa_at_pos)
             .multiple_dates(opt.multiple_dates)
