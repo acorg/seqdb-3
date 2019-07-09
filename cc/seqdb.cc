@@ -354,6 +354,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::sort(sorting srt)
 {
     switch (srt) {
+        case sorting::none:
+            break;
         case sorting::name_asc:
             sort_by_name_asc();
             break;

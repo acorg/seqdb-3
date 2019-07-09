@@ -143,7 +143,7 @@ namespace acmacs::seqdb
             using refs_t = std::vector<ref>;
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
             enum class print_options { details, seq_id, passage };
-            enum class sorting { name_asc, name_desc, date_asc, date_desc };
+            enum class sorting { none, name_asc, name_desc, date_asc, date_desc };
 
             auto empty() const { return refs_.empty(); }
             auto size() const { return refs_.size(); }

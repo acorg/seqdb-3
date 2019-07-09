@@ -34,7 +34,7 @@ struct Options : public argv
     option<str>       base_seq_regex{*this, "base-seq", desc{"regex to select single base sequence,\n                    it is put the first in the output, other filters do not apply"}};
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
-    option<str>       sort_by{*this, "sort", dflt{"name"}, desc{"name, -name, date, -date"}};
+    option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
 
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
@@ -99,6 +99,8 @@ int main(int argc, char* const argv[])
         };
 
         const auto sorting_order = [](const acmacs::lowercase& desc) -> acmacs::seqdb::subset::sorting {
+            if (desc == "none")
+                return acmacs::seqdb::subset::sorting::none;
             if (desc == "name")
                 return acmacs::seqdb::subset::sorting::name_asc;
             if (desc == "-name")
@@ -139,9 +141,9 @@ int main(int argc, char* const argv[])
             .names_matching_regex(opt.name_regex)
             .recent(opt.recent)
             .random(opt.random)
+            .sort(sorting_order(opt.sort_by))
             .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
-            .sort(sorting_order(opt.sort_by))
             .export_sequences(opt.fasta,
                               acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
             .print(make_print_options(), opt.print || opt.fasta->empty());
