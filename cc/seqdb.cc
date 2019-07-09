@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <random>
 #include <regex>
+#include <numeric>
 
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
+#include "acmacs-base/counter.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
@@ -352,17 +354,19 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const export_options& options)
 {
     if (!filename.empty()) {
-        std::string output;
-        output.reserve(refs_.size() * static_cast<size_t>(refs_.front().seq_id().size() * 1.5 + refs_.front().seq().nucs.size()));
-        for (const auto& en : refs_) {
-            switch (options.e_format) {
-              case export_options::format::fasta_aa:
-              case export_options::format::fasta_nuc:
-                  export_fasta(en, options, output);
-                  break;
-            }
+        auto to_export = export_collect(options);
+
+        if (options.e_most_common_length) {
+            const acmacs::Counter counter(to_export, [](const auto& en) { return en.second.size(); });
+            ranges::for_each(to_export, [most_common_length = counter.max().first](auto& en) { en.second.resize(most_common_length, '-'); });
         }
-        acmacs::file::write(filename, output);
+
+        switch (options.e_format) {
+            case export_options::format::fasta_aa:
+            case export_options::format::fasta_nuc:
+                acmacs::file::write(filename, export_fasta(to_export, options));
+                break;
+        }
     }
     return *this;
 
@@ -370,9 +374,9 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::subset::export_fasta(const ref& entry, const export_options& options, std::string& output)
+acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect(const export_options& options) const
 {
-    const auto get_seq = [&entry, &options] {
+    const auto get_seq = [&options](const auto& entry) -> std::string_view {
         if (options.e_format == export_options::format::fasta_aa) {
             if (options.e_aligned)
                 return entry.seq().aa_aligned();
@@ -387,19 +391,35 @@ void acmacs::seqdb::v3::subset::export_fasta(const ref& entry, const export_opti
         }
     };
 
-    output.append(entry.seq_id());
-    output.append(1, '\n');
-    const auto seq = get_seq();
-    if (options.e_wrap_at == 0 || options.e_wrap_at >= seq.size()) {
-        output.append(seq);
+    collected_t result(refs_.size()); // {seq_id, sequence}
+    std::transform(std::begin(refs_), std::end(refs_), std::begin(result), [&get_seq](const auto& en) -> collected_entry_t { return std::pair(en.seq_id(), std::string{get_seq(en)}); });
+    return result;
+
+} // acmacs::seqdb::v3::subset::export_collect
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, const export_options& options)
+{
+    std::string output;
+    const auto output_size =
+        std::accumulate(std::begin(entries), std::end(entries), 0UL, [](size_t size, const auto& en) { return size + en.first.size() + en.second.size() + 2 + en.second.size() / 40; });
+    output.reserve(output_size);
+    for (const auto& en : entries) {
+        output.append(en.first);
         output.append(1, '\n');
-    }
-    else {
-        for (const auto chunk : seq | ranges::view::chunk(options.e_wrap_at)) {
-            output.append(chunk);
+        if (options.e_wrap_at == 0 || options.e_wrap_at >= en.second.size()) {
+            output.append(en.second);
             output.append(1, '\n');
         }
+        else {
+            for (const auto chunk : en.second | ranges::view::chunk(options.e_wrap_at)) {
+                output.append(chunk);
+                output.append(1, '\n');
+            }
+        }
     }
+    return output;
 
 } // acmacs::seqdb::v3::subset::export_fasta
 

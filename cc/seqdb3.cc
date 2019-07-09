@@ -45,9 +45,8 @@ struct Options : public argv
     option<bool>      wrap{*this, "wrap"};
     option<bool>      nucs{*this, "nucs", desc{"export nucleotide sequences instead of amino acid"}};
     option<bool>      not_aligned{*this, "not-aligned", desc{"do not align for exporting"}};
+    option<bool>      most_common_length{*this, "most-common-length", desc{"truncate or extend with - all sequences to make them all of the same length,\n                    most common among original sequences"}};
 
-    //   with deletions inserted
-    //   Truncate or extend with - all sequences to make them all of the same length, most common among original sequences.
     //   sort by date or name
     //   name format: {seq_id} {hi_name_or_seq_name_with_passage} {name} {date} {lab_id} {passage} {lab}
 };
@@ -129,7 +128,7 @@ int main(int argc, char* const argv[])
             .random(opt.random)
             .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
-            .export_sequences(opt.fasta, acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned))
+            .export_sequences(opt.fasta, acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length))
             .print(make_print_options(), opt.print || opt.fasta->empty());
 
         return 0;

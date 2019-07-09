@@ -42,12 +42,13 @@ namespace acmacs::seqdb
             format e_format{format::fasta_nuc};
             size_t e_wrap_at{0};
             bool   e_aligned{true};
+            bool   e_most_common_length{false};
 
             export_options& fasta(bool nucs) { e_format = nucs ? format::fasta_nuc : format::fasta_aa; return *this; }
             export_options& wrap(size_t wrap_at) { e_wrap_at = wrap_at; return *this; }
             export_options& no_wrap() { e_wrap_at = 0; return *this; }
             export_options& aligned(bool aligned = true) { e_aligned = aligned; return *this; }
-
+            export_options& most_common_length(bool most_common_length = true) { e_most_common_length = most_common_length; return *this; }
         };
 
         // ----------------------------------------------------------------------
@@ -167,7 +168,11 @@ namespace acmacs::seqdb
             subset() = default;
 
             void sort_by_date_recent_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); }); }
-            void export_fasta(const ref& entry, const export_options& options, std::string& output);
+
+            using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
+            using collected_t = std::vector<collected_entry_t>;
+            collected_t export_collect(const export_options& options) const;
+            std::string export_fasta(const collected_t& entries, const export_options& options);
 
             friend class Seqdb;
         };
