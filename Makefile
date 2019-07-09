@@ -6,6 +6,7 @@ TARGETS = \
   $(SEQDB_PY_LIB) \
   $(DIST)/seqdb3-scan \
   $(DIST)/seqdb3 \
+  $(DIST)/seqdb3-chart-sequenced \
   $(DIST)/test-insertions-deletions
 
 SEQDB_SOURCES = \
@@ -27,6 +28,7 @@ LDLIBS = \
   $(AD_LIB)/$(call shared_lib_name,libacmacsbase,1,0) \
   $(AD_LIB)/$(call shared_lib_name,liblocationdb,1,0) \
   $(AD_LIB)/$(call shared_lib_name,libacmacsvirus,1,0) \
+  $(AD_LIB)/$(call shared_lib_name,libacmacschart,2,0) \
   $(AD_LIB)/$(call shared_lib_name,libhidb,5,0) \
   $(XZ_LIBS) $(PYTHON_LIBS) $(CXX_LIBS)
 
