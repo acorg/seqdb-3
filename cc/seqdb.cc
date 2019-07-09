@@ -436,6 +436,7 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
         std::accumulate(std::begin(entries), std::end(entries), 0UL, [](size_t size, const auto& en) { return size + en.first.size() + en.second.size() + 2 + en.second.size() / 40; });
     output.reserve(output_size);
     for (const auto& en : entries) {
+        output.append(1, '>');
         output.append(en.first);
         output.append(1, '\n');
         if (options.e_wrap_at == 0 || options.e_wrap_at >= en.second.size()) {
