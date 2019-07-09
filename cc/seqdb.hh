@@ -135,6 +135,7 @@ namespace acmacs::seqdb
             using refs_t = std::vector<ref>;
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
             enum class print_options { details, seq_id, passage };
+            enum class sorting { name_asc, name_desc, date_asc, date_desc };
 
             auto empty() const { return refs_.empty(); }
             auto size() const { return refs_.size(); }
@@ -159,6 +160,7 @@ namespace acmacs::seqdb
             subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
             subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
             subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
+            subset& sort(sorting srt);
             subset& export_sequences(std::string_view filename, const export_options& options);
             subset& print(print_options po, bool do_print = true);
 
@@ -167,7 +169,10 @@ namespace acmacs::seqdb
 
             subset() = default;
 
+            void sort_by_name_asc() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() < e2.seq_id(); }); }
+            void sort_by_name_desc() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() > e2.seq_id(); }); }
             void sort_by_date_recent_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); }); }
+            void sort_by_date_oldest_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() < e2.entry->date(); }); }
 
             using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
             using collected_t = std::vector<collected_entry_t>;

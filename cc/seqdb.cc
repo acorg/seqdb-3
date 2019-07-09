@@ -351,6 +351,28 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::sort(sorting srt)
+{
+    switch (srt) {
+        case sorting::name_asc:
+            sort_by_name_asc();
+            break;
+        case sorting::name_desc:
+            sort_by_name_desc();
+            break;
+        case sorting::date_asc:
+            sort_by_date_oldest_first();
+            break;
+        case sorting::date_desc:
+            sort_by_date_recent_first();
+            break;
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::sort
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const export_options& options)
 {
     if (!filename.empty()) {
