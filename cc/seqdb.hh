@@ -142,7 +142,6 @@ namespace acmacs::seqdb
           public:
             using refs_t = std::vector<ref>;
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
-            enum class print_options { details, seq_id, passage };
             enum class sorting { none, name_asc, name_desc, date_asc, date_desc };
 
             auto empty() const { return refs_.empty(); }
@@ -170,7 +169,7 @@ namespace acmacs::seqdb
             subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
             subset& sort(sorting srt);
             subset& export_sequences(std::string_view filename, const export_options& options);
-            subset& print(print_options po, bool do_print = true);
+            subset& print(std::string_view name_format, bool do_print = true);
 
           private:
             refs_t refs_;
@@ -186,6 +185,7 @@ namespace acmacs::seqdb
             using collected_t = std::vector<collected_entry_t>;
             collected_t export_collect(const export_options& options) const;
             std::string export_fasta(const collected_t& entries, const export_options& options);
+            std::string make_name(std::string_view name_format, const ref& entry) const;
 
             friend class Seqdb;
         };

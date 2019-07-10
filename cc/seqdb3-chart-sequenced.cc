@@ -46,7 +46,7 @@ int main(int argc, char* const argv[])
                         this_reassortant_match = true;
                         match_symbol = 'R';
                     }
-                    fmt::print("  {} {}\n", match_symbol, entry.full_name());
+                    fmt::print("  {} {} {}\n", match_symbol, entry.full_name(), entry.seq().hi_names);
                 }
                 if (this_reassortant_match)
                     ++matched_by_name_reassortant;

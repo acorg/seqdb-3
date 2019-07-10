@@ -35,11 +35,10 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
+    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent}"}};
 
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
-    option<bool>      print_seqid{*this, "seq-id", desc{"printing seq_id instead of detailed info"}};
-    option<bool>      print_passage{*this, "passage", desc{"printing passage instead of detailed info (for debugging)"}};
 
     // export
     option<str>       fasta{*this, "fasta", dflt{""}, desc{"export to fasta, - for stdout"}};
@@ -47,7 +46,6 @@ struct Options : public argv
     option<bool>      nucs{*this, "nucs", desc{"export nucleotide sequences instead of amino acid"}};
     option<bool>      not_aligned{*this, "not-aligned", desc{"do not align for exporting"}};
     option<bool>      most_common_length{*this, "most-common-length", desc{"truncate or extend with - all sequences to make them all of the same length,\n                    most common among original sequences"}};
-    option<str>       name_format{*this, "name-format", dflt{"{seq_id}"}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent}"}};
 
 };
 
@@ -88,16 +86,6 @@ int main(int argc, char* const argv[])
             return source;
         };
 
-        const auto make_print_options = [&opt]() -> acmacs::seqdb::subset::print_options {
-            using namespace acmacs::seqdb;
-            if (opt.print_seqid)
-                return subset::print_options::seq_id;
-            else if (opt.print_passage)
-                return subset::print_options::passage;
-            else
-                return subset::print_options::details;
-        };
-
         const auto sorting_order = [](const acmacs::lowercase& desc) -> acmacs::seqdb::subset::sorting {
             if (desc == "none")
                 return acmacs::seqdb::subset::sorting::none;
@@ -126,6 +114,13 @@ int main(int argc, char* const argv[])
                         });
         }
 
+        if (opt.name_format->empty()) {
+            if (opt.fasta->empty())
+                opt.name_format.add("{full_name} {lineage} {dates} {country} {clades}");
+            else
+                opt.name_format.add("{seq_id}");
+        }
+
         init()
             .subtype(acmacs::uppercase{*opt.subtype})
             .lineage(acmacs::uppercase{*opt.lineage})
@@ -146,7 +141,7 @@ int main(int argc, char* const argv[])
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
             .export_sequences(opt.fasta,
                               acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
-            .print(make_print_options(), opt.print || opt.fasta->empty());
+            .print(opt.name_format, opt.print || opt.fasta->empty());
 
         return 0;
     }

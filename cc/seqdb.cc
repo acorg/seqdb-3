@@ -398,6 +398,27 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
 
 // ----------------------------------------------------------------------
 
+std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, const ref& entry) const
+{
+    return fmt::format(name_format,
+                       fmt::arg("seq_id", entry.seq_id()),
+                       fmt::arg("full_name", entry.full_name()),
+                       fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
+                       fmt::arg("lineage", entry.entry->lineage),
+                       fmt::arg("name", entry.entry->name),
+                       fmt::arg("date", entry.entry->date()),
+                       fmt::arg("dates", entry.entry->dates),
+                       fmt::arg("lab_id", entry.seq().lab_id()),
+                       fmt::arg("passage", entry.seq().passage()),
+                       fmt::arg("clades", entry.seq().clades),
+                       fmt::arg("lab", entry.seq().lab()),
+                       fmt::arg("country", entry.entry->country),
+                       fmt::arg("continent", entry.entry->continent));
+
+} // acmacs::seqdb::v3::subset::make_name
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect(const export_options& options) const
 {
     const auto get_seq = [&options](const auto& entry) -> std::string_view {
@@ -415,14 +436,9 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
         }
     };
 
-    const auto get_name = [&options](const auto& entry) -> std::string {
-        return fmt::format(options.e_name_format, fmt::arg("seq_id", entry.seq_id()), fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
-                           fmt::arg("name", entry.entry->name), fmt::arg("date", entry.entry->date()), fmt::arg("lab_id", entry.seq().lab_id()), fmt::arg("passage", entry.seq().passage()),
-                           fmt::arg("lab", entry.seq().lab()), fmt::arg("country", entry.entry->country), fmt::arg("continent", entry.entry->continent));
-    };
-
     collected_t result(refs_.size()); // {seq_id, sequence}
-    std::transform(std::begin(refs_), std::end(refs_), std::begin(result), [&get_name, &get_seq](const auto& en) -> collected_entry_t { return std::pair(get_name(en), std::string{get_seq(en)}); });
+    std::transform(std::begin(refs_), std::end(refs_), std::begin(result),
+                   [this, &options, &get_seq](const auto& en) -> collected_entry_t { return std::pair(make_name(options.e_name_format, en), std::string{get_seq(en)}); });
     return result;
 
 } // acmacs::seqdb::v3::subset::export_collect
@@ -456,30 +472,11 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(print_options po, bool do_print)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(std::string_view name_format, bool do_print)
 {
-    const auto make_details = [](const auto& ref) {
-        fmt::print("{}{}{} {} {} {}\n", ref.full_name(), ref.entry->lineage.empty() ? "" : " L:", ref.entry->lineage.empty() ? std::string_view{} : ref.entry->lineage, ref.entry->dates,
-                   ref.entry->country, ref.seq().clades);
-    };
-
-    const auto make_seq_id = [](const auto& ref) { fmt::print("{}\n", ref.seq_id()); };
-    const auto make_passage = [](const auto& ref) { for (const auto& passage : ref.seq().passages) fmt::print("{}\n", passage); };
-
     if (do_print) {
-        for (const auto& ref : *this) {
-            switch (po) {
-                case print_options::details:
-                    make_details(ref);
-                    break;
-                case print_options::seq_id:
-                    make_seq_id(ref);
-                    break;
-                case print_options::passage:
-                    make_passage(ref);
-                    break;
-            }
-        }
+        for (const auto& ref : *this)
+            fmt::print("{}\n", make_name(name_format, ref));
     }
     return *this;
 
