@@ -99,6 +99,7 @@ namespace acmacs::seqdb
             std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
             std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
             std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
+            std::string designation() const { return ::string::join(" ", {::string::join(" ", reassortants), passage()}); }
         };
 
         struct SeqdbEntry

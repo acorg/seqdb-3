@@ -126,7 +126,14 @@ std::string acmacs::seqdb::v3::ref::seq_id() const
         return false;
     };
 
-    const auto source = ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()});
+    auto source = ::string::join(" ", {entry->name, seq().designation()});
+    if (entry->seqs.size() > 1) {
+        // there could be multiple seqs with the same designation, but seq_id must be unique, also garli does not like name duplicates
+        std::vector<std::string> designations(entry->seqs.size());
+        std::transform(std::begin(entry->seqs), std::end(entry->seqs), std::begin(designations), [](const auto& en) { return en.designation(); });
+        if (std::count(std::begin(designations), std::end(designations), designations[seq_index]) > 1)
+            source.append(fmt::format("_d{}", seq_index));
+    }
     return source
             | ranges::view::remove_if(to_remove)
             | ranges::view::replace('?', 'x')
