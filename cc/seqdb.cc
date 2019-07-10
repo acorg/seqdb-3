@@ -74,6 +74,23 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_regex(std::string_
 
 // ----------------------------------------------------------------------
 
+const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index() const
+{
+    if (seq_id_index_.empty()) {
+        seq_id_index_.reserve(entries_.size() * 2);
+        for (const auto& entry : entries_) {
+            for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
+                ref rf{&entry, seq_no};
+                seq_id_index_.emplace(rf.seq_id(), std::move(rf));
+            }
+        }
+    }
+    return seq_id_index_;
+
+} // acmacs::seqdb::v3::Seqdb::seq_id_index
+
+// ----------------------------------------------------------------------
+
 std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
 {
     if (const auto ho = acmacs::virus::host(acmacs::virus::v2::virus_name_t{name}); !ho.empty())

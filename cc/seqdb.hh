@@ -7,6 +7,7 @@
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/string.hh"
 #include "acmacs-base/uppercase.hh"
+#include "acmacs-base/flat-map.hh"
 
 // ----------------------------------------------------------------------
 
@@ -16,7 +17,10 @@ namespace acmacs::seqdb
     {
         struct SeqdbSeq;
         struct SeqdbEntry;
+        struct ref;
         class subset;
+
+        using seq_id_index_t = flat_map_t<std::string, ref>;
 
         class Seqdb
         {
@@ -27,10 +31,12 @@ namespace acmacs::seqdb
             subset all() const;
             subset select_by_name(std::string_view name) const;
             subset select_by_regex(std::string_view re) const;
+            const seq_id_index_t& seq_id_index() const;
 
           private:
             std::string json_text_;
             std::vector<SeqdbEntry> entries_;
+            mutable seq_id_index_t seq_id_index_;
         };
 
         // ----------------------------------------------------------------------
