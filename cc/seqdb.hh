@@ -11,6 +11,8 @@
 
 // ----------------------------------------------------------------------
 
+namespace acmacs::chart { class Antigens; class ChartModify; }
+
 namespace acmacs::seqdb
 {
     inline namespace v3
@@ -32,6 +34,7 @@ namespace acmacs::seqdb
             subset select_by_name(std::string_view name) const;
             subset select_by_regex(std::string_view re) const;
             const seq_id_index_t& seq_id_index() const;
+            subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType) const;
 
           private:
             std::string json_text_;
@@ -163,6 +166,7 @@ namespace acmacs::seqdb
             auto size() const { return refs_.size(); }
             auto begin() const { return refs_.begin(); }
             auto end() const { return refs_.end(); }
+            const auto& operator[](size_t index) const { return refs_.at(index); }
             const auto& front() const { return refs_.front(); }
 
             subset& multiple_dates(bool do_filter = true);

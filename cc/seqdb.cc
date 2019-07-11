@@ -9,6 +9,7 @@
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "acmacs-virus/virus-name.hh"
+#include "acmacs-chart-2/chart.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -131,6 +132,14 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
     return seq_id_index_;
 
 } // acmacs::seqdb::v3::Seqdb::seq_id_index
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType) const
+{
+    throw std::runtime_error{"not implemented"};
+
+} // acmacs::seqdb::v3::Seqdb::match
 
 // ----------------------------------------------------------------------
 
