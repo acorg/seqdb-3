@@ -26,6 +26,7 @@ namespace acmacs::seqdb
         {
           public:
             static const Seqdb& get();
+            bool empty() const { return entries_.empty(); }
 
             subset all() const;
             subset select_by_name(std::string_view name) const;
@@ -136,10 +137,12 @@ namespace acmacs::seqdb
             size_t seq_index;
             bool selected{false}; // for choosing at random
 
+            ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
             ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
 
             constexpr bool operator==(const ref& rhs) const { return entry == rhs.entry && seq_index == rhs.seq_index; }
             constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
+            constexpr explicit operator bool() const { return entry != nullptr; }
 
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const;
