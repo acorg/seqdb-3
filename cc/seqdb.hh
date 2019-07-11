@@ -25,8 +25,7 @@ namespace acmacs::seqdb
         class Seqdb
         {
           public:
-            Seqdb(const std::string& filename);
-            // Seqdb(std::string&& source);
+            static const Seqdb& get();
 
             subset all() const;
             subset select_by_name(std::string_view name) const;
@@ -37,7 +36,13 @@ namespace acmacs::seqdb
             std::string json_text_;
             std::vector<SeqdbEntry> entries_;
             mutable seq_id_index_t seq_id_index_;
+
+            Seqdb(std::string_view filename);
+            // Seqdb(std::string&& source);
         };
+
+        void setup(std::string_view filename);
+        inline const Seqdb& get() { return Seqdb::get(); }
 
         // ----------------------------------------------------------------------
 

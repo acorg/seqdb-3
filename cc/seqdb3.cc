@@ -1,7 +1,6 @@
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/date.hh"
-#include "acmacs-base/acmacsd.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/range-v3.hh"
 #include "seqdb-3/seqdb.hh"
@@ -54,10 +53,8 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
-        std::string db_filename{acmacs::acmacsd_root() + "/data/seqdb.json.xz"};
-        if (!opt.db->empty())
-            db_filename = opt.db;
-        acmacs::seqdb::Seqdb seqdb(db_filename);
+        acmacs::seqdb::setup(opt.db);
+        const auto& seqdb = acmacs::seqdb::get();
 
         const auto init = [&] {
             if (!opt.name->empty())

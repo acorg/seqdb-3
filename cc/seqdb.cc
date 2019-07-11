@@ -2,10 +2,12 @@
 #include <random>
 #include <regex>
 #include <numeric>
+#include <memory>
 
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/counter.hh"
+#include "acmacs-base/acmacsd.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
@@ -13,10 +15,44 @@
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::Seqdb::Seqdb(const std::string& filename)
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wglobal-constructors"
+#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#endif
+
+static std::string sSeqdbFilename = acmacs::acmacsd_root() + "/data/seqdb.json.xz";
+
+#pragma GCC diagnostic pop
+
+void acmacs::seqdb::v3::setup(std::string_view filename)
 {
-    json_text_ = static_cast<std::string>(acmacs::file::read(filename));
-    parse(json_text_, entries_);
+    if (!filename.empty())
+        sSeqdbFilename = filename;
+
+} // acmacs::seqdb::v3::setup
+
+// ----------------------------------------------------------------------
+
+const acmacs::seqdb::v3::Seqdb& acmacs::seqdb::v3::Seqdb::get()
+{
+    static Seqdb sSeqdb(sSeqdbFilename);
+    return sSeqdb;
+
+} // acmacs::seqdb::v3::get
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::Seqdb::Seqdb(std::string_view filename)
+{
+    try {
+        json_text_ = static_cast<std::string>(acmacs::file::read(filename));
+        parse(json_text_, entries_);
+    }
+    catch (std::exception&) {
+        json_text_.clear();
+        entries_.clear();
+    }
 
 } // acmacs::seqdb::v3::Seqdb::Seqdb
 
