@@ -36,7 +36,13 @@ void acmacs::seqdb::v3::setup(std::string_view filename)
 
 const acmacs::seqdb::v3::Seqdb& acmacs::seqdb::v3::Seqdb::get()
 {
+#pragma GCC diagnostic push
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wexit-time-destructors"
+#endif
     static Seqdb sSeqdb(sSeqdbFilename);
+#pragma GCC diagnostic pop
+
     return sSeqdb;
 
 } // acmacs::seqdb::v3::get
@@ -120,6 +126,7 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
                 seq_id_index_.emplace(rf.seq_id(), std::move(rf));
             }
         }
+        seq_id_index_.sort_by_key();
     }
     return seq_id_index_;
 
