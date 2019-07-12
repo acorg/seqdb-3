@@ -23,6 +23,7 @@ namespace acmacs::seqdb
         class subset;
 
         using seq_id_index_t = flat_map_t<std::string, ref>;
+        using hi_name_index_t = flat_map_t<std::string_view, ref>;
 
         class Seqdb
         {
@@ -34,12 +35,16 @@ namespace acmacs::seqdb
             subset select_by_name(std::string_view name) const;
             subset select_by_regex(std::string_view re) const;
             const seq_id_index_t& seq_id_index() const;
+            const hi_name_index_t& hi_name_index() const;
+
+            // returned subset contains elements for each antigen, i.e. it may contain empty ref's
             subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType) const;
 
           private:
             std::string json_text_;
             std::vector<SeqdbEntry> entries_;
             mutable seq_id_index_t seq_id_index_;
+            mutable hi_name_index_t hi_name_index_;
 
             Seqdb(std::string_view filename);
             // Seqdb(std::string&& source);

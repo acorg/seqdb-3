@@ -135,9 +135,57 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType) const
+const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_index() const
 {
-    throw std::runtime_error{"not implemented"};
+    if (hi_name_index_.empty()) {
+        hi_name_index_.reserve(entries_.size() * 2);
+        for (const auto& entry : entries_) {
+            for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
+                for (const auto& hi_name : entry.seqs[seq_no].hi_names) {
+                    ref rf{&entry, seq_no};
+                    hi_name_index_.emplace(hi_name, std::move(rf));
+                }
+            }
+        }
+        hi_name_index_.sort_by_key();
+    }
+    return hi_name_index_;
+
+} // acmacs::seqdb::v3::Seqdb::hi_name_index
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Antigens& aAntigens, std::string_view /*aChartVirusType*/) const
+{
+    // check lineage?
+    // check virus type
+
+    subset result;
+    const auto& hi_name_ind = hi_name_index();
+    size_t matched = 0;
+    for (auto antigen : aAntigens) {
+        if (auto found_ref = hi_name_ind.find(antigen->full_name()); found_ref != hi_name_ind.end()) {
+            result.refs_.push_back(std::move(found_ref->second));
+            ++matched;
+        }
+        else if (antigen->passage().empty()) {
+            bool found = false;
+            for (const auto& selected : select_by_name(antigen->name())) {
+                if (selected.seq().has_reassortant(*antigen->reassortant())) {
+                    result.refs_.push_back(selected);
+                    ++matched;
+                    found = true;
+                }
+            }
+            if (!found)
+                result.refs_.emplace_back();
+        }
+        else
+            result.refs_.emplace_back();
+    }
+    fmt::print("INFO: antigens from chart have sequences in seqdb: {}\n", matched);
+
+    return result;
 
 } // acmacs::seqdb::v3::Seqdb::match
 
