@@ -194,6 +194,7 @@ namespace acmacs::seqdb
             subset& sort(sorting srt);
             subset& export_sequences(std::string_view filename, const export_options& options);
             subset& print(std::string_view name_format, bool do_print = true);
+            subset& report_date_range(bool do_report);
 
           private:
             refs_t refs_;

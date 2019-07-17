@@ -499,6 +499,31 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::sort(sorting srt)
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_date_range(bool do_report)
+{
+    if (do_report) {
+        if (!refs_.empty()) {
+            std::string_view min_date = refs_.front().entry->date(), max_date = min_date;
+            for (const auto& ref : refs_) {
+                const auto date = ref.entry->date();
+                if (date < min_date)
+                    min_date = date;
+                else if (date > max_date)
+                    max_date = date;
+            }
+            fmt::print(stderr, "INFO: {} sequences, date range: {} - {}\n", refs_.size(), min_date, max_date);
+        }
+        else {
+            fmt::print(stderr, "WARNING: no sequences to report date range for\n");
+        }
+    }
+
+    return *this;
+
+} // acmacs::seqdb::v3::subset::report_date_range
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const export_options& options)
 {
     if (!filename.empty()) {
