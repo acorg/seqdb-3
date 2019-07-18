@@ -1,4 +1,4 @@
-#include "acmacs-base/in-json.hh"
+#include "acmacs-base/in-json-parser.hh"
 #include "seqdb-3/seqdb-parse.hh"
 #include "seqdb-3/seqdb.hh"
 
