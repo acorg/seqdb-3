@@ -61,31 +61,42 @@ void acmacs::seqdb::v3::scan::detect_lineages_clades(std::vector<fasta::scan_res
 
 namespace local::B
 {
-    inline bool is_victoria(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions) { return deletions.empty(); }
+    using deletions_insertions_t = acmacs::seqdb::v3::scan::deletions_insertions_t;
 
-    inline bool is_victoria_del2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
+    inline bool is_no_deletions(const deletions_insertions_t& deletions) { return deletions.empty(); }
+
+    inline bool is_N_deletions_at(const deletions_insertions_t& deletions, size_t num_deletions, size_t pos1)
     {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
+        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == (pos1 - 1) && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_tripledel2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
+    inline bool is_few_deletions_at_the_end(const deletions_insertions_t& deletions)
     {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
+        return deletions.deletions.size() == 1 && deletions.deletions.front().pos > 500 && deletions.insertions.empty();
     }
 
-    inline bool is_victoria_tripledel2017_pos_shifted_163_164(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    {
-        return deletions.deletions.size() == 1 && (deletions.deletions.front().pos == 162 || deletions.deletions.front().pos == 163) && deletions.deletions.front().num == 3 && deletions.insertions.empty();
-    }
+    // ----------------------------------------------------------------------
+
+    // inline bool is_victoria(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions) { return deletions.empty(); }
+
+    // inline bool is_victoria_del2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
+    // {
+    //     return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
+    // }
+
+    // inline bool is_victoria_tripledel2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
+    // {
+    //     return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
+    // }
+
+    // inline bool is_victoria_tripledel2017_pos_shifted_163_164(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
+    // {
+    //     return deletions.deletions.size() == 1 && (deletions.deletions.front().pos == 162 || deletions.deletions.front().pos == 163) && deletions.deletions.front().num == 3 && deletions.insertions.empty();
+    // }
 
     inline bool is_victoria_sixdel2019(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
     {
         return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 6 && deletions.insertions.empty();
-    }
-
-    inline bool is_victoria_deletions_at_the_end(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos > 500 && deletions.insertions.empty();
     }
 
     inline bool is_yamagata_shifted(acmacs::seqdb::v3::scan::sequence_t& sequence)
@@ -158,34 +169,35 @@ namespace local::B
         // };
 
         auto& deletions = sequence.deletions();
-        if (is_victoria(deletions) || is_victoria_deletions_at_the_end(deletions)) {
+        if (is_no_deletions(deletions) || is_few_deletions_at_the_end(deletions)) {
+            // VICTORIA
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("no");
         }
-        else if (is_victoria_del2017(deletions)) {
+        else if (is_N_deletions_at(deletions, 2, 162) || is_N_deletions_at(deletions, 2, 163)) {
+            // VICTORIA (double) del 2017
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria del2017");
+            // according to David Burke 2019-07-16 14:27, also see https://jvi.asm.org/content/jvi/73/9/7343.full.pdf
+            // B/GUATEMALA/581/2017      VPN--KNKTAT
+            // B/COLORADO/6/2017_MDCK1   VPD--KNKTAT
+            deletions.deletions.front().pos = 163 - 1;
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"DEL2017"});
         }
-        else if (is_victoria_tripledel2017(deletions)) {
+        else if (is_N_deletions_at(deletions, 3, 162) || is_N_deletions_at(deletions, 3, 163) || is_N_deletions_at(deletions, 3, 164)) {
+            // VICTORIA triple del 2017
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria tripledel2017");
+            // according to David Burke 2019-07-16 14:27
+            // VPK---NKTAT
+            deletions.deletions.front().pos = 163 - 1;
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
-        }
-        else if (is_victoria_tripledel2017_pos_shifted_163_164(deletions)) {
-            if (sequence.lineage().empty())
-                sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
-            else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
-                warn("victoria tripledel2017 (pos shifted)");
-            deletions.deletions.front().pos = 161;
-            sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
-            // rep();
         }
         else if (is_victoria_sixdel2019(deletions)) {
             if (sequence.lineage().empty())
