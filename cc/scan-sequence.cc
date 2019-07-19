@@ -64,22 +64,6 @@ std::string acmacs::seqdb::v3::scan::format(const deletions_insertions_t& deleti
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::scan::format_date(const date::year_month_day& a_date)
-{
-    if (a_date.ok())
-        return date::display(a_date);
-    if (a_date.year().ok()) {
-        if (a_date.month().ok())
-            return date::format("%Y-%m-00", a_date);
-        else
-            return date::format("%Y-00-00", a_date);
-    }
-    return std::string{"0000-00-00"};
-
-} // acmacs::seqdb::v3::scan::format_date
-
-// ----------------------------------------------------------------------
-
 std::string acmacs::seqdb::v3::scan::sequence_t::aa_format() const
 {
     fmt::memory_buffer out;

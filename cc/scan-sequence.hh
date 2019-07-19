@@ -48,7 +48,14 @@ namespace acmacs::seqdb
             std::string format_aa(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
             // std::string format_nuc(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
             std::string format(const deletions_insertions_t& deletions);
-            std::string format_date(const date::year_month_day& a_date);
+
+            inline std::string format_date(const date::year_month_day& a_date)
+            {
+                if (a_date.year().ok())
+                    return date::display(a_date, date::allow_incomplete::yes);
+                else
+                    return std::string{"0000-00-00"};
+            }
 
             static const auto empty_month_or_day = [](const auto& date) { return date.find("-00") != std::string::npos; };
             static const auto not_empty_month_or_day = [](const auto& date) { return date.find("-00") == std::string::npos; };

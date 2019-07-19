@@ -63,41 +63,21 @@ namespace local::B
 {
     using deletions_insertions_t = acmacs::seqdb::v3::scan::deletions_insertions_t;
 
-    inline bool is_no_deletions(const deletions_insertions_t& deletions) { return deletions.empty(); }
-
-    inline bool is_N_deletions_at(const deletions_insertions_t& deletions, size_t num_deletions, size_t pos1)
+    inline bool no_deletions_after_before(const deletions_insertions_t& deletions, size_t on_or_after_pos1, size_t on_or_before_pos1)
     {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == (pos1 - 1) && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
+        for (const auto& del : deletions.deletions) {
+            if (del.pos >= (on_or_after_pos1 - 1) && del.pos <= (on_or_before_pos1 - 1))
+                return false;
+        }
+        return true;
     }
 
-    inline bool is_few_deletions_at_the_end(const deletions_insertions_t& deletions)
+    inline bool N_deletions_at(const deletions_insertions_t& deletions, size_t num_deletions, size_t pos1)
     {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos > 500 && deletions.insertions.empty();
+        return deletions.deletions.front().pos == (pos1 - 1) && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
     }
 
     // ----------------------------------------------------------------------
-
-    // inline bool is_victoria(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions) { return deletions.empty(); }
-
-    // inline bool is_victoria_del2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    // {
-    //     return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
-    // }
-
-    // inline bool is_victoria_tripledel2017(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    // {
-    //     return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 161 && deletions.deletions.front().num == 3 && deletions.insertions.empty();
-    // }
-
-    // inline bool is_victoria_tripledel2017_pos_shifted_163_164(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    // {
-    //     return deletions.deletions.size() == 1 && (deletions.deletions.front().pos == 162 || deletions.deletions.front().pos == 163) && deletions.deletions.front().num == 3 && deletions.insertions.empty();
-    // }
-
-    inline bool is_victoria_sixdel2019(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 163 && deletions.deletions.front().num == 6 && deletions.insertions.empty();
-    }
 
     inline bool is_yamagata_shifted(acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
@@ -107,24 +87,6 @@ namespace local::B
                 (deletions.size() == 1 && deletions.front().pos == 160 && deletions.front().num == 1 && sequence.aa_aligned_substr(157, 3) == "WAV") ||
                 (deletions.size() == 1 && deletions.front().pos == 163 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 3) == "VPK")) &&
                sequence.deletions().insertions.empty();
-    }
-
-    inline bool is_yamagata(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    {
-        return !deletions.deletions.empty() && deletions.deletions.front().pos == 162 && deletions.deletions.front().num == 1 &&
-               (deletions.deletions.size() == 1 || deletions.deletions[1].pos > 500) && deletions.insertions.empty();
-    }
-
-    inline bool is_yamagata_doubledel(acmacs::seqdb::v3::scan::sequence_t& sequence)
-    {
-        const auto& deletions = sequence.deletions().deletions;
-        return deletions.size() == 1 && deletions.front().pos == 162 && deletions.front().num == 2 && sequence.year() <= 2013 && sequence.deletions().insertions.empty();
-    }
-
-    // 12 sequences from TAIWAN 2010 have deletions 169:2
-    inline bool is_taiwan_169_2(const acmacs::seqdb::v3::scan::deletions_insertions_t& deletions)
-    {
-        return deletions.deletions.size() == 1 && deletions.deletions.front().pos == 168 && deletions.deletions.front().num == 2 && deletions.insertions.empty();
     }
 
     inline bool is_semi_ignored(acmacs::seqdb::v3::scan::sequence_t& sequence)
@@ -150,12 +112,14 @@ namespace local::B
     // B/Yamagata/16/88
     // B/Victoria/2/87
 
-    // VICTORIA del2017: 162, 163
-    // VICTORIA tripledel2017: 162, 163, 164 by convention
-
     // YAMAGATA: deletion must be at 163
     // David Burke 2017-08-17: deletions ( and insertions) of amino acids usually occur in regions of the protein structure where it changes direction ( loops ).
     // In the case of HA, this is after VPK and before NKTAT/YKNAT.
+
+    // DISABLED:
+    //     Sarah 2018-08, David Burke disagrees 2019-07-16
+    //     VICTORIA del2017: 162, 163
+    //     VICTORIA tripledel2017: 162, 163, 164 by convention
 
     void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref)
     {
@@ -169,43 +133,61 @@ namespace local::B
         // };
 
         auto& deletions = sequence.deletions();
-        if (is_no_deletions(deletions) || is_few_deletions_at_the_end(deletions)) {
+        constexpr size_t b_vic_del_mutants_pos0 = 163 - 1; // Must be 163-1 according to David Burke
+
+        //---------- VICTORIA ----------
+
+        if (no_deletions_after_before(deletions, 1, 500)) { // may have deletions after 500
             // VICTORIA
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("no");
         }
-        else if (is_N_deletions_at(deletions, 2, 162) || is_N_deletions_at(deletions, 2, 163)) {
+        else if (N_deletions_at(deletions, 2, 162) || N_deletions_at(deletions, 2, 163)) {
             // VICTORIA (double) del 2017
+            // according to David Burke 2019-07-16 14:27, also see https://jvi.asm.org/content/jvi/73/9/7343.full.pdf
+            // B/GUATEMALA/581/2017      VPN--KNKTAT
+            // B/COLORADO/6/2017_MDCK1   VPD--KNKTAT
+            deletions.deletions.front().pos = b_vic_del_mutants_pos0;
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria del2017");
-            // according to David Burke 2019-07-16 14:27, also see https://jvi.asm.org/content/jvi/73/9/7343.full.pdf
-            // B/GUATEMALA/581/2017      VPN--KNKTAT
-            // B/COLORADO/6/2017_MDCK1   VPD--KNKTAT
-            deletions.deletions.front().pos = 163 - 1;
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"DEL2017"});
         }
-        else if (is_N_deletions_at(deletions, 3, 162) || is_N_deletions_at(deletions, 3, 163) || is_N_deletions_at(deletions, 3, 164)) {
+        else if (N_deletions_at(deletions, 3, 162) || N_deletions_at(deletions, 3, 163) || N_deletions_at(deletions, 3, 164)) {
             // VICTORIA triple del 2017
+            // according to David Burke 2019-07-16 14:27
+            // VPK---NKTAT
+            deletions.deletions.front().pos = b_vic_del_mutants_pos0;
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria tripledel2017");
-            // according to David Burke 2019-07-16 14:27
-            // VPK---NKTAT
-            deletions.deletions.front().pos = 163 - 1;
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
         }
-        else if (is_victoria_sixdel2019(deletions)) {
+        else if (N_deletions_at(deletions, 6, 164)) {
+            // VICTORIA sixdel2019 (only from Japan as of 2019-07-19)
+            // David Burke 2019-07-19 15:40: These look really
+            // unusual. Based on the geometry of the loop, I would
+            // tend to align the N with C-terminal side: B/KANAGAWA/AC1867/2019 VPK------NTNP
+            deletions.deletions.front().pos = b_vic_del_mutants_pos0;
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria sixdel2019 (pos shifted)");
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"SIXDEL2019"});
             // rep();
+        }
+
+            //---------- YAMAGATA ----------
+
+        else if (N_deletions_at(deletions, 1, 163) && no_deletions_after_before(deletions, 164, 500)) {
+            if (sequence.lineage().empty())
+                sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
+            else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
+                warn("yamagata");
         }
         else if (is_yamagata_shifted(sequence)) {
             if (sequence.lineage().empty())
@@ -214,19 +196,13 @@ namespace local::B
                 warn("yamagata-shifted");
             deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{162, 1}};
         }
-        else if (is_yamagata(deletions)) {
+        else if (N_deletions_at(deletions, 2, 163) && sequence.year() <= 2013) {
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
                 warn("yamagata");
         }
-        else if (is_yamagata_doubledel(sequence)) {
-            if (sequence.lineage().empty())
-                sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
-            else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
-                warn("yamagata");
-        }
-        else if (is_taiwan_169_2(deletions)) {
+        else if (N_deletions_at(deletions, 2, 169)) {
             // 12 sequences from TAIWAN 2010 have deletions 169:2
             sequence.lineage(acmacs::virus::lineage_t{});
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TAIWAN2010"});
@@ -238,6 +214,7 @@ namespace local::B
             // do not issue warning
         }
         else {
+            fmt::print(stderr, "DEBUG: 1-at-163:{} no-between-164-500:{}\n", N_deletions_at(deletions, 1, 163), no_deletions_after_before(deletions, 164, 500));
             warn("unknown", "ERROR");
         }
 
