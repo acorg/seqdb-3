@@ -499,10 +499,11 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::sort(sorting srt)
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_date_range(bool do_report)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report)
 {
     if (do_report) {
         if (!refs_.empty()) {
+            size_t with_hi_names = 0;
             std::string_view min_date = refs_.front().entry->date(), max_date = min_date;
             for (const auto& ref : refs_) {
                 const auto date = ref.entry->date();
@@ -510,17 +511,19 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_date_range(bool do_
                     min_date = date;
                 else if (date > max_date)
                     max_date = date;
+                if (!ref.seq().hi_names.empty())
+                    ++with_hi_names;
             }
-            fmt::print(stderr, "INFO: {} sequences, date range: {} - {}\n", refs_.size(), min_date, max_date);
+            fmt::print(stderr, "Sequences: {}\nDate range: {} - {}\nHiDb matches: {}\n", refs_.size(), min_date, max_date, with_hi_names);
         }
         else {
-            fmt::print(stderr, "WARNING: no sequences to report date range for\n");
+            fmt::print(stderr, "No sequences selected\n");
         }
     }
 
     return *this;
 
-} // acmacs::seqdb::v3::subset::report_date_range
+} // acmacs::seqdb::v3::subset::report_stat
 
 // ----------------------------------------------------------------------
 

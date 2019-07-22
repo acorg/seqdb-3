@@ -222,6 +222,11 @@ namespace local::B
 
     // ----------------------------------------------------------------------
 
+    // V1A: !58P 75K 172P
+    // V1A.1 = del2017
+    // V1A.2 = tripledel2017
+    // V1B  58P
+
     void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
         if (sequence.lineage() == acmacs::virus::lineage_t{"VICTORIA"}) {
