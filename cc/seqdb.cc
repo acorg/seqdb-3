@@ -414,6 +414,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
             }
         }
         fmt::print(stderr, "DEBUG: (group-size, num-groups): {}\n", counter_group_size);
+        fmt::print(stderr, "DEBUG: total groups: {}\n", refs_.back().group_no);
     }
     return *this;
 
