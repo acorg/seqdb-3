@@ -372,9 +372,9 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
         std::mt19937 generator{std::random_device()()};
         std::uniform_int_distribution<size_t> distribution(0, refs_.size() - 1);
         for (size_t no = 0; no < random; ++no)
-            refs_[distribution(generator)].selected = true;
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return !en.selected; }), std::end(refs_));
-        std::for_each(std::begin(refs_), std::end(refs_), [](auto& en) { en.selected = false; });
+            refs_[distribution(generator)].to_be_removed = true;
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return !en.to_be_removed; }), std::end(refs_));
+        std::for_each(std::begin(refs_), std::end(refs_), [](auto& en) { en.to_be_removed = false; });
     }
     return *this;
 
@@ -382,10 +382,65 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(size_t dist_threshold)
+{
+    if (dist_threshold > 0) {
+        auto group_master = most_recent_with_hi_name();
+        auto group_master_aa_aligned = group_master->seq().aa_aligned();
+        auto group_first = std::begin(refs_);
+        acmacs::Counter<ssize_t> counter_group_size;
+        for (size_t group_no = 1; group_first != std::end(refs_); ++group_no) {
+            if (group_no != 1) {
+                group_master = group_first;
+                while (!group_master->has_hi_names() && group_master != std::end(refs_))
+                    ++group_master;
+                if (group_master == std::end(refs_))
+                    group_master = group_first;
+                group_master_aa_aligned = group_master->seq().aa_aligned();
+            }
+            // fmt::print("DEBUG: group {} master: {} {} rest size: {}\n", group_no, group_master->seq_id(), group_master->entry->date(), std::end(refs_) - group_first);
+            for (auto refp = group_first; refp != std::end(refs_); ++refp)
+                refp->hamming_distance = hamming_distance(group_master_aa_aligned, refp->seq().aa_aligned());
+            std::sort(group_first, std::end(refs_), [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; });
+            for (auto refp = group_first; ; ++refp) {
+                if (refp == std::end(refs_) || refp->hamming_distance >= dist_threshold) {
+                    // fmt::print(stderr, "DEBUG: group {} size: {}\n", group_no, refp - group_first);
+                    counter_group_size.count(refp - group_first);
+                    group_first = refp;
+                    break;
+                }
+                else
+                    refp->group_no = group_no;
+            }
+        }
+        fmt::print(stderr, "DEBUG: (group-size, num-groups): {}\n", counter_group_size);
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::group_by_hamming_distance
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset::refs_t::const_iterator acmacs::seqdb::v3::subset::most_recent_with_hi_name() const
+{
+    refs_t::const_iterator result = std::end(refs_);
+    std::string_view date;
+    for (auto refp = std::begin(refs_); refp != std::end(refs_); ++refp) {
+        if (refp->has_hi_names() && refp->entry->date() > date) { // refs_[no].seq().reassortants.empty() &&
+            result = refp;
+            date = refp->entry->date();
+        }
+    }
+    return result;
+
+} // acmacs::seqdb::v3::subset::most_recent_with_hi_name
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::with_hi_name(bool with_hi_name)
 {
     if (with_hi_name)
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.seq().hi_names.empty(); }), std::end(refs_));
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return !en.has_hi_names(); }), std::end(refs_));
     return *this;
 
 } // acmacs::seqdb::v3::subset::with_hi_name

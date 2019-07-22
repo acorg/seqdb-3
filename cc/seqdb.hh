@@ -143,7 +143,9 @@ namespace acmacs::seqdb
         {
             const SeqdbEntry* entry;
             size_t seq_index;
-            bool selected{false}; // for choosing at random
+            bool to_be_removed{false}; // for subsetting at random
+            size_t group_no{0}; // for group_by_hamming_distance
+            size_t hamming_distance{0}; // for group_by_hamming_distance
 
             ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
             ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
@@ -158,6 +160,7 @@ namespace acmacs::seqdb
             std::string hi_name_or_full_name() const { if (seq().hi_names.empty()) return full_name(); else return std::string{seq().hi_names.front()}; }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
+            bool has_hi_names() const { return !seq().hi_names.empty(); }
         };
 
         class subset
@@ -185,6 +188,7 @@ namespace acmacs::seqdb
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
             subset& random(size_t random);
+            subset& group_by_hamming_distance(size_t dist_threshold);
             subset& with_hi_name(bool with_hi_name);
             subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
@@ -205,6 +209,9 @@ namespace acmacs::seqdb
             void sort_by_name_desc() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() > e2.seq_id(); }); }
             void sort_by_date_recent_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); }); }
             void sort_by_date_oldest_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() < e2.entry->date(); }); }
+            void sort_by_hamming_distance() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; }); }
+
+            refs_t::const_iterator most_recent_with_hi_name() const;
 
             using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
             using collected_t = std::vector<collected_entry_t>;

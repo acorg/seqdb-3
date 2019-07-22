@@ -35,6 +35,7 @@ struct Options : public argv
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
     option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent}"}};
+    option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
 
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
@@ -133,6 +134,7 @@ int main(int argc, char* const argv[])
             .names_matching_regex(opt.name_regex)
             .recent(opt.recent)
             .random(opt.random)
+            .group_by_hamming_distance(opt.group_by_hamming_distance)
             .sort(sorting_order(opt.sort_by))
             .report_stat() // static_cast<bool>(opt.fasta))
             .prepend_single_matching(opt.base_seq_regex, seqdb)
