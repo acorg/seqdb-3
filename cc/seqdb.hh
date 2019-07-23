@@ -188,7 +188,7 @@ namespace acmacs::seqdb
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
             subset& random(size_t random);
-            subset& group_by_hamming_distance(size_t dist_threshold);
+            subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size);
             subset& with_hi_name(bool with_hi_name);
             subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
@@ -212,6 +212,8 @@ namespace acmacs::seqdb
             void sort_by_hamming_distance() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; }); }
 
             refs_t::const_iterator most_recent_with_hi_name() const;
+            void remove_marked() { refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.to_be_removed; }), std::end(refs_)); }
+            void set_remove_marker(bool marker) { std::for_each(std::begin(refs_), std::end(refs_), [marker](auto& en) { en.to_be_removed = marker; }); }
 
             using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
             using collected_t = std::vector<collected_entry_t>;
