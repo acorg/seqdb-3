@@ -436,15 +436,21 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
             // too few groups
             set_remove_marker(true);
             size_t to_keep = 0;
-            size_t prev_group = 0;
-            for (auto& ref : refs_) {
-                if (ref.group_no != prev_group) {
-                    ref.to_be_removed = false;
-                    ++to_keep;
-                    prev_group = ref.group_no;
+            size_t prev_to_keep = output_size;
+            while (to_keep < output_size && prev_to_keep != to_keep) {
+                prev_to_keep = to_keep;
+                size_t group_no = 1;
+                for (auto& ref : refs_) {
+                    if (ref.group_no >= group_no && ref.to_be_removed) {
+                        ref.to_be_removed = false;
+                        ++to_keep;
+                        group_no = ref.group_no + 1;
+                    }
+                    if (to_keep >= output_size)
+                        break;
                 }
+                fmt::print(stderr, "DEBUG: to_keep {} group_no {}\n", to_keep, group_no);
             }
-            fmt::print(stderr, "DEBUG: to_keep {}\n", to_keep);
         }
         remove_marked();
     }
