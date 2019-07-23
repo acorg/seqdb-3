@@ -382,6 +382,30 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
 
 // ----------------------------------------------------------------------
 
+// Eu's algortihm of subsseting 2019-07-23
+
+// 1. Find first group master sequence. I think good starting sequence
+// is the most recent one that matched against hidb. Algorithm also
+// prefers matched sequences to make more antigens marked in the sig
+// pages.
+//
+// 2. Compute hamming distance between rest sequences and the master
+// sequence, sort rest sequences by hamming distance, smaller first.
+//
+// 3. Find group end, i.e. first sequence that has hamming distance to
+// the group master bigger than dist_threshold. Assign group no to
+// this group. Sort group (keep group master first) by number of hi
+// names (most number of names first) and by date (most recent first).
+//
+// 4. Next group master is the first sequence after group end. Repeat
+// 2-3-4 until all sequences are processed.
+//
+// 5. Select masters (first sequences) of every group. If there are
+// too many groups, more than output_size, then just used first
+// output_size groups. If output_size > number of groups, select the
+// second sequence in each group (if group size > 1). Do it until
+// output_size sequences selected.
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(size_t dist_threshold, size_t output_size)
 {
     if (dist_threshold > 0) {
@@ -418,8 +442,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
             counter_group_size.count(group_last - group_first);
             group_first = group_last;
         }
-        fmt::print(stderr, "DEBUG: (num-groups:group-size): {}\n", counter_group_size.report_sorted_max_first(" {second}:{first}"));
-        fmt::print(stderr, "DEBUG: total groups: {}\n", refs_.back().group_no);
+        // fmt::print(stderr, "DEBUG: (num-groups:group-size): {}\n", counter_group_size.report_sorted_max_first(" {second}:{first}"));
+        // fmt::print(stderr, "DEBUG: total groups: {}\n", refs_.back().group_no);
         if (refs_.back().group_no > output_size) {
             // too many groups, take one seq from each group starting with group 1, ignore groups with high numbers (furtherst from the recent strain)
             size_t prev_group = 0;
@@ -710,6 +734,7 @@ std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, c
                        fmt::arg("seq_id", entry.seq_id()),
                        fmt::arg("full_name", entry.full_name()),
                        fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
+                       fmt::arg("hi_names", entry.seq().hi_names),
                        fmt::arg("lineage", entry.entry->lineage),
                        fmt::arg("name", entry.entry->name),
                        fmt::arg("date", entry.entry->date()),
