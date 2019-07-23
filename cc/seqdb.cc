@@ -395,27 +395,28 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 
         const auto assign_group_no = [](auto first, auto last, size_t group_no) { std::for_each(first, last, [group_no](auto& en) { en.group_no = group_no; }); };
 
-        const auto sort_by_hi_names = [](auto first, auto last) { std::sort(first, last, [](const auto& e1, const auto& e2) { return e1.seq().hi_names.size() > e2.seq().hi_names.size(); }); };
+        const auto sort_by_hi_names = [](auto first, auto last) {
+            std::sort(first, last, [](const auto& e1, const auto& e2) {
+                return e1.seq().hi_names.size() == e2.seq().hi_names.size() ? e1.entry->date() > e2.entry->date() : e1.seq().hi_names.size() > e2.seq().hi_names.size();
+            });
+        };
 
         // ----------------------------------------------------------------------
 
-        auto group_master = most_recent_with_hi_name();
-        auto group_master_aa_aligned = group_master->seq().aa_aligned();
+        std::iter_swap(std::begin(refs_), most_recent_with_hi_name());
         auto group_first = std::begin(refs_);
         acmacs::Counter<ssize_t> counter_group_size;
         for (size_t group_no = 1; group_first != std::end(refs_); ++group_no) {
-            // fmt::print("DEBUG: group {} master: {} {} rest size: {}\n", group_no, group_master->seq_id(), group_master->entry->date(), std::end(refs_) - group_first);
-            compute_hamming_distance(group_master_aa_aligned, group_first, std::end(refs_));
-            sort_by_hamming_distance(group_first, std::end(refs_));
-            const auto group_last = find_group_end(group_first, std::end(refs_));
+            const auto group_master_aa_aligned = group_first->seq().aa_aligned();
+            const auto group_second = std::next(group_first);
+            // fmt::print("DEBUG: group {} master: {} {} rest size: {}\n", group_no, group_first->seq_id(), group_first->entry->date(), std::end(refs_) - group_first);
+            compute_hamming_distance(group_master_aa_aligned, group_second, std::end(refs_));
+            sort_by_hamming_distance(group_second, std::end(refs_));
+            const auto group_last = find_group_end(group_second, std::end(refs_));
             assign_group_no(group_first, group_last, group_no);
-            sort_by_hi_names(group_first, group_last);
+            sort_by_hi_names(group_no == 1 ? group_second : group_first, group_last);
             counter_group_size.count(group_last - group_first);
             group_first = group_last;
-            if (group_first != std::end(refs_)) {
-                group_master = group_first;
-                group_master_aa_aligned = group_master->seq().aa_aligned();
-            }
         }
         fmt::print(stderr, "DEBUG: (num-groups:group-size): {}\n", counter_group_size.report_sorted_max_first(" {second}:{first}"));
         fmt::print(stderr, "DEBUG: total groups: {}\n", refs_.back().group_no);
@@ -449,7 +450,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
                     if (to_keep >= output_size)
                         break;
                 }
-                fmt::print(stderr, "DEBUG: to_keep {} group_no {}\n", to_keep, group_no);
+                // fmt::print(stderr, "DEBUG: to_keep {} group_no {}\n", to_keep, group_no);
             }
         }
         remove_marked();
@@ -518,14 +519,15 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset::refs_t::const_iterator acmacs::seqdb::v3::subset::most_recent_with_hi_name() const
+acmacs::seqdb::v3::subset::refs_t::iterator acmacs::seqdb::v3::subset::most_recent_with_hi_name()
 {
-    refs_t::const_iterator result = std::end(refs_);
+    auto result = std::end(refs_);
     std::string_view date;
     for (auto refp = std::begin(refs_); refp != std::end(refs_); ++refp) {
         if (refp->has_hi_names() && refp->entry->date() > date) { // refs_[no].seq().reassortants.empty() &&
             result = refp;
             date = refp->entry->date();
+            // fmt::print(stderr, "DEBUG: [{}] {}\n", date, result->full_name());
         }
     }
     return result;
@@ -717,7 +719,10 @@ std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, c
                        fmt::arg("clades", entry.seq().clades),
                        fmt::arg("lab", entry.seq().lab()),
                        fmt::arg("country", entry.entry->country),
-                       fmt::arg("continent", entry.entry->continent));
+                       fmt::arg("continent", entry.entry->continent),
+                       fmt::arg("group_no", entry.group_no ? fmt::format("group:{}", entry.group_no) : std::string{}),
+                       fmt::arg("hamming_distance", fmt::format("hamdist:{}", entry.hamming_distance))
+                       );
 
 } // acmacs::seqdb::v3::subset::make_name
 

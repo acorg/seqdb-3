@@ -157,6 +157,7 @@ namespace acmacs::seqdb
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const;
             std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+            std::string full_name_with_date() const { return fmt::format("{} [{}]", ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}), entry->date()); }
             std::string hi_name_or_full_name() const { if (seq().hi_names.empty()) return full_name(); else return std::string{seq().hi_names.front()}; }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
@@ -211,7 +212,7 @@ namespace acmacs::seqdb
             void sort_by_date_oldest_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() < e2.entry->date(); }); }
             void sort_by_hamming_distance() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; }); }
 
-            refs_t::const_iterator most_recent_with_hi_name() const;
+            refs_t::iterator most_recent_with_hi_name();
             void remove_marked() { refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.to_be_removed; }), std::end(refs_)); }
             void set_remove_marker(bool marker) { std::for_each(std::begin(refs_), std::end(refs_), [marker](auto& en) { en.to_be_removed = marker; }); }
 

@@ -34,7 +34,7 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent}"}};
+    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent} {group_no}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
 
