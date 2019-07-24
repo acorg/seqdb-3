@@ -486,30 +486,12 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 // ----------------------------------------------------------------------
 
 // davipatti algorithm 2019-07-23 9:58
-// > 1. compute hamming distances between all pairs of strains
-// > 2. pick a random strain, put in selection
-// > 3. pick random strain. if it has a distance < d to anything in in selection then discard it. else, add it to selection.
-// > 4. repeat 3 until you have as many strains, n, as you want, or until no more strains to pick
+// > 1. pick a random strain, put in selection
+// > 2. pick random strain. if it has a distance < d to anything in in selection then discard it. else, add it to selection.
+// > 3. repeat 3 until you have as many strains, n, as you want, or until no more strains to pick
 //
-// The step 1 is redundant. It requires too much computation and memory
-// to store the results, while at least half of the results are not used
-// at all during steps 2-4. E.g. complete H3 dataset from 2015, i.e. for
-// 4.5 years, contains 42k sequences, then there are about 900M distances
-// between all pairs.
+// Problems: need to prioritize picking hidb matched sequences.
 //
-// There are 12k antigenic data matches among those 42k sequences,
-// i.e. about 29%. Your algorithm does not prioritize picking matched
-// sequences, it means resulting signature page is going to have just 1/3
-// antigens marked. Also your algorithm pays no attention to the fact
-// that different WHO CCs have different amount of HI'd and sequenced
-// antigens, in the result sig pages for say NIID may miss some clusters
-// (I mean strains from a cluster marked as a section of the tree), which
-// may have negative effect on science.
-//
-// > (i have previously looked at choosing maximally dissimilar sets of
-// > strains to make a tree. the algorithm for that ended up picking things
-// > at the ends of long branches, which is an unwanted artefact.)
-// >
 // > parameter d would have to be tuned if d=0, this is just randomly
 // > sampling strains if d is very high, only very dissimilar strains will
 // > make it into selection, and selection would be small ideally d would
@@ -522,17 +504,6 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 // strains closer to n (I guess having slightly more than n is better
 // than having slightly less) and cut it, if necessary.
 //
-// >
-// > i don't really know what you mean by stable in a different situation,
-// > of course different selections have to be made, to include new strains
-//
-// I meant if we run algorithm multiple times with the same source set
-// (the same sequence database) and generate trees, all the trees would
-// be similar enough and have more or less the same layout. And trees
-// produced today and trees produced 6 month ago (i.e. for previous VCM)
-// are similar and Derek would not ask why they are so different.
-//
-// >
 // > i foresee this algorithm being run initially to make a selection when
 // > new sequences come in, repeat step 3 above, but just on new strains
 // > so, original members stay in selection anything novel enough gets
@@ -540,6 +511,40 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 //
 // No. The size of selection must be the same (as close to 4k as possible).
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance_random(bool do_subset, size_t output_size)
+{
+    if (do_subset && !refs_.empty()) {
+        std::mt19937 generator{std::random_device()()};
+        const auto random_from = [&generator](auto first, auto last) {
+            std::uniform_int_distribution<ssize_t> distribution(0, last - first - 1);
+            return std::next(first, distribution(generator));
+        };
+
+        const auto minimal_distance_less_than = [](auto first, auto last, std::string_view picked_aa, size_t distance_threshold) -> bool {
+            return std::any_of(first, last, [picked_aa, distance_threshold](const auto& en) { return hamming_distance(picked_aa, en.seq().aa_aligned()) < distance_threshold; });
+        };
+
+        for (size_t distance_threshold = 1; distance_threshold < 10; ++distance_threshold) {
+            auto data = refs_;
+            std::iter_swap(std::begin(data), random_from(std::begin(data), std::end(data)));
+            auto selection_start = std::begin(data), selection_end = std::next(selection_start), discarded_start = std::end(data);
+            while (discarded_start > selection_end) {
+                auto picked = random_from(selection_end, discarded_start);
+                if (minimal_distance_less_than(selection_start, selection_end, picked->seq().aa_aligned(), distance_threshold)) { // discard
+                    --discarded_start;
+                    std::iter_swap(discarded_start, picked);
+                }
+                else { // put into selection
+                    std::iter_swap(selection_end, picked);
+                    ++selection_end;
+                }
+            }
+            fmt::print(stderr, "DEBUG: threshold: {} selection: {}\n", distance_threshold, selection_end - selection_start);
+        }
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::subset_by_hamming_distance_random
 
 // ----------------------------------------------------------------------
 

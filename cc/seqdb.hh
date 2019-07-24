@@ -189,7 +189,8 @@ namespace acmacs::seqdb
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
             subset& random(size_t random);
-            subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size);
+            subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size); // Eu's algorithm 2019-07-23
+            subset& subset_by_hamming_distance_random(bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
             subset& with_hi_name(bool with_hi_name);
             subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
