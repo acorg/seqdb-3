@@ -67,8 +67,13 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
                 }
                 if (scan_result.has_value()) {
                     auto messages = normalize_name(*scan_result);
-                    if (import_sequence(sequence_ref.sequence, scan_result->sequence, options))
+                    if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
+                        if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
+                            || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
+                            scan_result->sequence.remove_dates();
+                        }
                         sequences_per_file[f_no].push_back(std::move(*scan_result));
+                    }
                 }
                 else
                     fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
@@ -382,6 +387,7 @@ static const std::map<std::string_view, std::string_view> sLabs{
     {"WHO COLLABORATING CENTRE FOR REFERENCE AND RESEARCH ON INFLUENZA", "VIDRL"},
     {"ERASMUS MEDICAL CENTER", "EMC"},
     {"WHO CHINESE NATIONAL INFLUENZA CENTER", "CNIC"},
+    {"NATIONAL INSTITUTE FOR BIOLOGICAL STANDARDS AND CONTROL (NIBSC)", "NIBSC"},
 };
 #include "acmacs-base/diagnostics-pop.hh"
 

@@ -182,6 +182,7 @@ namespace acmacs::seqdb
 
                 void add_date(const std::string& date);
                 void add_date(const date::year_month_day& a_date) { add_date(format_date(a_date)); }
+                void remove_dates() { dates_.clear(); }
                 void add_passage(acmacs::virus::Passage&& a_passage) { passages_.add(std::move(a_passage)); }
                 void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
                 void name(acmacs::virus::virus_name_t&& a_name) { name_ = std::move(a_name); }
