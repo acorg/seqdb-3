@@ -524,6 +524,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
             return std::any_of(first, last, [picked_aa, distance_threshold](const auto& en) { return hamming_distance(picked_aa, en.seq().aa_aligned()) < distance_threshold; });
         };
 
+        decltype(refs_) best_data;
         for (size_t distance_threshold = 1; distance_threshold < 10; ++distance_threshold) {
             auto data = refs_;
             std::iter_swap(std::begin(data), random_from(std::begin(data), std::end(data)));
@@ -540,7 +541,16 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
                 }
             }
             fmt::print(stderr, "DEBUG: threshold: {} selection: {}\n", distance_threshold, selection_end - selection_start);
+            if (static_cast<size_t>(selection_end - selection_start) < output_size)
+                break;          // use previous (best_data)
+            best_data.resize(static_cast<size_t>(selection_end - selection_start));
+            std::copy(selection_start, selection_end, std::begin(best_data));
         }
+        if (best_data.empty())
+            throw std::runtime_error(fmt::format("subset_by_hamming_distance_random: best_data is empty"));
+        const auto num_seqs = std::min(output_size, best_data.size());
+        refs_.resize(num_seqs);
+        std::copy(std::begin(best_data), std::next(std::begin(best_data), static_cast<ssize_t>(num_seqs)), std::begin(refs_));
     }
     return *this;
 
