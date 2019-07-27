@@ -37,6 +37,8 @@ struct Options : public argv
     option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent} {group_no}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
+    option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
+    option<bool>      keep_all_hi_matched{*this, "keep-all-hi", desc{"do NOT remove HI matched when removing duplicates (--remove-nuc-duplicates)"}};
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
 
     // print
@@ -138,6 +140,7 @@ int main(int argc, char* const argv[])
             .random(opt.random)
             .group_by_hamming_distance(opt.group_by_hamming_distance, opt.output_size)
             .subset_by_hamming_distance_random(opt.subset_by_hamming_distance_random, opt.output_size)
+            .remove_nuc_duplicates(opt.remove_nuc_duplicates, opt.keep_all_hi_matched)
             .sort(sorting_order(opt.sort_by))
             .report_stat() // static_cast<bool>(opt.fasta))
             .prepend_single_matching(opt.base_seq_regex, seqdb)

@@ -104,8 +104,10 @@ namespace acmacs::seqdb
                 return static_cast<size_t>(- shift);
             }
 
-            std::string_view aa_aligned() const { return amino_acids.substr(aa_nuc_shift(a_shift)); }
-            std::string_view nuc_aligned() const { return nucs.substr(aa_nuc_shift(n_shift)); }
+            std::string_view aa_aligned(size_t length = std::string_view::npos) const { return amino_acids.substr(aa_nuc_shift(a_shift), length); }
+            std::string_view nuc_aligned(size_t length = std::string_view::npos) const { return nucs.substr(aa_nuc_shift(n_shift), length); }
+            size_t aa_aligned_length() const { return amino_acids.size() - aa_nuc_shift(a_shift); }
+            size_t nuc_aligned_length() const { return nucs.size() - aa_nuc_shift(n_shift); }
 
             char aa_at(size_t pos0) const
             {
@@ -191,6 +193,7 @@ namespace acmacs::seqdb
             subset& random(size_t random);
             subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size); // Eu's algorithm 2019-07-23
             subset& subset_by_hamming_distance_random(bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
+            subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
             subset& with_hi_name(bool with_hi_name);
             subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
             subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
