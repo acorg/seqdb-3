@@ -9,6 +9,7 @@
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/acmacsd.hh"
+#include "acmacs-base/to-json.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
@@ -266,6 +267,58 @@ void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) con
     }
 
 } // acmacs::seqdb::v3::Seqdb::add_clades
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1(const acmacs::chart::Chart& chart) const
+{
+    struct stat_per_pos_t
+    {
+        ssize_t shannon_index = 0; // https://en.wikipedia.org/wiki/Diversity_index
+        std::map<char, size_t> aa_count;
+    };
+
+    constexpr size_t max_num_pos = 1000;
+    std::vector<stat_per_pos_t> stat_per_pos(max_num_pos);
+    to_json::object json_antigens;
+    for (auto [ag_no, ref] : acmacs::enumerate(match(*chart.antigens(), chart.info()->virus_type()))) {
+        if (ref) {
+            const auto sequence = ref.seq().aa_aligned();
+            json_antigens << to_json::key_val{std::to_string(ag_no), sequence};
+            for (auto [pos, aa] : acmacs::enumerate(sequence, 1))
+                ++stat_per_pos[pos].aa_count[aa];
+        }
+    }
+    for (auto& per_pos : stat_per_pos) {
+        const auto sum = std::accumulate(per_pos.aa_count.begin(), per_pos.aa_count.end(), 0UL, [](auto accum, const auto& entry) { return accum + entry.second; });
+        const auto shannon_index = -std::accumulate(per_pos.aa_count.begin(), per_pos.aa_count.end(), 0.0, [sum = double(sum)](auto accum, const auto& entry) {
+            const double p = entry.second / sum;
+            return accum + p * std::log(p);
+        });
+        per_pos.shannon_index = std::lround(shannon_index * 100);
+    }
+    to_json::object json_per_pos;
+    for (auto [pos, entry] : acmacs::enumerate(stat_per_pos)) {
+        // if (entry.size() > 1) // && (entry.find('X') == entry.end() || entry.size() > 2))
+        json_per_pos << to_json::key_val{std::to_string(pos), to_json::object{to_json::key_val{"shannon", entry.shannon_index}, to_json::key_val{"aa_count", to_json::object::from(entry.aa_count)}}};
+    }
+    return to_json::object{to_json::key_val{"sequences", to_json::object{to_json::key_val{"antigens", json_antigens}, to_json::key_val{"per_pos", json_per_pos}}}}.compact();
+
+} // acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::chart::Chart& chart) const
+{
+    auto antigens = chart.antigens();
+    std::string fasta;
+    for (auto [ag_no, ref] : acmacs::enumerate(match(*antigens, chart.info()->virus_type()))) {
+        if (ref)
+            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.seq().nuc_aligned());
+    }
+    return fasta;
+
+} // acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta
 
 // ----------------------------------------------------------------------
 

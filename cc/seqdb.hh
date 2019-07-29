@@ -11,7 +11,7 @@
 
 // ----------------------------------------------------------------------
 
-namespace acmacs::chart { class Antigens; class ChartModify; }
+namespace acmacs::chart { class Antigens; class Chart; class ChartModify; }
 
 namespace acmacs::seqdb
 {
@@ -39,7 +39,7 @@ namespace acmacs::seqdb
             const hi_name_index_t& hi_name_index() const;
 
             // returned subset contains elements for each antigen, i.e. it may contain empty ref's
-            subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType={}) const;
+            subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType = {}) const;
 
             using aas_indexes_t = std::map<std::string, std::vector<size_t>>;
             aas_indexes_t aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const;
@@ -50,6 +50,11 @@ namespace acmacs::seqdb
             clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
 
             void add_clades(acmacs::chart::ChartModify& chart) const;
+
+            // returns json with data for ace-view/2018 sequences_of_chart command
+            std::string sequences_of_chart_for_ace_view_1(const acmacs::chart::Chart& chart) const;
+            // returns sequences in the fasta format
+            std::string sequences_of_chart_as_fasta(const acmacs::chart::Chart& chart) const;
 
           private:
             std::string json_text_;
@@ -72,16 +77,40 @@ namespace acmacs::seqdb
 
             format e_format{format::fasta_nuc};
             size_t e_wrap_at{0};
-            bool   e_aligned{true};
-            bool   e_most_common_length{false};
+            bool e_aligned{true};
+            bool e_most_common_length{false};
             std::string e_name_format{"{seq_id}"};
 
-            export_options& fasta(bool nucs) { e_format = nucs ? format::fasta_nuc : format::fasta_aa; return *this; }
-            export_options& wrap(size_t wrap_at) { e_wrap_at = wrap_at; return *this; }
-            export_options& no_wrap() { e_wrap_at = 0; return *this; }
-            export_options& aligned(bool aligned = true) { e_aligned = aligned; return *this; }
-            export_options& most_common_length(bool most_common_length = true) { e_most_common_length = most_common_length; return *this; }
-            export_options& name_format(std::string_view name_format) { e_name_format = name_format; return *this; }
+            export_options& fasta(bool nucs)
+            {
+                e_format = nucs ? format::fasta_nuc : format::fasta_aa;
+                return *this;
+            }
+            export_options& wrap(size_t wrap_at)
+            {
+                e_wrap_at = wrap_at;
+                return *this;
+            }
+            export_options& no_wrap()
+            {
+                e_wrap_at = 0;
+                return *this;
+            }
+            export_options& aligned(bool aligned = true)
+            {
+                e_aligned = aligned;
+                return *this;
+            }
+            export_options& most_common_length(bool most_common_length = true)
+            {
+                e_most_common_length = most_common_length;
+                return *this;
+            }
+            export_options& name_format(std::string_view name_format)
+            {
+                e_name_format = name_format;
+                return *this;
+            }
         };
 
         // ----------------------------------------------------------------------
@@ -101,7 +130,10 @@ namespace acmacs::seqdb
             std::vector<std::string_view> hi_names;
             labs_t lab_ids;
 
-            bool has_lab(std::string_view lab) const { return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; }); }
+            bool has_lab(std::string_view lab) const
+            {
+                return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; });
+            }
             bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
             bool has_reassortant(std::string_view reassortant) const { return std::find(std::begin(reassortants), std::end(reassortants), reassortant) != std::end(reassortants); }
 
@@ -112,7 +144,7 @@ namespace acmacs::seqdb
                 const auto shift = ::string::from_chars<int>(shift_s);
                 if (shift > 0)
                     throw std::runtime_error(fmt::format("unsupported shift {}, hi_names: {}", shift, hi_names));
-                return static_cast<size_t>(- shift);
+                return static_cast<size_t>(-shift);
             }
 
             std::string_view aa_aligned(size_t length = std::string_view::npos) const { return amino_acids.substr(aa_nuc_shift(a_shift), length); }
@@ -158,8 +190,8 @@ namespace acmacs::seqdb
         {
             const SeqdbEntry* entry;
             size_t seq_index;
-            bool to_be_removed{false}; // for subsetting at random
-            size_t group_no{0}; // for group_by_hamming_distance
+            bool to_be_removed{false};  // for subsetting at random
+            size_t group_no{0};         // for group_by_hamming_distance
             size_t hamming_distance{0}; // for group_by_hamming_distance
 
             ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
@@ -172,8 +204,18 @@ namespace acmacs::seqdb
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const;
             std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
-            std::string full_name_with_date() const { return fmt::format("{} [{}]", ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}), entry->date()); }
-            std::string hi_name_or_full_name() const { if (seq().hi_names.empty()) return full_name(); else return std::string{seq().hi_names.front()}; }
+            std::string full_name_with_date() const
+            {
+                return fmt::format("{} [{}]", ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}),
+                                   entry->date());
+            }
+            std::string hi_name_or_full_name() const
+            {
+                if (seq().hi_names.empty())
+                    return full_name();
+                else
+                    return std::string{seq().hi_names.front()};
+            }
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
             bool has_hi_names() const { return !seq().hi_names.empty(); }
@@ -204,7 +246,7 @@ namespace acmacs::seqdb
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
             subset& random(size_t random);
-            subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size); // Eu's algorithm 2019-07-23
+            subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
             subset& subset_by_hamming_distance_random(bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
             subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
             subset& with_hi_name(bool with_hi_name);
@@ -223,15 +265,36 @@ namespace acmacs::seqdb
 
             subset() = default;
 
-            void sort_by_name_asc() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() < e2.seq_id(); }); }
-            void sort_by_name_desc() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() > e2.seq_id(); }); }
-            void sort_by_date_recent_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); }); }
-            void sort_by_date_oldest_first() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() < e2.entry->date(); }); }
-            void sort_by_hamming_distance() { std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; }); }
+            void sort_by_name_asc()
+            {
+                std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() < e2.seq_id(); });
+            }
+            void sort_by_name_desc()
+            {
+                std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.seq_id() > e2.seq_id(); });
+            }
+            void sort_by_date_recent_first()
+            {
+                std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() > e2.entry->date(); });
+            }
+            void sort_by_date_oldest_first()
+            {
+                std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.entry->date() < e2.entry->date(); });
+            }
+            void sort_by_hamming_distance()
+            {
+                std::sort(std::begin(refs_), std::end(refs_), [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; });
+            }
 
             refs_t::iterator most_recent_with_hi_name();
-            void remove_marked() { refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.to_be_removed; }), std::end(refs_)); }
-            void set_remove_marker(bool marker) { std::for_each(std::begin(refs_), std::end(refs_), [marker](auto& en) { en.to_be_removed = marker; }); }
+            void remove_marked()
+            {
+                refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.to_be_removed; }), std::end(refs_));
+            }
+            void set_remove_marker(bool marker)
+            {
+                std::for_each(std::begin(refs_), std::end(refs_), [marker](auto& en) { en.to_be_removed = marker; });
+            }
 
             using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
             using collected_t = std::vector<collected_entry_t>;
@@ -242,9 +305,8 @@ namespace acmacs::seqdb
             friend class Seqdb;
         };
 
-
     } // namespace v3
-} // namespace seqdb
+} // namespace acmacs::seqdb
 
 // ----------------------------------------------------------------------
 /// Local Variables:
