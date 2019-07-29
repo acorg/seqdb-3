@@ -39,7 +39,10 @@ namespace acmacs::seqdb
             const hi_name_index_t& hi_name_index() const;
 
             // returned subset contains elements for each antigen, i.e. it may contain empty ref's
-            subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType) const;
+            subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType={}) const;
+
+            using aas_indexes_t = std::map<std::string, std::vector<size_t>>;
+            aas_indexes_t aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const;
 
           private:
             std::string json_text_;
@@ -110,7 +113,7 @@ namespace acmacs::seqdb
             size_t aa_aligned_length() const { return amino_acids.size() - aa_nuc_shift(a_shift); }
             size_t nuc_aligned_length() const { return nucs.size() - aa_nuc_shift(n_shift); }
 
-            char aa_at(size_t pos0) const
+            char aa_at_pos0(size_t pos0) const
             {
                 const auto aligned = aa_aligned();
                 if (pos0 < aligned.size())
@@ -118,6 +121,8 @@ namespace acmacs::seqdb
                 else
                     return '?';
             }
+
+            char aa_at_pos1(size_t pos1) const { return aa_at_pos0(pos1 - 1); }
 
             std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
             std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }

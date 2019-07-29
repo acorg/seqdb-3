@@ -7,6 +7,7 @@
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/counter.hh"
+#include "acmacs-base/enumerate.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "acmacs-chart-2/chart.hh"
@@ -173,11 +174,21 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
     // check virus type
 
     subset result;
-    const auto& hi_name_ind = hi_name_index();
+
+    auto find_by_hi_name = [this](const auto& antigen) -> std::optional<ref> {
+        const auto& hi_name_ind = hi_name_index();
+        if (auto found_ref1 = hi_name_ind.find(antigen.full_name()); found_ref1 != hi_name_ind.end())
+            return found_ref1->second;
+        else if (auto found_ref2 = hi_name_ind.find(antigen.full_name_for_seqdb_matching()); found_ref2 != hi_name_ind.end())
+            return found_ref2->second;
+        else
+            return std::nullopt;
+    };
+
     size_t matched = 0;
     for (auto antigen : aAntigens) {
-        if (auto found_ref = hi_name_ind.find(antigen->full_name()); found_ref != hi_name_ind.end()) {
-            result.refs_.push_back(std::move(found_ref->second));
+        if (auto found_ref = find_by_hi_name(*antigen); found_ref.has_value()) {
+            result.refs_.push_back(std::move(*found_ref));
             ++matched;
         }
         else if (antigen->passage().empty()) {
@@ -200,6 +211,22 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
     return result;
 
 } // acmacs::seqdb::v3::Seqdb::match
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const
+{
+    aas_indexes_t aas_indexes;
+    for (auto [ag_no, ref] : acmacs::enumerate(match(aAntigens))) {
+        if (ref) {
+            std::string aa(aPositions1.size(), 'X');
+            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [ref=ref](size_t pos) { return ref.seq().aa_at_pos1(pos); });
+            aas_indexes[aa].push_back(ag_no);
+        }
+    }
+    return aas_indexes;
+
+} // acmacs::seqdb::v3::Seqdb::aa_at_pos_for_antigens
 
 // ----------------------------------------------------------------------
 
@@ -633,7 +660,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const std::vecto
                                            if (en.seq().amino_acids.empty())
                                                return remove;
                                            for (const auto& [pos0, aa, equal] : aa_at_pos0) {
-                                               if ((en.seq().aa_at(pos0) == aa) != equal)
+                                               if ((en.seq().aa_at_pos0(pos0) == aa) != equal)
                                                    return remove;
                                            }
                                            return keep;
