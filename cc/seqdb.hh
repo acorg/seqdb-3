@@ -44,6 +44,11 @@ namespace acmacs::seqdb
             using aas_indexes_t = std::map<std::string, std::vector<size_t>>;
             aas_indexes_t aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const;
 
+            using clade_t = std::string_view;
+            using clades_t = std::vector<clade_t>;
+            enum class clades_for_name_inclusive { no /* only common clades for matching sequences */, yes /* all possible clades */ };
+            clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
+
           private:
             std::string json_text_;
             std::vector<SeqdbEntry> entries_;

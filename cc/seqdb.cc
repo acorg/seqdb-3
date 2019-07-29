@@ -230,6 +230,25 @@ acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std::string_view name, clades_for_name_inclusive inclusive) const
+{
+    clades_t result;
+    bool clades_found = false;
+    for (const auto& ref : select_by_name(name)) {
+        if (inclusive == clades_for_name_inclusive::yes || !clades_found) {
+            std::copy(std::begin(ref.seq().clades), std::end(ref.seq().clades), std::back_inserter(result));
+        }
+        else {
+            result.erase(std::remove_if(std::begin(result), std::end(result), [&ref](const auto& clade) { return !ref.seq().has_clade(clade); }), std::end(result));
+        }
+        clades_found |= !ref.seq().clades.empty();
+    }
+    return result;
+
+} // acmacs::seqdb::v3::Seqdb::clades_for_name
+
+// ----------------------------------------------------------------------
+
 std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
 {
     if (const auto ho = acmacs::virus::host(acmacs::virus::v2::virus_name_t{name}); !ho.empty())
@@ -290,12 +309,13 @@ std::string acmacs::seqdb::v3::ref::seq_id() const
         if (std::count(std::begin(designations), std::end(designations), designations[seq_index]) > 1)
             source.append(fmt::format("_d{}", seq_index));
     }
-    return source
-            | ranges::view::remove_if(to_remove)
-            | ranges::view::replace('?', 'x')
-            | ranges::view::replace_if(to_replace_with_slash, '/') // usually in passages
-            | ranges::view::replace_if(to_replace_with_underscore, '_')
-            ;
+    return ranges::to<std::string>(
+        source
+        | ranges::view::remove_if(to_remove)
+        | ranges::view::replace('?', 'x')
+        | ranges::view::replace_if(to_replace_with_slash, '/') // usually in passages
+        | ranges::view::replace_if(to_replace_with_underscore, '_')
+                        );
 
 } // acmacs::seqdb::v3::ref::seq_id
 
@@ -875,7 +895,7 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
         }
         else {
             for (const auto chunk : en.second | ranges::view::chunk(options.e_wrap_at)) {
-                output.append(chunk);
+                output.append(ranges::to<std::string>(chunk));
                 output.append(1, '\n');
             }
         }
