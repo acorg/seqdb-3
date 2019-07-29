@@ -10,7 +10,7 @@
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "acmacs-virus/virus-name.hh"
-#include "acmacs-chart-2/chart.hh"
+#include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -246,6 +246,26 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
     return result;
 
 } // acmacs::seqdb::v3::Seqdb::clades_for_name
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) const
+{
+    auto antigens = chart.antigens_modify();
+    for (auto [ag_no, ref] : acmacs::enumerate(match(*antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)))) {
+        if (ref) {
+            auto& antigen = antigens->at(ag_no);
+            if (!ref.seq().clades.empty()) {
+                for (const auto& clade : ref.seq().clades)
+                    antigen.add_clade(std::string{clade});
+            }
+            else {
+                antigen.add_clade("SEQUENCED");
+            }
+        }
+    }
+
+} // acmacs::seqdb::v3::Seqdb::add_clades
 
 // ----------------------------------------------------------------------
 

@@ -49,6 +49,8 @@ namespace acmacs::seqdb
             enum class clades_for_name_inclusive { no /* only common clades for matching sequences */, yes /* all possible clades */ };
             clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
 
+            void add_clades(acmacs::chart::ChartModify& chart) const;
+
           private:
             std::string json_text_;
             std::vector<SeqdbEntry> entries_;
