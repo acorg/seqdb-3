@@ -117,6 +117,18 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_regex(std::string_
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::ref acmacs::seqdb::v3::Seqdb::find_hi_name(std::string_view full_name) const
+{
+    const auto& hi_name_index = acmacs::seqdb::get().hi_name_index();
+    if (const auto indp = hi_name_index.find(full_name); indp != hi_name_index.end())
+        return indp->second;
+    else
+        return {};
+
+} // acmacs::seqdb::v3::Seqdb::find_hi_name
+
+// ----------------------------------------------------------------------
+
 const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index() const
 {
     if (seq_id_index_.empty()) {

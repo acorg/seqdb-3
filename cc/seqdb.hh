@@ -34,6 +34,7 @@ namespace acmacs::seqdb
             subset all() const;
             subset select_by_name(std::string_view name) const;
             subset select_by_regex(std::string_view re) const;
+            ref find_hi_name(std::string_view full_name) const;
             const seq_id_index_t& seq_id_index() const;
             const hi_name_index_t& hi_name_index() const;
 
