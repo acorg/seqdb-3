@@ -321,9 +321,11 @@ acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppe
         if (const auto found = result.find(en); found != std::string::npos)
             result.erase(found, en.size());
     }
-    return result
-            | ranges::view::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
-            | ranges::view::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }); // collapse spaces
+    return ranges::to<std::string>(
+        result
+        | ranges::view::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
+        | ranges::view::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }) // collapse spaces
+                      );
 
 } // acmacs::seqdb::v3::scan::fasta::fix_passage
 
