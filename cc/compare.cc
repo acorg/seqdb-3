@@ -4,14 +4,18 @@
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::compare_report_text(const subset& sequences)
+std::string acmacs::seqdb::v3::compare_report_text(const subset& sequences, size_t split)
 {
+    const char* split_space = "  ";
     fmt::memory_buffer out;
     for (auto [no, ref] : acmacs::enumerate(sequences))
         fmt::format_to(out, "{:2d} {}\n", no, ref.seq_id());
     fmt::format_to(out, "\n   ");
-    for (auto no : acmacs::range(sequences.size()))
+    for (auto no : acmacs::range(sequences.size())) {
+        if (no == split)
+            fmt::format_to(out, split_space);
         fmt::format_to(out, " {:>2d}", no);
+    }
     fmt::format_to(out, "\n");
 
     std::vector<std::string_view> seqs(sequences.size());
@@ -25,7 +29,7 @@ std::string acmacs::seqdb::v3::compare_report_text(const subset& sequences)
                 return seq.size() <= pos || seq[pos] == aa;
             })) {
             fmt::format_to(out, "{:3d} {:>2c}", pos + 1, aa);
-            std::for_each(std::next(std::begin(seqs)), std::end(seqs), [aa, pos, &out](std::string_view seq) {
+            std::for_each(std::next(std::begin(seqs)), std::end(seqs), [aa, pos, &out, split, col_no=1, split_space](std::string_view seq) mutable {
                 char seq_aa = '-';
                 if (seq.size() <= pos)
                     seq_aa = '-';
@@ -33,7 +37,8 @@ std::string acmacs::seqdb::v3::compare_report_text(const subset& sequences)
                     seq_aa = '.';
                 else
                     seq_aa = seq[pos];
-                fmt::format_to(out, " {:>2c}", seq_aa);
+                fmt::format_to(out, "{} {:>2c}", static_cast<size_t>(col_no) == split ? split_space : "", seq_aa);
+                ++col_no;
             });
             fmt::format_to(out, "\n");
         }
