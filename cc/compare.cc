@@ -106,9 +106,24 @@ std::string acmacs::seqdb::v3::compare_report_text(const subset& set1, const sub
 
 // ----------------------------------------------------------------------
 
+namespace local
+{
+    extern const char* sReportHtml;
+
+    template <typename R1, typename R2> std::string compare_report_html(const acmacs::seqdb::v3::ref& master, R1&& r1, R2&& r2)
+    {
+        return fmt::format(sReportHtml, fmt::arg("title", "title"), fmt::arg("data", "data"));
+    }
+}
+
+// ----------------------------------------------------------------------
+
 std::string acmacs::seqdb::v3::compare_report_html(const subset& sequences, size_t split)
 {
-    return {};
+    if (split > 0)
+        return local::compare_report_html(sequences[0], ranges::view::drop(sequences, 1) | ranges::view::take(split - 1), ranges::view::drop(sequences, static_cast<ssize_t>(split)));
+    else
+        return local::compare_report_html(sequences[0], ranges::view::drop(sequences, 1), ranges::empty_view<ref>{});
 
 } // acmacs::seqdb::v3::compare_report_html
 
@@ -116,12 +131,53 @@ std::string acmacs::seqdb::v3::compare_report_html(const subset& sequences, size
 
 std::string acmacs::seqdb::v3::compare_report_html(const subset& set1, const subset& set2)
 {
-    return "<html></html>";
+    return local::compare_report_html(set1[0], set1 | ranges::view::drop(1), ranges::view::all(set2));
 
 } // acmacs::seqdb::v3::compare_report_html
 
 // ----------------------------------------------------------------------
 
+const char* local::sReportHtml = R"(<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+     table.fasta-aa-entries {{ white-space: nowrap; }}
+     table.fasta-aa-entries td.fasta-aa-name.fasta-aa-master {{ color: magenta; }}
+     table.fasta-aa-entries .row-even {{ background-color: #F0F0F0; }}
+     table.fasta-aa-entries table.fasta-aa-sequence {{ border-spacing: 0; font-family: Menlo, monospace; }}
+     table.fasta-aa-entries td.fasta-aa-name {{ min-width: 30em; }}
+     [aA] {{ color: blue; }}
+     [aC] {{ color: salmon; }}
+     [aD] {{ color: magenta; }}
+     [aE] {{ color: magenta; }}
+     [aF] {{ color: blue; }}
+     [aG] {{ color: #FF8C00; }}
+     [aH] {{ color: #008B8B; }}
+     [aI] {{ color: blue; }}
+     [aK] {{ color: red; }}
+     [aL] {{ color: blue; }}
+     [aM] {{ color: blue; }}
+     [aN] {{ color: #228B22; }}
+     [aP] {{ color: goldenrod; }}
+     [aQ] {{ color: #228B22; }}
+     [aR] {{ color: red; }}
+     [aS] {{ color: #228B22; }}
+     [aT] {{ color: #228B22; }}
+     [aV] {{ color: blue; }}
+     [aW] {{ color: blue; }}
+     [aY] {{ color: #008B8B; }}
+     [aX] {{ color: grey; }}
+     p.table-title {{ font-weight: bold; margin: 3em 0 0 2em; }}
+    </style>
+    <title>{title}</title>
+  </head>
+  <body>
+    <h2>{title}</h2>
+{data}
+  </body>
+</html>
+)";
 
 // ----------------------------------------------------------------------
 /// Local Variables:
