@@ -104,10 +104,33 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_seq_id(std::string
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name) const
 {
     subset ss;
-    if (const auto found = std::lower_bound(std::begin(entries_), std::end(entries_), name, [](const auto& entry, std::string_view nam) { return entry.name < nam; }); found != std::end(entries_) && found->name == name) {
-        for (size_t seq_no = 0; seq_no < found->seqs.size(); ++seq_no)
-            ss.refs_.emplace_back(&*found, seq_no);
+
+    const auto find_name = [&ss, this](std::string_view look_for) {
+        if (const auto found = std::lower_bound(std::begin(entries_), std::end(entries_), look_for, [](const auto& entry, std::string_view nam) { return entry.name < nam; });
+            found != std::end(entries_) && found->name == look_for) {
+            for (size_t seq_no = 0; seq_no < found->seqs.size(); ++seq_no)
+                ss.refs_.emplace_back(&*found, seq_no);
+        }
+    };
+
+    find_name(name);
+    if (ss.empty()) {
+        if (name[0] == 'A' || name[0] == 'a' || name[0] == 'B' || name[0] == 'b') {
+            const auto result = acmacs::virus::parse_name(name);
+            find_name(*result.name);
+            if (ss.empty() && (name[0] == 'A'  || name[0] == 'a') && name[1] == '/') {
+                for (const char* subtype : {"A(H1N1)/", "A(H3N2)/"}) {
+                    find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name.substr(2)}).name);
+                }
+            }
+        }
+        else {
+            for (const char* subtype : {"A(H1N1)/", "A(H3N2)/", "B/"}) {
+                find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name}).name);
+            }
+        }
     }
+
     return ss;
 
 } // acmacs::seqdb::v3::Seqdb::select_by_name
