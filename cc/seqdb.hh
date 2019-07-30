@@ -313,6 +313,7 @@ namespace acmacs::seqdb
             friend class Seqdb;
         };
 
+
     } // namespace v3
 } // namespace acmacs::seqdb
 

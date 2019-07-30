@@ -1,12 +1,8 @@
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/fmt.hh"
-#include "acmacs-base/enumerate.hh"
-#include "acmacs-base/range.hh"
-#include "seqdb-3/seqdb.hh"
+#include "seqdb-3/compare.hh"
 
 // ----------------------------------------------------------------------
-
-static void report_text(const acmacs::seqdb::subset& subset);
 
 using namespace acmacs::argv;
 struct Options : public argv
@@ -28,7 +24,7 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::setup(opt.db);
         const auto& seqdb = acmacs::seqdb::get();
         const auto subset = seqdb.find_by_seq_ids(*opt.seq_ids);
-        report_text(subset);
+        fmt::print("{}\n", acmacs::seqdb::compare_report_text(subset));
 
         return 0;
     }
@@ -37,47 +33,6 @@ int main(int argc, char* const argv[])
         return 1;
     }
 }
-
-// ----------------------------------------------------------------------
-
-void report_text(const acmacs::seqdb::subset& subset)
-{
-    for (auto [no, ref] : acmacs::enumerate(subset))
-        fmt::print("{:2d} {}\n", no, ref.seq_id());
-    fmt::print("\n   ");
-    for (auto no : acmacs::range(subset.size()))
-        fmt::print(" {:>2d}", no);
-    fmt::print("\n");
-
-    std::vector<std::string_view> seqs(subset.size());
-    std::transform(std::begin(subset), std::end(subset), std::begin(seqs), [](const auto& ref) { return ref.seq().aa_aligned(); });
-
-    // std::for_each(std::next(std::begin(seqs)), std::end(seqs), [](std::string_view seq) { fmt::print("{}\n\n", seq.size()); });
-
-    for (size_t pos = 0; pos < seqs[0].size(); ++pos) {
-        const auto aa = seqs[0][pos];
-        if (!std::all_of(std::next(std::begin(seqs)), std::end(seqs), [aa, pos](std::string_view seq) {
-                return seq.size() <= pos || seq[pos] == aa;
-            })) {
-            fmt::print("{:3d} {:>2c}", pos + 1, aa);
-            std::for_each(std::next(std::begin(seqs)), std::end(seqs), [aa, pos](std::string_view seq) {
-                char seq_aa = '-';
-                if (seq.size() <= pos)
-                    seq_aa = '-';
-                else if (seq[pos] == aa)
-                    seq_aa = '.';
-                else
-                    seq_aa = seq[pos];
-                fmt::print(" {:>2c}", seq_aa);
-            });
-            fmt::print("\n");
-        }
-    }
-
-} // report_text
-
-// ----------------------------------------------------------------------
-
 
 // ----------------------------------------------------------------------
 /// Local Variables:
