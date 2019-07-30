@@ -51,6 +51,9 @@ namespace acmacs::seqdb
 
             void add_clades(acmacs::chart::ChartModify& chart) const;
 
+            // returns subset where each entry corresponds to the entry in seq_ids
+            subset find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const;
+
             // returns json with data for ace-view/2018 sequences_of_chart command
             std::string sequences_of_chart_for_ace_view_1(const acmacs::chart::Chart& chart) const;
             // returns sequences in the fasta format
@@ -232,6 +235,8 @@ namespace acmacs::seqdb
             auto size() const { return refs_.size(); }
             auto begin() const { return refs_.begin(); }
             auto end() const { return refs_.end(); }
+            auto begin() { return refs_.begin(); }
+            auto end() { return refs_.end(); }
             const auto& operator[](size_t index) const { return refs_.at(index); }
             const auto& front() const { return refs_.front(); }
 
@@ -264,6 +269,7 @@ namespace acmacs::seqdb
             refs_t refs_;
 
             subset() = default;
+            subset(size_t size) : refs_(size) {}
 
             void sort_by_name_asc()
             {
@@ -295,6 +301,8 @@ namespace acmacs::seqdb
             {
                 std::for_each(std::begin(refs_), std::end(refs_), [marker](auto& en) { en.to_be_removed = marker; });
             }
+
+            void resize(size_t size) { refs_.resize(size); }
 
             using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
             using collected_t = std::vector<collected_entry_t>;

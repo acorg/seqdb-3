@@ -215,6 +215,23 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const
+{
+    const auto& index = seq_id_index();
+    subset result(seq_ids.size());
+    std::transform(std::begin(seq_ids), std::end(seq_ids), result.begin(), [&index](std::string_view seq_id) -> ref {
+        if (const auto found = index.find(seq_id); found != index.end())
+            return found->second;
+        else
+            return {};
+    });
+
+    return result;
+
+} // acmacs::seqdb::v3::Seqdb::find_by_seq_ids
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const
 {
     aas_indexes_t aas_indexes;

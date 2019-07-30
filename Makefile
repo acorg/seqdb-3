@@ -7,6 +7,7 @@ TARGETS = \
   $(DIST)/seqdb3-scan \
   $(DIST)/seqdb3 \
   $(DIST)/seqdb3-chart-sequenced \
+  $(DIST)/seqdb3-compare-sequences \
   $(DIST)/test-insertions-deletions
 
 SEQDB_SOURCES = \
