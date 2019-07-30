@@ -10,8 +10,8 @@ namespace acmacs::seqdb
     {
         std::string compare_report_text(const subset& sequences, size_t split = 0);
         std::string compare_report_text(const subset& set1, const subset& set2);
-        std::string compare_report_html(const subset& sequences, size_t split = 0);
-        std::string compare_report_html(const subset& set1, const subset& set2);
+        std::string compare_report_html(std::string_view title, const subset& sequences, size_t split = 0);
+        std::string compare_report_html(std::string_view title, const subset& set1, const subset& set2);
 
     } // namespace v3
 } // namespace acmacs::seqdb

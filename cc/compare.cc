@@ -110,28 +110,58 @@ namespace local
 {
     extern const char* sReportHtml;
 
-    template <typename R1, typename R2> std::string compare_report_html(const acmacs::seqdb::v3::ref& master, R1&& r1, R2&& r2)
+    template <typename R1, typename R2> std::string compare_report_html(std::string_view title, const acmacs::seqdb::v3::ref& master, R1&& r1, R2&& r2)
     {
-        return fmt::format(sReportHtml, fmt::arg("title", "title"), fmt::arg("data", "data"));
+        const auto aligned = [](const auto& ref) -> std::string_view { return ref.seq().aa_aligned(); };
+        const std::string_view master_seq = aligned(master);
+        const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::view::transform(aligned));
+        const auto seq2 = ranges::to<std::vector<std::string_view>>(r2 | ranges::view::transform(aligned));
+        const auto positions = positions_with_differences(master_seq, ranges::view::all(seq1), ranges::view::all(seq2));
+
+        fmt::memory_buffer rows;
+        fmt::format_to(rows, "<tr><td class='fasta-aa-name'></td>", master.seq_id());
+        for (auto pos : positions)
+            fmt::format_to(rows, "<td class='pos-no'>{}</td>", pos + 1);
+        fmt::format_to(rows, "</tr>\n");
+
+        fmt::format_to(rows, "<tr><td class='fasta-aa-name'>{}</td>", master.seq_id());
+        for (auto pos : positions)
+            fmt::format_to(rows, "<td class='aa' a{aa}>{aa}</td>", fmt::arg("aa", master_seq[pos]));
+        fmt::format_to(rows, "</tr>\n");
+
+        const auto make_row = [&](const auto& ref) {
+            fmt::format_to(rows, "<tr><td class='fasta-aa-name'>{}</td>", ref.seq_id());
+            const auto seq = aligned(ref);
+            for (auto pos : positions)
+                fmt::format_to(rows, "<td class='aa' a{}>{}</td>", seq[pos], seq_aa(master_seq[pos], seq, pos));
+            fmt::format_to(rows, "</tr>\n");
+        };
+
+        ranges::for_each(r1, make_row);
+        fmt::format_to(rows, "<tr><td class='fasta-aa-name'>--</td></tr>\n");
+        ranges::for_each(r2, make_row);
+
+        const auto data = fmt::format("<table class='fasta-aa-entries'>{}</table>\n", fmt::to_string(rows));
+        return fmt::format(sReportHtml, fmt::arg("title", title), fmt::arg("data", data));
     }
 }
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::compare_report_html(const subset& sequences, size_t split)
+std::string acmacs::seqdb::v3::compare_report_html(std::string_view title, const subset& sequences, size_t split)
 {
     if (split > 0)
-        return local::compare_report_html(sequences[0], ranges::view::drop(sequences, 1) | ranges::view::take(split - 1), ranges::view::drop(sequences, static_cast<ssize_t>(split)));
+        return local::compare_report_html(title, sequences[0], ranges::view::drop(sequences, 1) | ranges::view::take(split - 1), ranges::view::drop(sequences, static_cast<ssize_t>(split)));
     else
-        return local::compare_report_html(sequences[0], ranges::view::drop(sequences, 1), ranges::empty_view<ref>{});
+        return local::compare_report_html(title, sequences[0], ranges::view::drop(sequences, 1), ranges::empty_view<ref>{});
 
 } // acmacs::seqdb::v3::compare_report_html
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::compare_report_html(const subset& set1, const subset& set2)
+std::string acmacs::seqdb::v3::compare_report_html(std::string_view title, const subset& set1, const subset& set2)
 {
-    return local::compare_report_html(set1[0], set1 | ranges::view::drop(1), ranges::view::all(set2));
+    return local::compare_report_html(title, set1[0], set1 | ranges::view::drop(1), ranges::view::all(set2));
 
 } // acmacs::seqdb::v3::compare_report_html
 
@@ -147,6 +177,8 @@ const char* local::sReportHtml = R"(<!DOCTYPE html>
      table.fasta-aa-entries .row-even {{ background-color: #F0F0F0; }}
      table.fasta-aa-entries table.fasta-aa-sequence {{ border-spacing: 0; font-family: Menlo, monospace; }}
      table.fasta-aa-entries td.fasta-aa-name {{ min-width: 30em; }}
+     table.fasta-aa-entries td.pos-no {{ text-align: center; width: 2em; }}
+     table.fasta-aa-entries td.aa {{ text-align: center; }}
      [aA] {{ color: blue; }}
      [aC] {{ color: salmon; }}
      [aD] {{ color: magenta; }}
