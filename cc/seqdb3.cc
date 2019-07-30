@@ -15,6 +15,7 @@ struct Options : public argv
     option<str> db{*this, "db", dflt{""}};
 
     // select
+    option<str>       seq_id{*this, "seq-id", dflt{""}, desc{"initially filter by seq-id"}};
     option<str>       name{*this, 'n', "name", dflt{""}, desc{"initially filter by name (name only, full string equality"}};
     option<str>       subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
     option<str>       host{*this, "host", dflt{""}};
@@ -34,7 +35,7 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {hi_name_or_full_name} {name} {date} {lab_id} {passage} {lab} {country} {continent} {group_no}"}};
+    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {lineage} {name} {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
@@ -62,7 +63,9 @@ int main(int argc, char* const argv[])
         const auto& seqdb = acmacs::seqdb::get();
 
         const auto init = [&] {
-            if (!opt.name->empty())
+            if (!opt.seq_id->empty())
+                return seqdb.select_by_seq_id(*opt.seq_id);
+            else if (!opt.name->empty())
                 return seqdb.select_by_name(*opt.name);
             else
                 return seqdb.all();

@@ -32,6 +32,7 @@ namespace acmacs::seqdb
             bool empty() const { return entries_.empty(); }
 
             subset all() const;
+            subset select_by_seq_id(std::string_view seq_id) const;
             subset select_by_name(std::string_view name) const;
             subset select_by_regex(std::string_view re) const;
             ref find_hi_name(std::string_view full_name) const;

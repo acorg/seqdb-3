@@ -90,6 +90,17 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::all() const
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_seq_id(std::string_view seq_id) const
+{
+    subset ss;
+    if (const auto found = seq_id_index().find(seq_id); found != seq_id_index().end())
+        ss.refs_.emplace_back(found->second);
+    return ss;
+
+} // acmacs::seqdb::v3::Seqdb::select_by_seq_id
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name) const
 {
     subset ss;
