@@ -11,7 +11,7 @@
 
 // ----------------------------------------------------------------------
 
-namespace acmacs::chart { class Antigens; class Chart; class ChartModify; }
+namespace acmacs::chart { class Antigens; class Chart; class ChartModify; class PointIndexList; }
 
 namespace acmacs::seqdb
 {
@@ -264,6 +264,12 @@ namespace acmacs::seqdb
             subset& export_sequences(std::string_view filename, const export_options& options);
             subset& print(std::string_view name_format, bool do_print = true);
             subset& report_stat(bool do_report = true);
+
+            subset& append(const subset& another);
+
+            // returns new subset, this subset is not modified
+            enum class matched_only { no, yes };
+            subset filter_by_indexes(const acmacs::chart::PointIndexList& indexes, enum matched_only matched_only = matched_only::yes) const;
 
           private:
             refs_t refs_;
