@@ -207,6 +207,12 @@ namespace local::B
             sequence.lineage(acmacs::virus::lineage_t{});
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TAIWAN2010"});
         }
+        else if (N_deletions_at(deletions, 1, 160) && no_deletions_after_before(deletions, 161, 500) && sequence.aa_at_pos1(161) == 'E' && sequence.aa_at_pos1(163) == 'K') {
+            // deletion detection was invalid, most probably due to 162X. B/ALICANTE/19_0649/20171219
+            // fmt::print(stderr, "DEBUG: {} 160{} 161{} 162{} 163{}\n", acmacs::seqdb::scan::format(deletions), sequence.aa_at_pos1(160), sequence.aa_at_pos1(161), sequence.aa_at_pos1(162), sequence.aa_at_pos1(163));
+            sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
+            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{162, 1}};
+        }
         else if (is_semi_ignored(sequence)) {
             fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
         }
