@@ -245,6 +245,7 @@ namespace acmacs::seqdb
             subset& subtype(const acmacs::uppercase& virus_type);
             subset& lineage(const acmacs::uppercase& lineage);
             subset& lab(const acmacs::uppercase& lab);
+            subset& whocc_lab(bool do_filter = true);
             subset& host(const acmacs::uppercase& host);
             subset& dates(std::string_view start, std::string_view end);
             subset& continent(const acmacs::uppercase& continent);

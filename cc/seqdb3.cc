@@ -20,6 +20,7 @@ struct Options : public argv
     option<str>       subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
     option<str>       host{*this, "host", dflt{""}};
     option<str>       lab{*this, "lab", dflt{""}};
+    option<bool>      whocc_lab{*this, "whocc-lab", desc{"only 4 WHOCC labs"}};
     option<str>       lineage{*this, "lineage", dflt{""}};
     option<str>       start_date{*this, "start-date", dflt{""}};
     option<str>       end_date{*this, "end-date", dflt{""}};
@@ -130,6 +131,7 @@ int main(int argc, char* const argv[])
             .subtype(acmacs::uppercase{*opt.subtype})
             .lineage(acmacs::uppercase{*opt.lineage})
             .lab(fix_lab(acmacs::uppercase{*opt.lab}))
+            .whocc_lab(opt.whocc_lab)
             .host(acmacs::uppercase{*opt.host})
             .dates(fix_date(opt.start_date), fix_date(opt.end_date))
             .continent(acmacs::uppercase{*opt.continent})

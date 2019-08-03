@@ -497,6 +497,16 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::lab(const acmacs::uppercas
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::whocc_lab(bool do_filter)
+{
+    if (do_filter)
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return ! (en.has_lab("CDC") || en.has_lab("CRICK") || en.has_lab("NIID") || en.has_lab("VIDRL")); }), std::end(refs_));
+    return *this;
+
+} // acmacs::seqdb::v3::subset::whocc_lab
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::host(const acmacs::uppercase& host)
 {
     if (!host.empty())
