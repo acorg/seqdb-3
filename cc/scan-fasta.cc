@@ -1,8 +1,5 @@
 #include <map>
-
-// #include <regex>
-// #include <array>
-// #include <set>
+#include <regex>
 
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/range-v3.hh"
@@ -258,11 +255,13 @@ static const std::regex re_empty_annotations_if_just{"^[\\(\\)_\\-\\s,\\.]+$"};
 
 acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source)
 {
-    // std::cout << source.name << '\n';
-    // return source;
+    // fmt::print("INFO: {}\n", source.fasta.name);
+
+    fix_gisaid_name(source);
 
     auto result = acmacs::virus::parse_name(source.fasta.name);
     source.sequence.name(std::move(result.name));
+    // fmt::print("INFO: {}\n", source.sequence.name());
     // source.sequence.host(std::move(result.host));
     source.sequence.country(std::move(result.country));
     source.sequence.continent(std::move(result.continent));
@@ -298,6 +297,25 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     return result.messages;
 
 } // acmacs::seqdb::v3::scan::fasta::normalize_name
+
+// ----------------------------------------------------------------------
+
+#include "acmacs-base/global-constructors-push.hh"
+
+static const std::regex re_CSISP_name{"/[\\d_]+(_)(20\\d\\d)\\d\\d\\d\\d$"};
+
+#include "acmacs-base/diagnostics-pop.hh"
+
+void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source)
+{
+    // CSISP has names with the isolation date: A/Valencia/07_0435_20171111 -> A/Valencia/07_0435/2017
+    if (std::smatch match; std::regex_search(source.fasta.name, match, re_CSISP_name)) {
+        // fmt::print("INFO: {}\n", source.fasta.name);
+        source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match.position(1))), '/', match.str(2));
+        // fmt::print("INFO: {}\n", source.fasta.name);
+    }
+
+} // acmacs::seqdb::v3::scan::fasta::fix_gisaid_name
 
 // ----------------------------------------------------------------------
 
