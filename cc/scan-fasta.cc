@@ -261,6 +261,8 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
     auto result = acmacs::virus::parse_name(source.fasta.name);
     source.sequence.name(std::move(result.name));
+    if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
+        fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
     // fmt::print("INFO: {}\n", source.sequence.name());
     // source.sequence.host(std::move(result.host));
     source.sequence.country(std::move(result.country));
