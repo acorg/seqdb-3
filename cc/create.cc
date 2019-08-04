@@ -83,7 +83,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
     size_t num_sequences = 0;
     for (const auto& en : sequences) {
         const auto& seq = en.sequence;
-        const auto name = seq.name_with_annotations();
+        const std::string_view name = seq.name().get();
         if (filter.good(seq)) { //  && seq.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
             if (name != previous) {
                 flush();
@@ -99,6 +99,8 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
 
             {
                 to_json::object entry_seq;
+                if (!seq.annotations().empty())
+                    entry_seq << to_json::key_val("A", seq.annotations());
                 if (!seq.reassortant().empty())
                     entry_seq << to_json::key_val("r", to_json::array(*seq.reassortant(), to_json::json::compact_output::yes));
                 if (!seq.passages().empty())

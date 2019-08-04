@@ -206,13 +206,13 @@ namespace acmacs::seqdb
                 constexpr deletions_insertions_t& deletions() { return deletions_; }
                 constexpr const deletions_insertions_t& deletions() const { return deletions_; }
 
-                std::string name_with_annotations() const
-                {
-                    if (annotations_.empty())
-                        return *name_;
-                    else
-                        return fmt::format("{} {}", name_, annotations_);
-                }
+                // std::string name_with_annotations() const
+                // {
+                //     if (annotations_.empty())
+                //         return *name_;
+                //     else
+                //         return fmt::format("{} {}", name_, annotations_);
+                // }
 
                 void merge_from(const sequence_t& source);
 

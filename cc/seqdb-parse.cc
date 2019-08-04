@@ -83,6 +83,10 @@ namespace local
                     target_.nucs = data;
                     reset_key();
                     break;
+                case 'A':
+                    target_.annotations = data;
+                    reset_key();
+                    break;
                 default:
                     throw in_json::parse_error("seq: unexpected key: ", data);
             }

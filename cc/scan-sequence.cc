@@ -382,14 +382,14 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
         if (country_.empty())
             country_ = source.country_;
         else if (country_ != source.country_)
-            fmt::print(stderr, "WARNING: sequence_t::merge_from: {}: countrys differ: \"{}\" vs. \"{}\"\n", name_with_annotations(), country_, source.country_);
+            fmt::print(stderr, "WARNING: sequence_t::merge_from: {}: countries differ: \"{}\" vs. \"{}\"\n", name(), country_, source.country_);
     }
 
     if (!source.continent_.empty()) {
         if (continent_.empty())
             continent_ = source.continent_;
         else if (continent_ != source.continent_)
-            fmt::print(stderr, "WARNING: sequence_t::merge_from: {}: continents differ: \"{}\" vs. \"{}\"\n", name_with_annotations(), continent_, source.continent_);
+            fmt::print(stderr, "WARNING: sequence_t::merge_from: {}: continents differ: \"{}\" vs. \"{}\"\n", name(), continent_, source.continent_);
     }
 
     dates_.merge_from(source.dates_);

@@ -128,6 +128,7 @@ namespace acmacs::seqdb
             std::string_view a_shift;
             std::string_view nucs;
             std::string_view n_shift;
+            std::string_view annotations;
             std::vector<std::string_view> reassortants;
             std::vector<std::string_view> passages;
             std::vector<std::string_view> clades;
@@ -170,7 +171,7 @@ namespace acmacs::seqdb
             std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
             std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
             std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
-            std::string designation() const { return ::string::join(" ", {::string::join(" ", reassortants), passage()}); }
+            std::string designation() const { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), passage()}); }
         };
 
         struct SeqdbEntry
