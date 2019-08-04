@@ -426,7 +426,7 @@ std::string acmacs::seqdb::v3::ref::seq_id() const
     };
 
     auto source = ::string::join(" ", {entry->name, seq().designation()});
-    if (entry->seqs.size() > 1) {
+    if (entry->seqs.size() > 1 && seq_index > 0) {
         // there could be multiple seqs with the same designation, but seq_id must be unique, also garli does not like name duplicates
         std::vector<std::string> designations(entry->seqs.size());
         std::transform(std::begin(entry->seqs), std::end(entry->seqs), std::begin(designations), [](const auto& en) { return en.designation(); });

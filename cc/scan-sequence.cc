@@ -406,6 +406,17 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
 } // acmacs::seqdb::v3::scan::sequence_t::merge_from
 
 // ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::sequence_t::update_subtype(const acmacs::virus::type_subtype_t& subtype)
+{
+    if (subtype.size() >= 7 && name_->find('/') == 5) { // A(H3) -> A(H3N2)
+        name_.get().replace(0, 5, subtype);
+        type_subtype_ = subtype;
+    }
+
+} // acmacs::seqdb::v3::scan::sequence_t::update_subtype
+
+// ----------------------------------------------------------------------
 /// Local Variables:
 /// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
 /// End:

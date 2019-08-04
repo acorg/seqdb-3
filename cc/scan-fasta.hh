@@ -40,7 +40,8 @@ namespace acmacs::seqdb
                 constexpr const auto is_translated = [](const scan_result_t& sc) { return sc.sequence.translated(); };
                 constexpr const auto is_different_type_subtype = [](const scan_result_t& sc) { return sc.fasta.type_subtype != sc.sequence.type_subtype(); };
                 constexpr const auto is_different_type_subtype_ignore_h0 = [](const scan_result_t& sc) {
-                    return sc.fasta.type_subtype != sc.sequence.type_subtype() && (sc.fasta.type_subtype.h_or_b() != "H0" || sc.sequence.type_subtype().type() != 'A');
+                    const auto f_hb = sc.fasta.type_subtype.h_or_b(), s_hb = sc.sequence.type_subtype().h_or_b();
+                    return f_hb != s_hb && (f_hb != "H0" || s_hb == "B");
                 };
 
                 // ----------------------------------------------------------------------

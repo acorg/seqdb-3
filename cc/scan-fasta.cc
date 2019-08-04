@@ -442,8 +442,12 @@ acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(cons
 {
     if (source.empty())
         fmt::print(stderr, "WARNING: {}:{}: no subtype\n", filename, line_no, source);
-    if (source.size() >= 8 && source->front() == 'A')
-        return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(4))};
+    if (source.size() >= 8 && source->front() == 'A') {
+        if (source[5] != '0' && source[7] == '0') // H3N0
+            return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(4, 2))};
+        else
+            return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(4))};
+    }
     else if (!source.empty() && source->front() == 'B')
         return acmacs::virus::type_subtype_t{"B"};
     return {};

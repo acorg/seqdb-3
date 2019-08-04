@@ -197,6 +197,7 @@ namespace acmacs::seqdb
                 // void continent(const std::string& continent) { continent_ = continent; }
                 void continent(std::string&& continent) { continent_ = std::move(continent); }
                 void add_hi_name(const std::string& hi_name) { hi_names_.add(hi_name); }
+                void update_subtype(const acmacs::virus::type_subtype_t& subtype);
 
                 void add_lab_id(const acmacs::uppercase& lab, const acmacs::uppercase& lab_id);
                 void add_lab_id(const acmacs::uppercase& lab);

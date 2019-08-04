@@ -39,7 +39,7 @@ static void find_by_lab_id(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref
 static void find_by_name(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found);
 static bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
-static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
+// static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
 
 // ----------------------------------------------------------------------
 
@@ -143,7 +143,10 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Match
     bool matched = false;
     for (const auto& e: antigen_to_matching) {
         const auto name = found[e.first]->full_name();
-        std::next(first, static_cast<ssize_t>(e.second.seq_no))->sequence.add_hi_name(name);
+        auto& sequence = std::next(first, static_cast<ssize_t>(e.second.seq_no))->sequence;
+        sequence.add_hi_name(name);
+        if (const size_t subtype_size = name.find('/'); subtype_size > 1 && subtype_size <= 8)
+            sequence.update_subtype(acmacs::virus::type_subtype_t{name.substr(0, subtype_size)});
         if (const auto& date = found[e.first]->date(); !date.empty())
             first->sequence.add_date(date);
         matched = true;
@@ -154,34 +157,34 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Match
 
 // ----------------------------------------------------------------------
 
-bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching)
-{
-    bool matched = false;
-    if (matching.size() == 1) {
-        for (const auto& ms: matching[0]) {
-            if (ms.score == matching[0][0].score) {
-                const auto name = found[ms.found_no]->full_name();
-                first->sequence.add_hi_name(name);
-                matched = true;
-            }
-        }
-    }
-    else {
-        std::set<size_t> found_assigned;
-        for (const auto& m: matching) {
-            for (const auto& sf: m) {
-                if (sf.score == m[0].score && found_assigned.count(sf.found_no) == 0) {
-                    const auto name = found[sf.found_no]->full_name();
-                    std::next(first, static_cast<ssize_t>(sf.seq_no))->sequence.add_hi_name(name);
-                    matched = true;
-                    found_assigned.insert(sf.found_no);
-                }
-            }
-        }
-    }
-    return matched;
+// bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching)
+// {
+//     bool matched = false;
+//     if (matching.size() == 1) {
+//         for (const auto& ms: matching[0]) {
+//             if (ms.score == matching[0][0].score) {
+//                 const auto name = found[ms.found_no]->full_name();
+//                 first->sequence.add_hi_name(name);
+//                 matched = true;
+//             }
+//         }
+//     }
+//     else {
+//         std::set<size_t> found_assigned;
+//         for (const auto& m: matching) {
+//             for (const auto& sf: m) {
+//                 if (sf.score == m[0].score && found_assigned.count(sf.found_no) == 0) {
+//                     const auto name = found[sf.found_no]->full_name();
+//                     std::next(first, static_cast<ssize_t>(sf.seq_no))->sequence.add_hi_name(name);
+//                     matched = true;
+//                     found_assigned.insert(sf.found_no);
+//                 }
+//             }
+//         }
+//     }
+//     return matched;
 
-} // match_normal
+// } // match_normal
 
 // ----------------------------------------------------------------------
 
