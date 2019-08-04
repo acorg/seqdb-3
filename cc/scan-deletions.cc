@@ -102,13 +102,16 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
         to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
     }
     catch (local::not_verified& err) {
-        fmt::print(stderr, "-------------------- NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
+        const bool h5 = master.type_subtype()->substr(2, 2) == "H5";
+        if (!h5)
+            fmt::print(stderr, "deletions_insertions -------------------- NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
         try {
-            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), acmacs::debug::yes);
+            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), h5 ? acmacs::debug::no : acmacs::debug::yes);
         }
         catch (local::not_verified&) {
         }
-        fmt::print(stderr, "\n");
+        if (!h5)
+            fmt::print(stderr, "\n");
     }
 
 } // acmacs::seqdb::v3::scan::deletions_insertions

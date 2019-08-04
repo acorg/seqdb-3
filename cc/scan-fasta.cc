@@ -251,6 +251,8 @@ static const std::regex re_valid_annotations{
 
 static const std::regex re_empty_annotations_if_just{"^[\\(\\)_\\-\\s,\\.]+$"};
 
+static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
+
 #include "acmacs-base/diagnostics-pop.hh"
 
 acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source)
@@ -261,9 +263,12 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
     auto result = acmacs::virus::parse_name(source.fasta.name);
     source.sequence.name(std::move(result.name));
-    if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
-        fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
+    if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
+        fmt::print(stderr, "WARNING: no year at the end of name: {} {}:{}\n", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
+    // if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
+    //     fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
     // fmt::print("INFO: {}\n", source.sequence.name());
+
     // source.sequence.host(std::move(result.host));
     source.sequence.country(std::move(result.country));
     source.sequence.continent(std::move(result.continent));
@@ -305,17 +310,27 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 #include "acmacs-base/global-constructors-push.hh"
 
 static const std::regex re_CSISP_name{"/[\\d_]+(_)(20\\d\\d)\\d\\d\\d\\d$"};
+static const std::regex re_year_at_end_of_name{"(19\\d\\d|20[0-2]\\d)$"};
+// static const std::regex re_year_3000{"/(30)([0-2]\\d)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
 void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source)
 {
     // CSISP has names with the isolation date: A/Valencia/07_0435_20171111 -> A/Valencia/07_0435/2017
-    if (std::smatch match; std::regex_search(source.fasta.name, match, re_CSISP_name)) {
+    if (std::smatch match_CSISP_name; std::regex_search(source.fasta.name, match_CSISP_name, re_CSISP_name)) {
         // fmt::print("INFO: {}\n", source.fasta.name);
-        source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match.position(1))), '/', match.str(2));
+        source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match_CSISP_name.position(1))), '/', match_CSISP_name.str(2));
         // fmt::print("INFO: {}\n", source.fasta.name);
     }
+    else if (std::smatch match_year_at_end_of_name; source.fasta.name.size() > 4 && source.fasta.name[source.fasta.name.size() - 5] != '/' && std::regex_search(source.fasta.name, match_year_at_end_of_name, re_year_at_end_of_name)) {
+        // A/Iasi/2416022019
+        source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), '/', match_year_at_end_of_name.str(1));
+    }
+    // else if (std::smatch match_year_3000; std::regex_search(source.fasta.name, match_year_3000, re_year_3000)) {
+    //     // A/OMSK/3296/3018
+    //     source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), "/20", match_year_at_end_of_name.str(2));
+    // }
 
 } // acmacs::seqdb::v3::scan::fasta::fix_gisaid_name
 
