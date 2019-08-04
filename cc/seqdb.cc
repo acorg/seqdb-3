@@ -559,6 +559,19 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent(size_t recent)
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched(const std::vector<size_t>& recent_matched)
+{
+    if (recent_matched.size() > 1 && refs_.size() > recent_matched[0]) {
+        sort_by_date_recent_first();
+        std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0])), std::end(refs_), [](const auto& en) { return !en.has_hi_names(); });
+        refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0] + recent_matched[1])), std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::recent_matched
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
 {
     if (random > 0 && refs_.size() > random) {

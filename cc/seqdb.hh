@@ -253,6 +253,7 @@ namespace acmacs::seqdb
             subset& country(const acmacs::uppercase& country);
             subset& clade(const acmacs::uppercase& clade);
             subset& recent(size_t recent);
+            subset& recent_matched(const std::vector<size_t>& recent_matched);
             subset& random(size_t random);
             subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
             subset& subset_by_hamming_distance_random(bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23

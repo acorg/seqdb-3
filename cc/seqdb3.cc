@@ -29,6 +29,7 @@ struct Options : public argv
     option<str>       clade{*this, "clade", dflt{""}};
     option<str>       aa_at_pos{*this, "aa-at-pos", dflt{""}, desc{"comma separated list: 162N,74R,!167X"}};
     option<size_t>    recent{*this, "recent", dflt{0UL}};
+    option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent, then add num2 older which are also matched against hidb"}};
     option<size_t>    random{*this, "random", dflt{0UL}};
     option<bool>      with_hi_name{*this, "with-hi-name"};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
@@ -142,6 +143,7 @@ int main(int argc, char* const argv[])
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)
             .recent(opt.recent)
+            .recent_matched(acmacs::string::split_into_size_t(*opt.recent_matched, ","))
             .random(opt.random)
             .group_by_hamming_distance(opt.group_by_hamming_distance, opt.output_size)
             .subset_by_hamming_distance_random(opt.subset_by_hamming_distance_random, opt.output_size)
