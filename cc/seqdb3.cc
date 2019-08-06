@@ -29,15 +29,15 @@ struct Options : public argv
     option<str>       clade{*this, "clade", dflt{""}};
     option<str>       aa_at_pos{*this, "aa-at-pos", dflt{""}, desc{"comma separated list: 162N,74R,!167X"}};
     option<size_t>    recent{*this, "recent", dflt{0UL}};
-    option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent, then add num2 older which are also matched against hidb"}};
+    option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent,\n                                       then add num2 older which are also matched against hidb"}};
     option<size_t>    random{*this, "random", dflt{0UL}};
-    option<bool>      with_hi_name{*this, "with-hi-name"};
+    option<bool>      with_hi_name{*this, "with-hi-name", desc{"matched against hidb"}};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
-    option<str>       base_seq_regex{*this, "base-seq", desc{"regex to select single base sequence,\n                    it is put the first in the output, other filters do not apply"}};
+    option<str>       base_seq_regex{*this, "base-seq", desc{"regex to select single base sequence,\n                                       it is put the first in the output, other filters do not apply"}};
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {lineage} {name} {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
+    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
@@ -52,7 +52,7 @@ struct Options : public argv
     option<bool>      wrap{*this, "wrap"};
     option<bool>      nucs{*this, "nucs", desc{"export nucleotide sequences instead of amino acid"}};
     option<bool>      not_aligned{*this, "not-aligned", desc{"do not align for exporting"}};
-    option<bool>      most_common_length{*this, "most-common-length", desc{"truncate or extend with - all sequences to make them all of the same length,\n                    most common among original sequences"}};
+    option<bool>      most_common_length{*this, "most-common-length", desc{"truncate or extend with - all sequences to make them all of the same length,\n                                       most common among original sequences"}};
 
 };
 
