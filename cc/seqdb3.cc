@@ -2,6 +2,7 @@
 #include "acmacs-base/fmt.hh"
 #include "acmacs-base/date.hh"
 #include "acmacs-base/string-split.hh"
+#include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
 #include "seqdb-3/seqdb.hh"
 
@@ -16,6 +17,7 @@ struct Options : public argv
 
     // select
     option<str>       seq_id{*this, "seq-id", dflt{""}, desc{"initially filter by seq-id"}};
+    option<str>       seq_id_from{*this, "seq-id-from", dflt{""}, desc{"read list of seq ids from a file (one per line) and initially select them all"}};
     option<str>       name{*this, 'n', "name", dflt{""}, desc{"initially filter by name (name only, full string equality"}};
     option<str>       subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
     option<str>       host{*this, "host", dflt{""}};
@@ -65,9 +67,11 @@ int main(int argc, char* const argv[])
         const auto& seqdb = acmacs::seqdb::get();
 
         const auto init = [&] {
-            if (!opt.seq_id->empty())
+            if (opt.seq_id)
                 return seqdb.select_by_seq_id(*opt.seq_id);
-            else if (!opt.name->empty())
+            else if (opt.seq_id_from)
+                return seqdb.select_by_seq_id(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.seq_id_from)), "\n"));
+            else if (opt.name)
                 return seqdb.select_by_name(*opt.name);
             else
                 return seqdb.all();
