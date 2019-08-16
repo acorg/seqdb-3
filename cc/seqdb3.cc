@@ -13,23 +13,24 @@ struct Options : public argv
 {
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
-    option<str> db{*this, "db", dflt{""}};
+    option<str> db{*this, "db"};
 
     // select
-    option<str>       seq_id{*this, "seq-id", dflt{""}, desc{"initially filter by seq-id"}};
-    option<str>       seq_id_from{*this, "seq-id-from", dflt{""}, desc{"read list of seq ids from a file (one per line) and initially select them all"}};
-    option<str>       name{*this, 'n', "name", dflt{""}, desc{"initially filter by name (name only, full string equality"}};
-    option<str>       subtype{*this, "flu", dflt{""}, desc{"B, A(H1N1), H1, A(H3N2), H3"}};
-    option<str>       host{*this, "host", dflt{""}};
-    option<str>       lab{*this, "lab", dflt{""}};
+    option<str>       seq_id{*this, "seq-id", desc{"initially filter by seq-id"}};
+    option<str>       seq_id_from{*this, "seq-id-from", desc{"read list of seq ids from a file (one per line) and initially select them all"}};
+    option<str>       name{*this, 'n', "name", desc{"initially filter by name (name only, full string equality)"}};
+    option<str>       names_from{*this, "names-from", desc{"read names from a file (one per line) and initially select them all (name only, full string equality)"}};
+    option<str>       subtype{*this, "flu", desc{"B, A(H1N1), H1, A(H3N2), H3"}};
+    option<str>       host{*this, "host"};
+    option<str>       lab{*this, "lab"};
     option<bool>      whocc_lab{*this, "whocc-lab", desc{"only 4 WHOCC labs"}};
-    option<str>       lineage{*this, "lineage", dflt{""}};
-    option<str>       start_date{*this, "start-date", dflt{""}};
-    option<str>       end_date{*this, "end-date", dflt{""}};
-    option<str>       continent{*this, "continent", dflt{""}};
-    option<str>       country{*this, "country", dflt{""}};
-    option<str>       clade{*this, "clade", dflt{""}};
-    option<str>       aa_at_pos{*this, "aa-at-pos", dflt{""}, desc{"comma separated list: 162N,74R,!167X"}};
+    option<str>       lineage{*this, "lineage"};
+    option<str>       start_date{*this, "start-date"};
+    option<str>       end_date{*this, "end-date"};
+    option<str>       continent{*this, "continent"};
+    option<str>       country{*this, "country"};
+    option<str>       clade{*this, "clade"};
+    option<str>       aa_at_pos{*this, "aa-at-pos", desc{"comma separated list: 162N,74R,!167X"}};
     option<size_t>    recent{*this, "recent", dflt{0UL}};
     option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent,\n                                       then add num2 older which are also matched against hidb"}};
     option<size_t>    random{*this, "random", dflt{0UL}};
@@ -39,7 +40,7 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, "name-format", dflt{""}, desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
+    option<str>       name_format{*this, "name-format", desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
@@ -50,7 +51,7 @@ struct Options : public argv
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
 
     // export
-    option<str>       fasta{*this, "fasta", dflt{""}, desc{"export to fasta, - for stdout"}};
+    option<str>       fasta{*this, "fasta", desc{"export to fasta, - for stdout"}};
     option<bool>      wrap{*this, "wrap"};
     option<bool>      nucs{*this, "nucs", desc{"export nucleotide sequences instead of amino acid"}};
     option<bool>      not_aligned{*this, "not-aligned", desc{"do not align for exporting"}};
@@ -73,6 +74,8 @@ int main(int argc, char* const argv[])
                 return seqdb.select_by_seq_id(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.seq_id_from)), "\n"));
             else if (opt.name)
                 return seqdb.select_by_name(*opt.name);
+            else if (opt.names_from)
+                return seqdb.select_by_name(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.names_from)), "\n"));
             else
                 return seqdb.all();
         };

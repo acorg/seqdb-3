@@ -35,6 +35,7 @@ namespace acmacs::seqdb
             subset select_by_seq_id(std::string_view seq_id) const;
             subset select_by_seq_id(const std::vector<std::string_view>& seq_ids) const;
             subset select_by_name(std::string_view name) const;
+            subset select_by_name(const std::vector<std::string_view>& names) const;
             subset select_by_regex(std::string_view re) const;
             ref find_hi_name(std::string_view full_name) const;
             const seq_id_index_t& seq_id_index() const;
@@ -69,6 +70,9 @@ namespace acmacs::seqdb
 
             Seqdb(std::string_view filename);
             // Seqdb(std::string&& source);
+
+            void select_by_name(std::string_view name, subset& subs) const;
+
         };
 
         void setup(std::string_view filename);
