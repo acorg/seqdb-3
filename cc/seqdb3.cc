@@ -19,7 +19,7 @@ struct Options : public argv
     option<str>       seq_id{*this, "seq-id", desc{"initially filter by seq-id"}};
     option<str>       seq_id_from{*this, "seq-id-from", desc{"read list of seq ids from a file (one per line) and initially select them all"}};
     option<str>       name{*this, 'n', "name", desc{"initially filter by name (name only, full string equality)"}};
-    option<str>       names_from{*this, "names-from", desc{"read names from a file (one per line) and initially select them all (name only, full string equality)"}};
+    option<str>       names_from{*this, "names-from", desc{"read names from a file (one per line)\n                                       and initially select them all (name only, full string equality)"}};
     option<str>       subtype{*this, "flu", desc{"B, A(H1N1), H1, A(H3N2), H3"}};
     option<str>       host{*this, "host"};
     option<str>       lab{*this, "lab"};
@@ -40,7 +40,7 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, "name-format", desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
+    option<str>       name_format{*this, "name-format", desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {hi_name} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no} {hamming_distance}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};

@@ -1013,6 +1013,7 @@ std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, c
                        fmt::arg("full_name", entry.full_name()),
                        fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
                        fmt::arg("hi_names", entry.seq().hi_names),
+                       fmt::arg("hi_name", !entry.seq().hi_names.empty() ? entry.seq().hi_names.front() : std::string_view{}),
                        fmt::arg("lineage", entry.entry->lineage),
                        fmt::arg("name", entry.entry->name),
                        fmt::arg("date", entry.entry->date()),

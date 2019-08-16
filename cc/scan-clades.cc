@@ -401,12 +401,14 @@ namespace local::H3
         clade_desc_t{acmacs::seqdb::clade_t{"2A2"},  {{131, 'K'}, {142, 'K'}, {158, 'N'}, {159, 'Y'}, {261, 'Q'}}},
         clade_desc_t{acmacs::seqdb::clade_t{"2A3"},  {{121, 'K'}, {135, 'K'}, {144, 'K'}, {150, 'K'}, {158, 'N'}, {159, 'Y'}, {261, 'Q'}}},
         clade_desc_t{acmacs::seqdb::clade_t{"2A4"},  {{ 31, 'S'}, { 53, 'N'}, {142, 'G'}, {144, 'R'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {192, 'T'}, {197, 'H'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'S'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'T'}}},
         clade_desc_t{acmacs::seqdb::clade_t{"159S"}, {{159, 'S'}}}, // explicit Derek's request on 2019-04-18
         clade_desc_t{acmacs::seqdb::clade_t{"159F"}, {{159, 'F'}}}, // explicit Derek's request on 2019-04-18
         clade_desc_t{acmacs::seqdb::clade_t{"159Y"}, {{159, 'Y'}}}, // explicit Derek's request on 2019-04-18
     };
+
+    // Removed because it makes no sense, GLY cannot be difined this way, search email for sequon
+        // clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'S'}}},
+        // clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'T'}}},
 
 #pragma GCC diagnostic pop
 
