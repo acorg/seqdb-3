@@ -50,6 +50,8 @@ struct Options : public argv
     option<bool> print_aa_sizes{*this, "print-aa-sizes"};
     option<bool> print_stat{*this, "stat"};
 
+    option<bool> verbose{*this, 'v', "verbose"};
+
     argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
 };
 
@@ -60,7 +62,7 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
-        auto all_sequences = acmacs::seqdb::scan::fasta::scan(opt.filenames, {});
+        auto all_sequences = acmacs::seqdb::scan::fasta::scan(opt.filenames, acmacs::seqdb::scan::fasta::scan_options_t(opt.verbose ? acmacs::debug::yes : acmacs::debug::no));
         fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);

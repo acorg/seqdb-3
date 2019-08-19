@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 
+#include "acmacs-base/debug.hh"
 #include "seqdb-3/scan-sequence.hh"
 
 // ----------------------------------------------------------------------
@@ -53,7 +54,10 @@ namespace acmacs::seqdb
 
                 struct scan_options_t
                 {
+                    scan_options_t(debug a_dbg) : dbg{a_dbg} {}
+                    scan_options_t(size_t a_remove_too_short_nucs, debug a_dbg = debug::no) : remove_too_short_nucs{a_remove_too_short_nucs}, dbg{a_dbg} {}
                     size_t remove_too_short_nucs{100}; // remove nuc sequences shorter than this (if value 1000, sequence of length 1000 is kept)
+                    debug dbg;
                 };
 
                 struct scan_input_t
@@ -111,7 +115,7 @@ namespace acmacs::seqdb
                 using messages_t = std::vector<acmacs::virus::v2::parse_result_t::message_t>;
 
                 // returns error and warning messages
-                messages_t normalize_name(scan_result_t& source);
+                messages_t normalize_name(scan_result_t& source, debug dbg);
                 void fix_gisaid_name(scan_result_t& source);
 
                 bool import_sequence(std::string_view raw_sequence, sequence_t& sequence_data, const scan_options_t& options);

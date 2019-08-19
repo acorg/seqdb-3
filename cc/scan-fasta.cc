@@ -63,7 +63,7 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
                         break;
                 }
                 if (scan_result.has_value()) {
-                    auto messages = normalize_name(*scan_result);
+                    auto messages = normalize_name(*scan_result, options.dbg);
                     if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
                         if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
                             || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
@@ -255,9 +255,10 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source)
+acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg)
 {
-    // fmt::print("INFO: {}\n", source.fasta.name);
+    if (dbg == debug::yes)
+        fmt::print(stderr, "DEBUG: source.fasta.name: {}\n", source.fasta.name);
 
     fix_gisaid_name(source);
 
@@ -267,7 +268,8 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
         fmt::print(stderr, "WARNING: no year at the end of name: {} {}:{}\n", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
     // if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
     //     fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
-    // fmt::print("INFO: {}\n", source.sequence.name());
+    if (dbg == debug::yes)
+        fmt::print(stderr, "DEBUG: source.sequence.name: {}\n", source.sequence.name());
 
     // source.sequence.host(std::move(result.host));
     source.sequence.country(std::move(result.country));
