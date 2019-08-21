@@ -48,7 +48,7 @@ void acmacs::seqdb::v3::scan::detect_insertions_deletions(std::vector<fasta::sca
 local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t>& sequences)
 {
     std::map<std::string, acmacs::Counter<size_t>> aligned_lengths;
-    for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::scan::fasta::is_aligned))
+    for (const auto& sc : sequences | ranges::views::filter(acmacs::seqdb::v3::scan::fasta::is_aligned))
         aligned_lengths.try_emplace(std::string(sc.sequence.type_subtype().h_or_b())).first->second.count(sc.sequence.aa_aligned_length());
 
     subtype_master_t masters;
@@ -65,7 +65,7 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
                     master_length = vt.first;
             }
             size_t num_X = 0;
-            for (const auto& sc : sequences | ranges::view::filter(acmacs::seqdb::v3::scan::fasta::is_aligned)) {
+            for (const auto& sc : sequences | ranges::views::filter(acmacs::seqdb::v3::scan::fasta::is_aligned)) {
                 if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
                     if (master == nullptr) {
                         master = &sc.sequence;

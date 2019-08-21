@@ -118,7 +118,7 @@ int main(int argc, char* const argv[])
         std::vector<acmacs::seqdb::subset::amino_acid_at_pos0_t> aa_at_pos;
         if (!opt.aa_at_pos->empty()) {
             const auto fields = acmacs::string::split(*opt.aa_at_pos, ",");
-            aa_at_pos = ranges::to<decltype(aa_at_pos)>(fields | ranges::view::transform([](const auto& source) -> acmacs::seqdb::subset::amino_acid_at_pos0_t {
+            aa_at_pos = ranges::to<decltype(aa_at_pos)>(fields | ranges::views::transform([](const auto& source) -> acmacs::seqdb::subset::amino_acid_at_pos0_t {
                             if (source.size() >= 2 && source.size() <= 4 && std::isdigit(source.front()) && std::isalpha(source.back()))
                                 return {string::from_chars<size_t>(source.substr(0, source.size() - 1)) - 1, source.back(), true};
                             else if (source.size() >= 3 && source.size() <= 5 && source.front() == '!' && std::isdigit(source[1]) && std::isalpha(source.back()))

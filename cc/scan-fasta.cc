@@ -360,8 +360,8 @@ acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppe
     }
     return ranges::to<std::string>(
         result
-        | ranges::view::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
-        | ranges::view::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }) // collapse spaces
+        | ranges::views::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
+        | ranges::views::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }) // collapse spaces
                       );
 
 } // acmacs::seqdb::v3::scan::fasta::fix_passage
@@ -494,7 +494,7 @@ acmacs::seqdb::v3::scan::fasta::hint_t acmacs::seqdb::v3::scan::fasta::find_hint
 std::string acmacs::seqdb::v3::scan::fasta::report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter(is_aligned) | ranges::view::filter(is_different_type_subtype_ignore_h0))
+    for (const auto& sc : sequences | ranges::views::filter(is_aligned) | ranges::views::filter(is_different_type_subtype_ignore_h0))
         fmt::format_to(out, "detected:{} | fasta:{} | {} -- {}:{}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
@@ -505,7 +505,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_false_positive(const std::vec
 std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(isnot_aligned)) {
+    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(isnot_aligned)) {
         // fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
         fmt::format_to(out, "{} ::: {} ::: {}:{}\n", sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no);
     }
@@ -518,7 +518,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector
 std::string acmacs::seqdb::v3::scan::fasta::report_aa(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_translated))
+    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(is_translated))
         fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
@@ -529,7 +529,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_aa(const std::vector<scan_res
 std::string acmacs::seqdb::v3::scan::fasta::report_aa_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::view::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::view::filter(is_aligned)) {
+    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(is_aligned)) {
         const auto seq = sc.sequence.aa_aligned();
         fmt::format_to(out, "{} [{}]\n{}\n", sc.sequence.full_name(), seq.size(), seq.substr(0, sequence_cutoff));
     }

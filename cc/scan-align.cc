@@ -116,7 +116,7 @@ namespace local
             table_t()
             {
                 ranges::fill(data, 1);
-                for (auto pos : ranges::view::iota(0UL, max_sequence_length)) { // X and - do not contribute at any position
+                for (auto pos : ranges::views::iota(0UL, max_sequence_length)) { // X and - do not contribute at any position
                     data[number_of_symbols * pos + static_cast<size_t>('X')] = 0;
                     data[number_of_symbols * pos + static_cast<size_t>('-')] = 0;
                 }
@@ -158,7 +158,7 @@ void acmacs::seqdb::v3::scan::translate_align(std::vector<fasta::scan_result_t>&
     // fmt::print(stderr, "translate_align aligned 1: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), date::current_date_time());
 
     local::Aligner aligner;
-    for (const auto& entry : sequences | ranges::view::filter(fasta::is_aligned)) {
+    for (const auto& entry : sequences | ranges::views::filter(fasta::is_aligned)) {
         aligner.update(entry.sequence.aa_aligned(), entry.sequence.type_subtype());
     }
     // aligner.report();
@@ -467,7 +467,7 @@ std::optional<int> local::Aligner::table_t::align(char start_aa, std::string_vie
 {
     // fmt::print(stderr, "Aligner::table_t::align {}\n{}\n", debug_name, amino_acids);
     for (auto p_start = amino_acids.find(start_aa); p_start < (amino_acids.size() / 2); p_start = amino_acids.find(start_aa, p_start + 1)) {
-        const auto all_pos = ranges::view::iota(0UL, std::min(max_sequence_length, amino_acids.size() - p_start));
+        const auto all_pos = ranges::views::iota(0UL, std::min(max_sequence_length, amino_acids.size() - p_start));
         if (const auto failed_pos = ranges::find_if(all_pos, [this,amino_acids,p_start](size_t pos) -> bool { return data[number_of_symbols * pos + static_cast<size_t>(amino_acids[p_start + pos])]; }); failed_pos != ranges::end(all_pos)) {
             // if (*failed_pos > 10)
             //     fmt::print(stderr, "Aligner::table_t::align FAILED: shift:{} {}:{} -- {} -- {}\n", p_start, *failed_pos, amino_acids[p_start + *failed_pos], debug_name, amino_acids.substr(0, p_start + *failed_pos + 5));
@@ -501,7 +501,7 @@ void local::Aligner::table_t::report(std::string prefix) const
     std::array<iter_t, max_sequence_length> iters;
     std::array<bool, max_sequence_length> completed;
     size_t last_pos = 0;
-    for (auto pos : ranges::view::iota(0UL, max_sequence_length)) {
+    for (auto pos : ranges::views::iota(0UL, max_sequence_length)) {
         iters[pos] = increment(begin(pos), end(pos), begin(pos) + static_cast<ssize_t>('A') - 1);
         if (iters[pos] == end(pos)) {
             completed[pos] = true;
@@ -513,7 +513,7 @@ void local::Aligner::table_t::report(std::string prefix) const
     }
 
     const auto print_line = [&iters, &completed, increment, begin, end, last_pos]() {
-        for (auto pos : ranges::view::iota(0UL, last_pos)) {
+        for (auto pos : ranges::views::iota(0UL, last_pos)) {
             if (iters[pos] != end(pos)) {
                 fmt::print(stderr, "{}", static_cast<char>(iters[pos] - begin(pos)));
                 iters[pos] = increment(begin(pos), end(pos), iters[pos]);

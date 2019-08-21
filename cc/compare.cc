@@ -32,7 +32,7 @@ namespace local
 
     template <typename R> inline std::vector<size_t> positions_with_differences(std::string_view master_sequence, R&& r1)
     {
-        return positions_with_differences(master_sequence, std::forward<R>(r1), ranges::view::empty<R>());
+        return positions_with_differences(master_sequence, std::forward<R>(r1), ranges::views::empty<R>());
     }
 
     // ----------------------------------------------------------------------
@@ -67,10 +67,10 @@ namespace local
 
         const auto aligned = [](const auto& ref) -> std::string_view { return ref.seq().aa_aligned(); };
         const std::string_view master_seq = aligned(master);
-        const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::view::transform(aligned));
-        const auto seq2 = ranges::to<std::vector<std::string_view>>(r2 | ranges::view::transform(aligned));
+        const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::views::transform(aligned));
+        const auto seq2 = ranges::to<std::vector<std::string_view>>(r2 | ranges::views::transform(aligned));
 
-        for (auto pos : positions_with_differences(master_seq, ranges::view::all(seq1), ranges::view::all(seq2))) {
+        for (auto pos : positions_with_differences(master_seq, ranges::views::all(seq1), ranges::views::all(seq2))) {
             const auto aa = master_seq[pos];
             fmt::format_to(out, "{:3d} {:>2c}", pos + 1, aa);
             const auto format_aa = [aa, pos, &out](std::string_view seq) { fmt::format_to(out, " {:>2c}", seq_aa(aa, seq, pos)); };
@@ -90,9 +90,9 @@ namespace local
 std::string acmacs::seqdb::v3::compare_report_text(const subset& sequences, size_t split)
 {
     if (split > 0)
-        return local::compare_report_text(sequences[0], ranges::view::drop(sequences, 1) | ranges::view::take(split - 1), ranges::view::drop(sequences, static_cast<ssize_t>(split)));
+        return local::compare_report_text(sequences[0], ranges::views::drop(sequences, 1) | ranges::views::take(split - 1), ranges::views::drop(sequences, static_cast<ssize_t>(split)));
     else
-        return local::compare_report_text(sequences[0], ranges::view::drop(sequences, 1), ranges::empty_view<ref>{});
+        return local::compare_report_text(sequences[0], ranges::views::drop(sequences, 1), ranges::empty_view<ref>{});
 
 } // acmacs::seqdb::v3::compare_report_text
 
@@ -100,7 +100,7 @@ std::string acmacs::seqdb::v3::compare_report_text(const subset& sequences, size
 
 std::string acmacs::seqdb::v3::compare_report_text(const subset& set1, const subset& set2)
 {
-    return local::compare_report_text(set1[0], set1 | ranges::view::drop(1), ranges::view::all(set2));
+    return local::compare_report_text(set1[0], set1 | ranges::views::drop(1), ranges::views::all(set2));
 
 } // acmacs::seqdb::v3::compare_report_text
 
@@ -114,9 +114,9 @@ namespace local
     {
         const auto aligned = [](const auto& ref) -> std::string_view { return ref.seq().aa_aligned(); };
         const std::string_view master_seq = aligned(master);
-        const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::view::transform(aligned));
-        const auto seq2 = ranges::to<std::vector<std::string_view>>(r2 | ranges::view::transform(aligned));
-        const auto positions = positions_with_differences(master_seq, ranges::view::all(seq1), ranges::view::all(seq2));
+        const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::views::transform(aligned));
+        const auto seq2 = ranges::to<std::vector<std::string_view>>(r2 | ranges::views::transform(aligned));
+        const auto positions = positions_with_differences(master_seq, ranges::views::all(seq1), ranges::views::all(seq2));
 
         fmt::memory_buffer rows;
         fmt::format_to(rows, "<tr><td class='fasta-aa-name'></td>", master.seq_id());
@@ -151,9 +151,9 @@ namespace local
 std::string acmacs::seqdb::v3::compare_report_html(std::string_view title, const subset& sequences, size_t split)
 {
     if (split > 0)
-        return local::compare_report_html(title, sequences[0], ranges::view::drop(sequences, 1) | ranges::view::take(split - 1), ranges::view::drop(sequences, static_cast<ssize_t>(split)));
+        return local::compare_report_html(title, sequences[0], ranges::views::drop(sequences, 1) | ranges::views::take(split - 1), ranges::views::drop(sequences, static_cast<ssize_t>(split)));
     else
-        return local::compare_report_html(title, sequences[0], ranges::view::drop(sequences, 1), ranges::empty_view<ref>{});
+        return local::compare_report_html(title, sequences[0], ranges::views::drop(sequences, 1), ranges::empty_view<ref>{});
 
 } // acmacs::seqdb::v3::compare_report_html
 
@@ -161,7 +161,7 @@ std::string acmacs::seqdb::v3::compare_report_html(std::string_view title, const
 
 std::string acmacs::seqdb::v3::compare_report_html(std::string_view title, const subset& set1, const subset& set2)
 {
-    return local::compare_report_html(title, set1[0], set1 | ranges::view::drop(1), ranges::view::all(set2));
+    return local::compare_report_html(title, set1[0], set1 | ranges::views::drop(1), ranges::views::all(set2));
 
 } // acmacs::seqdb::v3::compare_report_html
 

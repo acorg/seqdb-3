@@ -466,10 +466,10 @@ std::string acmacs::seqdb::v3::ref::seq_id() const
     }
     return ranges::to<std::string>(
         source
-        | ranges::view::remove_if(to_remove)
-        | ranges::view::replace('?', 'x')
-        | ranges::view::replace_if(to_replace_with_slash, '/') // usually in passages
-        | ranges::view::replace_if(to_replace_with_underscore, '_')
+        | ranges::views::remove_if(to_remove)
+        | ranges::views::replace('?', 'x')
+        | ranges::views::replace_if(to_replace_with_slash, '/') // usually in passages
+        | ranges::views::replace_if(to_replace_with_underscore, '_')
                         );
 
 } // acmacs::seqdb::v3::ref::seq_id
@@ -1073,7 +1073,7 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
             output.append(1, '\n');
         }
         else {
-            for (const auto chunk : en.second | ranges::view::chunk(options.e_wrap_at)) {
+            for (const auto chunk : en.second | ranges::views::chunk(options.e_wrap_at)) {
                 output.append(ranges::to<std::string>(chunk));
                 output.append(1, '\n');
             }

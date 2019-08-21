@@ -161,7 +161,7 @@ void acmacs::seqdb::v3::scan::sequence_t::translate()
         };
 
         std::array<translated_t, 3> translated;
-        ranges::transform(ranges::view::iota(0UL, translated.size()), std::begin(translated), transformation);
+        ranges::transform(ranges::views::iota(0UL, translated.size()), std::begin(translated), transformation);
         const auto longest_translated =
             std::max_element(std::begin(translated), std::end(translated), [](const auto& e1, const auto& e2) { return std::get<std::string>(e1).size() < std::get<std::string>(e2).size(); });
         if (std::get<std::string>(*longest_translated).size() >= MINIMUM_SEQUENCE_AA_LENGTH)

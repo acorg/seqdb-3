@@ -392,7 +392,7 @@ namespace local::H3
 
     static const std::array sClades{
         clade_desc_t{acmacs::seqdb::clade_t{"3C.3"}, {{158, 'N'}, {159, 'F'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{138, 'S'}, {159, 'S'}, {225, 'D'}, {326, 'R'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{138, 'S'}, {159, 'S'}, {225, 'D'}}}, // R326K causes split in the tree for 2019-0814-tc1, removed on 2019-08-21 {326, 'R'}}},
         clade_desc_t{acmacs::seqdb::clade_t{"3B"},   {{ 62, 'K'}, { 83, 'R'}, {261, 'Q'}}},
         clade_desc_t{acmacs::seqdb::clade_t{"2A"},   {{158, 'N'}, {159, 'Y'}}},
         clade_desc_t{acmacs::seqdb::clade_t{"2A1"},  {{158, 'N'}, {159, 'Y'}, {171, 'K'}, {406, 'V'}, {484, 'E'}}},
