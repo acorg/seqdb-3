@@ -108,6 +108,7 @@ namespace acmacs::seqdb
 
                 std::tuple<scan_input_t, scan_output_t> scan(scan_input_t input);
 
+                std::optional<scan_result_t> name_gisaid_fields(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
                 std::optional<scan_result_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
                 std::optional<scan_result_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
                 std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);

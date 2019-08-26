@@ -57,7 +57,7 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
                 std::tie(file_input, sequence_ref) = scan(file_input);
 
                 std::optional<scan_result_t> scan_result;
-                for (auto parser : {&name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
+                for (auto parser : {&name_gisaid_fields, &name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
                     scan_result = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
                     if (scan_result.has_value())
                         break;
@@ -144,7 +144,10 @@ std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan
         throw scan_error(::string::concat(':', input.line_no, ": unexpected end of input"));
     input.name_line_no = input.line_no;
     ++input.line_no;
-    const std::string_view name(name_start, static_cast<size_t>(input.first - name_start));
+    auto name_size = static_cast<size_t>(input.first - name_start);
+    if (*(input.first - 1) == '\r')
+        --name_size;
+    const std::string_view name(name_start, name_size);
     const auto seq_start = ++input.first;
 
     bool eol = false;
@@ -168,6 +171,83 @@ std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan
     return {input, {name, std::string_view(seq_start, static_cast<size_t>(input.first - seq_start))}};
 
 } // acmacs::seqdb::v3::scan::fasta::scan
+
+// ----------------------------------------------------------------------
+
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_fields(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
+{
+    // Isolate name|a=Isolate ID|b=Type|c=Passage details/history|d=Lineage|e=Collection date|f=Submitter|g=Sample ID by sample provider|
+    // h=Sample ID by submitting lab|i=Last modified|j=Originating lab|k=Submitting lab|l=Segment|m=Segment number|n=Identifier|o=DNA Accession no.|p=DNA INSDC|
+
+    auto fields = acmacs::string::split(name, "_|_");
+    if (fields.size() != 18 || fields[1].substr(0, 2) != "a=" || !fields.back().empty()) {
+        fmt::print(stderr, "DEBUG: not name_gisaid_fields: {} [{}] [{}]\n", fields.size(), fields[1].substr(0, 2), fields.back());
+        return std::nullopt;
+    }
+
+    scan_result_t result;
+    result.fasta.entry_name = name;
+    result.fasta.name = fields[0];
+    result.fasta.filename = filename;
+    result.fasta.line_no = line_no;
+
+    std::string_view lab, lab_id;
+
+    for (auto it = std::next(std::begin(fields)); it != std::prev(std::end(fields)); ++it) {
+        if (it->at(1) != '=')
+            throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
+        switch(it->at(0)) {
+          case 'a':
+              result.sequence.add_isolate_id(it->substr(2));
+              break;
+          case 'b':
+              result.fasta.type_subtype = parse_subtype(it->substr(2), filename, line_no);
+              break;
+          case 'c':
+              result.fasta.passage = it->substr(2);
+              break;
+          case 'd':
+              result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(it->substr(2), filename, line_no)};
+              break;
+          case 'e':
+              result.sequence.add_date(seqdb::scan::format_date(parse_date(it->substr(2), filename, line_no)));
+              break;
+          case 'f':
+              result.sequence.add_submitter(it->substr(2));
+              break;
+          case 'g':
+              result.sequence.add_sample_id_by_sample_provider(it->substr(2));
+              break;
+          case 'h':
+              lab_id = it->substr(2);
+              break;
+          case 'i':
+              break;
+          case 'j':
+              break;
+          case 'k':
+              lab = it->substr(2);
+              break;
+          case 'l':
+              break;
+          case 'm':
+              break;
+          case 'n':
+              break;
+          case 'o':
+              break;
+          case 'p':
+              break;
+          default:
+            throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
+        }
+    }
+
+    result.sequence.add_lab_id(parse_lab(lab, filename, line_no), lab_id);
+
+    return result;
+
+} // acmacs::seqdb::v3::scan::fasta::name_gisaid_fields
 
 // ----------------------------------------------------------------------
 

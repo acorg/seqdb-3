@@ -215,6 +215,11 @@ namespace acmacs::seqdb
                 //         return fmt::format("{} {}", name_, annotations_);
                 // }
 
+                void add_isolate_id(std::string_view src) { isolate_id_.add(std::string{src}); }
+                void add_submitter(std::string_view src) { submitters_.add(std::string{src}); }
+                void add_sample_id_by_sample_provider(std::string_view src) { sample_id_by_sample_provider_.add(std::string{src}); }
+
+
                 void merge_from(const sequence_t& source);
 
               private:
@@ -236,8 +241,10 @@ namespace acmacs::seqdb
                 acmacs::virus::type_subtype_t type_subtype_; // by alignment
                 deletions_insertions_t deletions_;
                 acmacs::virus::lineage_t lineage_; // by deletion detection
+                flat_set_t<std::string> isolate_id_;
+                flat_set_t<std::string> submitters_;
+                flat_set_t<std::string> sample_id_by_sample_provider_;
                 clades_t clades_;
-
                 void aa_trim_absent(); // remove leading and trailing X and - from aa
 
             }; // class sequence_t

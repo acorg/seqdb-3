@@ -395,6 +395,8 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
     dates_.merge_from(source.dates_);
     passages_.merge_from(source.passages_, flat_set_sort_afterwards::yes);
     hi_names_.merge_from(source.hi_names_);
+    isolate_id_.merge_from(source.isolate_id_);
+    submitters_.merge_from(source.submitters_);
 
     for (const auto& [lab, ids] : source.lab_ids()) {
         if (const auto found = lab_ids_.find(lab); found != lab_ids_.end())
