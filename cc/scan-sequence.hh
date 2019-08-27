@@ -218,7 +218,13 @@ namespace acmacs::seqdb
                 void add_isolate_id(std::string_view src) { isolate_id_.add(std::string{src}); }
                 void add_submitter(std::string_view src) { submitters_.add(std::string{src}); }
                 void add_sample_id_by_sample_provider(std::string_view src) { sample_id_by_sample_provider_.add(std::string{src}); }
-
+                void add_gisaid_last_modified(std::string_view src) { gisaid_last_modified_.add(std::string(src)); }
+                void add_originating_lab(std::string_view src) { originating_lab_.add(std::string(src)); }
+                void add_gisaid_segment(std::string_view src) { gisaid_segment_.add(std::string(src)); }
+                void add_gisaid_segment_number(std::string_view src) { gisaid_segment_number_.add(std::string(src)); }
+                void add_gisaid_identifier(std::string_view src) { gisaid_identifier_.add(std::string(src)); }
+                void add_gisaid_dna_accession_no(std::string_view src) { gisaid_dna_accession_no_.add(std::string(src)); }
+                void add_gisaid_dna_insdc(std::string_view src) { gisaid_dna_insdc_.add(std::string(src)); }
 
                 void merge_from(const sequence_t& source);
 
@@ -244,6 +250,13 @@ namespace acmacs::seqdb
                 flat_set_t<std::string> isolate_id_;
                 flat_set_t<std::string> submitters_;
                 flat_set_t<std::string> sample_id_by_sample_provider_;
+                flat_set_t<std::string> gisaid_last_modified_;
+                flat_set_t<std::string> originating_lab_;
+                flat_set_t<std::string> gisaid_segment_;
+                flat_set_t<std::string> gisaid_segment_number_;
+                flat_set_t<std::string> gisaid_identifier_;
+                flat_set_t<std::string> gisaid_dna_accession_no_;
+                flat_set_t<std::string> gisaid_dna_insdc_;
                 clades_t clades_;
                 void aa_trim_absent(); // remove leading and trailing X and - from aa
 

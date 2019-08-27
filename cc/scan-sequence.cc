@@ -397,6 +397,13 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
     hi_names_.merge_from(source.hi_names_);
     isolate_id_.merge_from(source.isolate_id_);
     submitters_.merge_from(source.submitters_);
+    gisaid_last_modified_.merge_from(source.gisaid_last_modified_);
+    originating_lab_.merge_from(source.originating_lab_);
+    gisaid_segment_.merge_from(source.gisaid_segment_);
+    gisaid_segment_number_.merge_from(source.gisaid_segment_number_);
+    gisaid_identifier_.merge_from(source.gisaid_identifier_);
+    gisaid_dna_accession_no_.merge_from(source.gisaid_dna_accession_no_);
+    gisaid_dna_insdc_.merge_from(source.gisaid_dna_insdc_);
 
     for (const auto& [lab, ids] : source.lab_ids()) {
         if (const auto found = lab_ids_.find(lab); found != lab_ids_.end())

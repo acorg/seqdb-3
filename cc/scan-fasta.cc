@@ -222,21 +222,28 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
               lab_id = it->substr(2);
               break;
           case 'i':
+              result.sequence.add_gisaid_last_modified(seqdb::scan::format_date(parse_date(it->substr(2), filename, line_no)));
               break;
           case 'j':
+              result.sequence.add_originating_lab(it->substr(2));
               break;
           case 'k':
               lab = it->substr(2);
               break;
           case 'l':
+              result.sequence.add_gisaid_segment(it->substr(2));
               break;
           case 'm':
+              result.sequence.add_gisaid_segment_number(it->substr(2));
               break;
           case 'n':
+              result.sequence.add_gisaid_identifier(it->substr(2));
               break;
           case 'o':
+              result.sequence.add_gisaid_dna_accession_no(it->substr(2));
               break;
           case 'p':
+              result.sequence.add_gisaid_dna_insdc(it->substr(2));
               break;
           default:
             throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
