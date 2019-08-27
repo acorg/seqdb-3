@@ -36,6 +36,12 @@ namespace acmacs::seqdb
                     bool remove{false};
                 };
 
+                struct scan_results_t
+                {
+                    std::vector<scan_result_t> results;
+                    std::vector<acmacs::virus::parse_result_t::message_t> messages;
+                };
+
                 constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
                 constexpr const auto isnot_aligned = [](const scan_result_t& sc) { return !sc.sequence.aligned(); };
                 constexpr const auto is_translated = [](const scan_result_t& sc) { return sc.sequence.translated(); };
@@ -89,7 +95,7 @@ namespace acmacs::seqdb
 
                 // ----------------------------------------------------------------------
 
-                std::vector<scan_result_t> scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
+                scan_results_t scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
 
                 inline void sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept
                 {

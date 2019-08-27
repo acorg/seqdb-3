@@ -56,13 +56,14 @@ struct Options : public argv
 };
 
 static int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const Options& opt);
+static void report_messages(const std::vector<acmacs::virus::parse_result_t::message_t>& messages);
 
 int main(int argc, char* const argv[])
 {
     try {
         Options opt(argc, argv);
 
-        auto all_sequences = acmacs::seqdb::scan::fasta::scan(opt.filenames, acmacs::seqdb::scan::fasta::scan_options_t(opt.verbose ? acmacs::debug::yes : acmacs::debug::no));
+        auto [all_sequences, messages] = acmacs::seqdb::scan::fasta::scan(opt.filenames, acmacs::seqdb::scan::fasta::scan_options_t(opt.verbose ? acmacs::debug::yes : acmacs::debug::no));
         fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
@@ -91,6 +92,8 @@ int main(int argc, char* const argv[])
 
         if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "ERROR: FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
+
+        report_messages(messages);
 
         if (opt.print_counter_for->empty()) {
             acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
@@ -148,6 +151,22 @@ template <typename Key> static inline acmacs::flat_map_t<Key, size_t> sorted_by_
     result.sort_by_value_reverse();
     return result;
 }
+
+// ----------------------------------------------------------------------
+
+void report_messages(const std::vector<acmacs::virus::parse_result_t::message_t>& messages)
+{
+    std::map<std::string, std::vector<std::string>, std::less<>> messages_per_key;
+    for (const auto& msg : messages)
+        messages_per_key.try_emplace(msg.key).first->second.push_back(msg.value);
+    for (auto& [key, value] : messages_per_key) {
+        std::sort(std::begin(value), std::end(value));
+        fmt::print(stderr, "WARNING: {} ({})\n", key, value.size());
+        for (const auto& val : value)
+            fmt::print(stderr, "    {}\n", val);
+    }
+
+} // report_messages
 
 // ----------------------------------------------------------------------
 

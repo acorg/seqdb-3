@@ -29,6 +29,8 @@ namespace acmacs::seqdb
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
                 static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
+                static void add_message(std::vector<acmacs::virus::parse_result_t::message_t>& target, const std::vector<acmacs::virus::parse_result_t::message_t>& to_add);
+                static acmacs::virus::parse_result_t parse_and_fix_name(std::string_view name);
 
             } // namespace fasta
         }     // namespace scan
@@ -37,13 +39,14 @@ namespace acmacs::seqdb
 
 // ----------------------------------------------------------------------
 
-std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::scan(const std::vector<std::string_view>& filenames, const scan_options_t& options)
+acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan(const std::vector<std::string_view>& filenames, const scan_options_t& options)
 {
     using namespace fmt::literals;
 
     get_locdb(); // load locbd outside of threading code, it is not thread safe
 
     std::vector<std::vector<scan_result_t>> sequences_per_file(filenames.size());
+    std::vector<std::vector<acmacs::virus::parse_result_t::message_t>> messages_per_file(filenames.size());
 #pragma omp parallel for default(shared) schedule(static, 4)
     for (size_t f_no = 0; f_no < filenames.size(); ++f_no) {
         const auto& filename = filenames[f_no];
@@ -64,13 +67,14 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
                         break;
                 }
                 if (scan_result.has_value()) {
-                    auto messages = normalize_name(*scan_result, options.dbg);
+                    const auto messages = normalize_name(*scan_result, options.dbg);
                     if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
                         if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
                             || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
                             scan_result->sequence.remove_dates();
                         }
                         sequences_per_file[f_no].push_back(std::move(*scan_result));
+                        add_message(messages_per_file[f_no], messages);
                     }
                 }
                 else
@@ -90,7 +94,10 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
     for (auto& per_file : sequences_per_file)
         std::move(per_file.begin(), per_file.end(), std::back_inserter(all_sequences));
 
-    return all_sequences;
+    for (auto it = std::next(std::cbegin(messages_per_file)); it != std::cend(messages_per_file); ++it)
+        add_message(messages_per_file.front(), *it);
+
+    return {all_sequences, messages_per_file.front()};
 
 } // acmacs::seqdb::v3::scan::fasta::scan
 
@@ -359,7 +366,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
     fix_gisaid_name(source);
 
-    auto result = acmacs::virus::parse_name(source.fasta.name);
+    auto result = parse_and_fix_name(source.fasta.name);
     source.sequence.name(std::move(result.name));
     if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
         fmt::print(stderr, "WARNING: no year at the end of name: {} {}:{}\n", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
@@ -403,6 +410,23 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     return result.messages;
 
 } // acmacs::seqdb::v3::scan::fasta::normalize_name
+
+// ----------------------------------------------------------------------
+
+acmacs::virus::parse_result_t acmacs::seqdb::v3::scan::fasta::parse_and_fix_name(std::string_view name)
+{
+    auto result = acmacs::virus::parse_name(name);
+    for (const auto& msg : result.messages) {
+        if (msg == "location-not-found") {
+            if (msg.value == "HK") {
+                result = acmacs::virus::parse_name(::string::replace(name, "/HK/", "/HONG KONG/"));
+                break;
+            }
+        }
+    }
+    return result;
+
+} // acmacs::seqdb::v3::scan::fasta::parse_and_fix_name
 
 // ----------------------------------------------------------------------
 
@@ -633,6 +657,17 @@ std::string acmacs::seqdb::v3::scan::fasta::report_aa_aligned(const std::vector<
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::fasta::report_aa_aligned
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::fasta::add_message(std::vector<acmacs::virus::parse_result_t::message_t>& target, const std::vector<acmacs::virus::parse_result_t::message_t>& to_add)
+{
+    for (const auto& msg : to_add) {
+        if (std::find(std::begin(target), std::end(target), msg) == std::end(target))
+            target.push_back(msg);
+    }
+
+} // acmacs::seqdb::v3::scan::fasta::add_message
 
 // ----------------------------------------------------------------------
 /// Local Variables:
