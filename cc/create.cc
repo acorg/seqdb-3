@@ -104,7 +104,8 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                 if (!seq.reassortant().empty())
                     entry_seq << to_json::key_val("r", to_json::array(*seq.reassortant(), to_json::json::compact_output::yes));
                 if (!seq.passages().empty())
-                    entry_seq << to_json::key_val("p", to_json::array(seq.passages().begin(), seq.passages().end(), [](const auto& passage) { return *passage; }, to_json::json::compact_output::yes));
+                    entry_seq << to_json::key_val("p", to_json::array(
+                                                           seq.passages().begin(), seq.passages().end(), [](const auto& passage) { return *passage; }, to_json::json::compact_output::yes));
                 if (!seq.hi_names().empty())
                     entry_seq << to_json::key_val("h", to_json::array(seq.hi_names().begin(), seq.hi_names().end(), to_json::json::compact_output::yes));
                 if (!seq.aa().empty())
@@ -112,19 +113,46 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                 if (!seq.nuc().empty())
                     entry_seq << to_json::key_val("n", seq.nuc_format_not_aligned());
                 if (seq.shift_aa() != acmacs::seqdb::scan::sequence_t::shift_t{0})
-                    entry_seq << to_json::key_val("s", - static_cast<ssize_t>(*seq.shift_aa()));
+                    entry_seq << to_json::key_val("s", -static_cast<ssize_t>(*seq.shift_aa()));
                 if (seq.shift_nuc() != acmacs::seqdb::scan::sequence_t::shift_t{0})
-                    entry_seq << to_json::key_val("t", - static_cast<ssize_t>(*seq.shift_nuc()));
+                    entry_seq << to_json::key_val("t", -static_cast<ssize_t>(*seq.shift_nuc()));
                 if (!seq.clades().empty())
-                    entry_seq << to_json::key_val("c", to_json::array(seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
+                    entry_seq << to_json::key_val("c", to_json::array(
+                                                           seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
                 if (!seq.lab_ids().empty()) {
                     to_json::object lab_ids;
                     for (const auto& [lab, ids] : seq.lab_ids()) {
-                        lab_ids << to_json::key_val(lab, to_json::array(std::begin(ids), std::end(ids), [](const auto& lab_id) { return *lab_id; }, to_json::json::compact_output::yes));
+                        lab_ids << to_json::key_val(lab, to_json::array(
+                                                             std::begin(ids), std::end(ids), [](const auto& lab_id) { return *lab_id; }, to_json::json::compact_output::yes));
                     }
-                    entry_seq << to_json::key_val("l", lab_ids);
+                    entry_seq << to_json::key_val("l", std::move(lab_ids));
                 }
                 // "g": "gene: HA|NA", // HA if omitted
+
+                {
+                    to_json::object gisaid_data;
+                    if (!seq.isolate_id().empty())
+                        gisaid_data << to_json::key_val("i", to_json::array(seq.isolate_id().begin(), seq.isolate_id().end(), to_json::json::compact_output::yes));
+                    if (!seq.submitters().empty())
+                        gisaid_data << to_json::key_val("S", to_json::array(seq.submitters().begin(), seq.submitters().end(), to_json::json::compact_output::yes));
+                    if (!seq.sample_id_by_sample_provider().empty())
+                        gisaid_data << to_json::key_val("s", to_json::array(seq.sample_id_by_sample_provider().begin(), seq.sample_id_by_sample_provider().end(), to_json::json::compact_output::yes));
+                    if (!seq.gisaid_last_modified().empty())
+                        gisaid_data << to_json::key_val("m", to_json::array(seq.gisaid_last_modified().begin(), seq.gisaid_last_modified().end(), to_json::json::compact_output::yes));
+                    if (!seq.originating_lab().empty())
+                        gisaid_data << to_json::key_val("o", to_json::array(seq.originating_lab().begin(), seq.originating_lab().end(), to_json::json::compact_output::yes));
+                    if (!seq.gisaid_segment_number().empty())
+                        gisaid_data << to_json::key_val("n", to_json::array(seq.gisaid_segment_number().begin(), seq.gisaid_segment_number().end(), to_json::json::compact_output::yes));
+                    if (!seq.gisaid_identifier().empty())
+                        gisaid_data << to_json::key_val("t", to_json::array(seq.gisaid_identifier().begin(), seq.gisaid_identifier().end(), to_json::json::compact_output::yes));
+                    if (!seq.gisaid_dna_accession_no().empty())
+                        gisaid_data << to_json::key_val("D", to_json::array(seq.gisaid_dna_accession_no().begin(), seq.gisaid_dna_accession_no().end(), to_json::json::compact_output::yes));
+                    if (!seq.gisaid_dna_insdc().empty())
+                        gisaid_data << to_json::key_val("d", to_json::array(seq.gisaid_dna_insdc().begin(), seq.gisaid_dna_insdc().end(), to_json::json::compact_output::yes));
+                    if (!gisaid_data.empty())
+                        entry_seq << to_json::key_val("G", std::move(gisaid_data));
+                }
+
                 entry_seqs << std::move(entry_seq);
             }
 
@@ -137,7 +165,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
     flush();
 
     const auto js = to_json::object(to_json::key_val("_", "-*- js-indent-level: 1 -*-"), to_json::key_val("  version", "sequence-database-v2"), to_json::key_val("  date", date::current_date_time()),
-                              to_json::key_val("data", std::move(seqdb_data)));
+                                    to_json::key_val("data", std::move(seqdb_data)));
     acmacs::file::write(filename, fmt::format("{:1}\n", js));
     fmt::print("INFO: {} sequences written to {}\n", num_sequences, filename);
 

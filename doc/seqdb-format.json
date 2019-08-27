@@ -21,6 +21,17 @@
                  "A": "annotations",
                  "s": <shift (int) for aa sequence>,
                  "t": <shift (int) for nuc sequence>,
+                 "G": {         // gisaid data, added 2019-08-27
+                     "i": ["isolate_id"],
+                     "S": ["submitters"],
+                     "s": ["sample_id_by_sample_provider"],
+                     "m": ["gisaid_last_modified"],
+                     "o": ["originating_lab"],
+                     "n": ["gisaid_segment_number"],
+                     "t": ["gisaid_identifier"],
+                     "D": ["gisaid_dna_accession_no"],
+                     "d": ["gisaid_dna_insdc"]
+                 }
              },
          ],
          "v": "virus_type"

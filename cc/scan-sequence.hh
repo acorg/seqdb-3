@@ -226,6 +226,17 @@ namespace acmacs::seqdb
                 void add_gisaid_dna_accession_no(std::string_view src) { gisaid_dna_accession_no_.add(std::string(src)); }
                 void add_gisaid_dna_insdc(std::string_view src) { gisaid_dna_insdc_.add(std::string(src)); }
 
+                const auto& isolate_id() const { return isolate_id_; }
+                const auto& submitters() const { return submitters_; }
+                const auto& sample_id_by_sample_provider() const { return sample_id_by_sample_provider_; }
+                const auto& gisaid_last_modified() const { return gisaid_last_modified_; }
+                const auto& originating_lab() const { return originating_lab_; }
+                const auto& gisaid_segment() const { return gisaid_segment_; }
+                const auto& gisaid_segment_number() const { return gisaid_segment_number_; }
+                const auto& gisaid_identifier() const { return gisaid_identifier_; }
+                const auto& gisaid_dna_accession_no() const { return gisaid_dna_accession_no_; }
+                const auto& gisaid_dna_insdc() const { return gisaid_dna_insdc_; }
+
                 void merge_from(const sequence_t& source);
 
               private:
