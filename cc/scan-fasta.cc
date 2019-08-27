@@ -418,7 +418,7 @@ acmacs::virus::parse_result_t acmacs::seqdb::v3::scan::fasta::parse_and_fix_name
     auto result = acmacs::virus::parse_name(name);
     for (const auto& msg : result.messages) {
         if (msg == "location-not-found") {
-            if (msg.value == "HK") {
+            if (msg.value == "HK") { // gisaid has many of that kind
                 result = acmacs::virus::parse_name(::string::replace(name, "/HK/", "/HONG KONG/"));
                 break;
             }
