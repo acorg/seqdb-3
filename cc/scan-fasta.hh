@@ -52,6 +52,11 @@ namespace acmacs::seqdb
                     using std::runtime_error::runtime_error;
                 };
 
+                struct manually_excluded : public std::runtime_error
+                {
+                    manually_excluded(std::string_view msg) : std::runtime_error{std::string{msg}} {}
+                };
+
                 struct scan_options_t
                 {
                     scan_options_t(debug a_dbg) : dbg{a_dbg} {}

@@ -56,6 +56,7 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
                 scan_output_t sequence_ref;
                 std::tie(file_input, sequence_ref) = scan(file_input);
 
+                try {
                 std::optional<scan_result_t> scan_result;
                 for (auto parser : {&name_gisaid_fields, &name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
                     scan_result = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
@@ -74,6 +75,10 @@ std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::sc
                 }
                 else
                     fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
+                }
+                catch (manually_excluded& msg) {
+                    fmt::print("INFO: manually excluded: {} {} {}:{}\n", sequence_ref.name.substr(0, sequence_ref.name.find("_|_")), msg, filename, file_input.name_line_no);
+                }
             }
         }
         catch (std::exception& err) {
@@ -174,14 +179,14 @@ std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_fields(std::string_view name, const hint_t& /*hints*/, std::string_view filename,
-                                                                                                                size_t line_no)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_fields(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
 {
-    // Isolate name|a=Isolate ID|b=Type|c=Passage details/history|d=Lineage|e=Collection date|f=Submitter|g=Sample ID by sample provider|
-    // h=Sample ID by submitting lab|i=Last modified|j=Originating lab|k=Submitting lab|l=Segment|m=Segment number|n=Identifier|o=DNA Accession no.|p=DNA INSDC|
+    // Isolate name_|_a=Isolate ID_|_b=Type_|_c=Passage details/history_|_d=Lineage_|_e=Collection date_|_f=Submitter_|_g=Sample ID by sample provider_|_
+    // h=Sample ID by submitting lab_|_i=Last modified_|_j=Originating lab_|_k=Submitting lab_|_l=Segment_|_m=Segment number_|_n=Identifier_|_o=DNA Accession no._|_p=DNA INSDC_|_
+    // x=<exclusion-reason>_|_
 
     auto fields = acmacs::string::split(name, "_|_");
-    if (fields.size() != 18 || fields[1].substr(0, 2) != "a=" || !fields.back().empty()) {
+    if ((fields.size() != 18 && fields.size() != 19) || fields[1].substr(0, 2) != "a=" || !fields.back().empty()) {
         fmt::print(stderr, "DEBUG: not name_gisaid_fields: {} [{}] [{}]\n", fields.size(), fields[1].substr(0, 2), fields.back());
         return std::nullopt;
     }
@@ -247,6 +252,8 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                 case 'p':
                     result.sequence.add_gisaid_dna_insdc(::string::strip(it->substr(2)));
                     break;
+                case 'z': // manually excluded
+                    throw manually_excluded{it->substr(2)};
                 default:
                     throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
             }
@@ -595,7 +602,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_false_positive(const std::vec
 std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(isnot_aligned)) {
+    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return type_subtype_infix == "ALL" || sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(isnot_aligned)) {
         // fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
         fmt::format_to(out, "{} ::: {} ::: {}:{}\n", sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no);
     }
