@@ -93,6 +93,7 @@ int main(int argc, char* const argv[])
         if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "ERROR: FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
 
+        fmt::print(stderr, "{}\n", acmacs::seqdb::scan::fasta::report_dates(all_sequences));
         report_messages(messages);
 
         if (opt.print_counter_for->empty()) {

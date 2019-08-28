@@ -113,6 +113,7 @@ namespace acmacs::seqdb
                 std::string report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff = std::string::npos);
                 std::string report_aa(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff = std::string::npos);
                 std::string report_aa_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff = std::string::npos);
+                std::string report_dates(const std::vector<scan_result_t>& sequences);
 
                 // ----------------------------------------------------------------------
                 // details
