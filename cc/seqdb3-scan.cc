@@ -164,6 +164,8 @@ void report_messages(const std::vector<acmacs::virus::parse_result_t::message_t>
         fmt::print(stderr, "WARNING: {} ({})\n", key, value.size());
         for (const auto& val : value)
             fmt::print(stderr, "    {}\n", val);
+        if (std::string_view{key} == "location-not-found")
+            fmt::print(stderr, "locdb '{}'\n", ::string::join("' '", value));
     }
 
 } // report_messages
