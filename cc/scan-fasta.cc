@@ -194,7 +194,8 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
 
     auto fields = acmacs::string::split(name, "_|_");
     if ((fields.size() != 18 && fields.size() != 19) || fields[1].substr(0, 2) != "a=" || !fields.back().empty()) {
-        fmt::print(stderr, "DEBUG: not name_gisaid_fields: {} [{}] [{}]\n", fields.size(), fields[1].substr(0, 2), fields.back());
+        if (fields.size() > 1)
+            fmt::print(stderr, "WARNING: name_gisaid_fields: unexpected number of fields: {}: {}\n", fields.size(), name);
         return std::nullopt;
     }
 
@@ -259,7 +260,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                 case 'p':
                     result.sequence.add_gisaid_dna_insdc(::string::strip(it->substr(2)));
                     break;
-                case 'z': // manually excluded
+                case 'x': // manually excluded
                     throw manually_excluded{it->substr(2)};
                 default:
                     throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
