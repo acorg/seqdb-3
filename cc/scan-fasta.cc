@@ -195,7 +195,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     auto fields = acmacs::string::split(name, "_|_");
     if ((fields.size() != 18 && fields.size() != 19) || fields[1].substr(0, 2) != "a=" || !fields.back().empty()) {
         if (fields.size() > 1)
-            fmt::print(stderr, "WARNING: name_gisaid_fields: unexpected number of fields: {}: {}\n", fields.size(), name);
+            fmt::print(stderr, "{}:{}: warning: name_gisaid_fields: unexpected number of fields: {}: {}\n", filename, line_no, fields.size(), name);
         return std::nullopt;
     }
 
@@ -370,7 +370,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     auto result = parse_and_fix_name(source.fasta.name);
     source.sequence.name(std::move(result.name));
     if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
-        fmt::print(stderr, "WARNING: no year at the end of name: {} {}:{}\n", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
+        fmt::print(stderr, "{}:{}: warning: no year at the end of name: {}\n", source.fasta.filename, source.fasta.line_no, source.sequence.name());
     // if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
     //     fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
     if (dbg == debug::yes)
