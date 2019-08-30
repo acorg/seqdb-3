@@ -44,7 +44,7 @@ struct Options : public argv
     option<bool> whocc_only{*this, "whocc-only", desc{"create whocc only db (seqdb.json.xz)"}};
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
-    option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}};
+    option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}, desc{"ALL or comma separated: H1N,H3,B"}};
     option<str>  print_counter_for{*this, "print-counter-for", dflt{""}};
     option<str>  print_aligned_for{*this, "print-aligned-for", dflt{""}};
     option<bool> print_aa_sizes{*this, "print-aa-sizes"};
