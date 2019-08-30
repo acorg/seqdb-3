@@ -56,7 +56,7 @@ struct Options : public argv
 };
 
 static int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const Options& opt);
-static void report_messages(const std::vector<acmacs::virus::parse_result_t::message_t>& messages);
+static void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages);
 
 int main(int argc, char* const argv[])
 {
@@ -155,18 +155,29 @@ template <typename Key> static inline acmacs::flat_map_t<Key, size_t> sorted_by_
 
 // ----------------------------------------------------------------------
 
-void report_messages(const std::vector<acmacs::virus::parse_result_t::message_t>& messages)
+void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
 {
-    std::map<std::string, std::vector<std::string>, std::less<>> messages_per_key;
+    std::map<std::string, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
     for (const auto& msg : messages)
-        messages_per_key.try_emplace(msg.key).first->second.push_back(msg.value);
+        messages_per_key.try_emplace(msg.message.key).first->second.push_back(msg);
     for (auto& [key, value] : messages_per_key) {
-        std::sort(std::begin(value), std::end(value));
-        fmt::print(stderr, "WARNING: {} ({})\n", key, value.size());
-        for (const auto& val : value)
-            fmt::print(stderr, "    {}\n", val);
-        if (std::string_view{key} == "location-not-found")
-            fmt::print(stderr, "locdb '{}'\n", ::string::join("' '", value));
+        // std::sort(std::begin(value), std::end(value));
+        if (std::string_view{key} == "location-not-found" || std::string_view{key} == "unrecognized-passage") {
+            std::vector<std::string> locations(value.size());
+            std::transform(std::begin(value), std::end(value), std::begin(locations), [](const auto& en) { return en.message.value; });
+            std::sort(std::begin(locations), std::end(locations));
+            const auto end = std::unique(std::begin(locations), std::end(locations));
+            fmt::print(stderr, "WARNING: {} ({}):\n", key, end - std::begin(locations));
+            fmt::print(stderr, "  \"{}\"\n", ::string::join("\"\n  \"", std::begin(locations), end));
+            if (std::string_view{key} == "location-not-found")
+                fmt::print(stderr, "locdb \"{}\"\n", ::string::join("\" \"", std::begin(locations), end));
+        }
+        else {
+            fmt::print(stderr, "WARNING: {} ({}):\n", key, value.size());
+            for (const auto& val : value)
+                fmt::print(stderr, "{}:{}: warning: {} ({})\n", val.filename, val.line_no, val.message.value, key);
+        }
+        fmt::print(stderr, "\n");
     }
 
 } // report_messages

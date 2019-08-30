@@ -36,10 +36,21 @@ namespace acmacs::seqdb
                     bool remove{false};
                 };
 
+                using message_t = acmacs::virus::v2::parse_result_t::message_t;
+
+                struct message_line_t
+                {
+                    message_t message;
+                    std::string filename;
+                    size_t line_no;
+                };
+
+                using messages_t = std::vector<message_line_t>;
+
                 struct scan_results_t
                 {
                     std::vector<scan_result_t> results;
-                    std::vector<acmacs::virus::parse_result_t::message_t> messages;
+                    messages_t messages;
                 };
 
                 constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
@@ -124,8 +135,6 @@ namespace acmacs::seqdb
                 std::optional<scan_result_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
                 std::optional<scan_result_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
                 std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
-
-                using messages_t = std::vector<acmacs::virus::v2::parse_result_t::message_t>;
 
                 // returns error and warning messages
                 messages_t normalize_name(scan_result_t& source, debug dbg);
