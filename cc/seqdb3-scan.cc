@@ -175,7 +175,7 @@ void report_messages(const std::vector<acmacs::virus::parse_result_t::message_t>
 
 int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const Options& opt)
 {
-    acmacs::Counter<std::string> location_not_found, unrecognized_passage, labs, subtypes, lineages, clades;
+    acmacs::Counter<std::string> location_not_found, unrecognized_passage, labs, subtypes, lineages, clades, isolation_dates, submission_dates;
     std::map<std::string, std::map<size_t, size_t>> subtypes_sequence_length;
     int errors = 0;
 
@@ -188,6 +188,8 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
         ranges::for_each(entry.sequence.lab_ids(), [&labs](const auto& en) { labs.count(en.first); });
 
         subtypes.count(entry.sequence.type_subtype());
+        isolation_dates.count(entry.sequence.date_simulated().substr(0, 7)); // year-month
+        submission_dates.count(entry.sequence.gisaid_last_modified().front().substr(0, 7)); // year-month
         // if (entry.sequence.type_subtype().empty())
         //     fmt::print(stderr, "{}:{}: No subtype for {}\n", entry.fasta.filename, entry.fasta.line_no, *entry.sequence.name);
         if (auto [iter, inserted] = subtypes_sequence_length.emplace(entry.sequence.type_subtype(), std::map<size_t, size_t>{}).first->second.emplace(entry.sequence.nuc().size(), 1UL); !inserted)
@@ -213,29 +215,37 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
         }
     }
 
-    const auto report_by_count = [](const acmacs::Counter<std::string>& source, const char* title) {
+    const auto report_by_count = [](const acmacs::Counter<std::string>& source, const char* title, bool max_first) {
         fmt::print(stderr, "{}: {}\n", title, source.size());
-        for (const auto& entry : source.sorted_max_first())
-            fmt::print(stderr, "{:6d} {}\n", entry->second, entry->first);
+        if (max_first) {
+            for (const auto& entry : source.sorted_max_first())
+                fmt::print(stderr, "{:6d} {}\n", entry->second, entry->first);
+        }
+        else {
+            for (const auto& entry : source.counter())
+                fmt::print(stderr, "{} {:6d}\n", entry.first, entry.second);
+        }
         fmt::print(stderr, "\n");
     };
 
     if (!unrecognized_passage.empty()) {
-        report_by_count(unrecognized_passage, "Unrecognized PASSAGE");
+        report_by_count(unrecognized_passage, "Unrecognized PASSAGE", true);
         ++errors;
     }
 
     if (!location_not_found.empty()) {
-        report_by_count(location_not_found, "Not found LOCATION");
+        report_by_count(location_not_found, "Not found LOCATION", true);
         ++errors;
     }
 
     fmt::print(stderr, "======================================================================\n\n");
     fmt::print(stderr, "TOTAL: {}\n\n", sequences.size());
-    report_by_count(subtypes, "SUBTYPES");
-    report_by_count(lineages, "LINEAGES");
-    report_by_count(clades, "CLADES");
-    report_by_count(labs, "LABS");
+    report_by_count(subtypes, "SUBTYPES", true);
+    report_by_count(lineages, "LINEAGES", true);
+    report_by_count(clades, "CLADES", true);
+    report_by_count(labs, "LABS", true);
+    report_by_count(isolation_dates, "ISOLATION DATES", false);
+    report_by_count(submission_dates, "SUBMISSION DATES", false);
 
     fmt::print(stderr, "SUBTYPES and sequence lengths (count:seq-length)\n");
     for (const auto& [subtype, entry] : subtypes_sequence_length) {
