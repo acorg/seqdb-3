@@ -645,7 +645,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector
     fmt::memory_buffer out;
     for (const auto& sc : sequences | ranges::views::filter(filter_subtype) | ranges::views::filter(isnot_aligned)) {
         // fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
-        fmt::format_to(out, "{} ::: {} ::: {}:{}\n", sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no);
+        fmt::format_to(out, "{}:{}: warning: {} ::: {} \n", sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name);
     }
     return fmt::to_string(out);
 

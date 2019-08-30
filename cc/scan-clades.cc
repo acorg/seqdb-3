@@ -35,7 +35,7 @@ void acmacs::seqdb::v3::scan::detect_lineages_clades(std::vector<fasta::scan_res
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
         if (auto& entry = sequences[e_no]; fasta::is_aligned(entry)) {
             const auto subtype = entry.sequence.type_subtype().h_or_b();
-            const auto fasta_ref = fmt::format("{}:{}  {}", entry.fasta.filename, entry.fasta.line_no, entry.fasta.entry_name);
+            const auto fasta_ref = fmt::format("{}:{}: note:  {}", entry.fasta.filename, entry.fasta.line_no, entry.fasta.entry_name);
             if (subtype == "B") {
                 local::B::lineage(entry.sequence, fasta_ref);
                 local::B::clade(entry.sequence, fasta_ref);

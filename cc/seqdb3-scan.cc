@@ -115,7 +115,7 @@ int main(int argc, char* const argv[])
 
         if (!opt.print_not_aligned_for->empty()) {
             const auto report = acmacs::seqdb::scan::fasta::report_not_aligned(all_sequences, ::string::upper(*opt.print_not_aligned_for), 200);
-            fmt::print(stderr, "NOT ALIGNED {} {} (name and file reference are at the line end)\n{}\n", *opt.print_not_aligned_for, ranges::count(report, '\n'), report);
+            fmt::print(stderr, "NOT ALIGNED {} {} (name at the end)\n{}\n", *opt.print_not_aligned_for, ranges::count(report, '\n'), report);
         }
 
         if (!opt.print_aligned_for->empty()) {
