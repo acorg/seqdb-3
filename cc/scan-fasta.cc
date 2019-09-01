@@ -89,8 +89,11 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                 }
             }
         }
+        catch (scan_error& err) {
+            fmt::print(stderr, "{}\n", err);
+        }
         catch (std::exception& err) {
-            throw scan_error(fmt::format("{}: {}", filename, err));
+            fmt::print(stderr, "{}: error: {}\n", filename, err);
         }
     }
 
@@ -213,7 +216,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
 
     for (auto it = std::next(std::begin(fields)); it != std::prev(std::end(fields)); ++it) {
         if (it->at(1) != '=')
-            throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
+            throw scan_error(fmt::format("{}:{}: error: field {} unrecognized: {}", filename, line_no, it - std::begin(fields), *it));
         if (it->size() > 2) { // non-empty value
             switch (it->at(0)) {
                 case 'a':
@@ -267,7 +270,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                 case 'x': // manually excluded
                     throw manually_excluded{it->substr(2)};
                 default:
-                    throw scan_error(fmt::format("line:{} field:{}: unrecognized", line_no, it - std::begin(fields)));
+                    throw scan_error(fmt::format("{}:{}: error: field {} unrecognized: {}", filename, line_no, it - std::begin(fields), *it));
             }
         }
     }
