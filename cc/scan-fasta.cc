@@ -85,7 +85,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                     fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
                 }
                 catch (manually_excluded& msg) {
-                    fmt::print("INFO: manually excluded: {} {} {}:{}\n", sequence_ref.name.substr(0, sequence_ref.name.find("_|_")), msg, filename, file_input.name_line_no);
+                    // fmt::print("INFO: manually excluded: {} {} {}:{}\n", sequence_ref.name.substr(0, sequence_ref.name.find("_|_")), msg, filename, file_input.name_line_no);
                 }
             }
         }
