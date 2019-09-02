@@ -200,7 +200,8 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
 
         subtypes.count(entry.sequence.type_subtype());
         isolation_dates.count(entry.sequence.date_simulated().substr(0, 7)); // year-month
-        submission_dates.count(entry.sequence.gisaid_last_modified().front().substr(0, 7)); // year-month
+        if (!entry.sequence.gisaid_last_modified().empty())
+            submission_dates.count(entry.sequence.gisaid_last_modified().front().substr(0, 7)); // year-month
         // if (entry.sequence.type_subtype().empty())
         //     fmt::print(stderr, "{}:{}: No subtype for {}\n", entry.fasta.filename, entry.fasta.line_no, *entry.sequence.name);
         if (auto [iter, inserted] = subtypes_sequence_length.emplace(entry.sequence.type_subtype(), std::map<size_t, size_t>{}).first->second.emplace(entry.sequence.nuc().size(), 1UL); !inserted)
