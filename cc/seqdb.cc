@@ -145,16 +145,16 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name(const std::ve
 void acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name, subset& subs) const
 {
     const auto find_name = [&subs, this](std::string_view look_for) {
-        fmt::print(stderr, "DEBUG: select_by_name \"{}\"\n", look_for);
+        // fmt::print(stderr, "DEBUG: select_by_name \"{}\"\n", look_for);
         if (const auto found = std::lower_bound(std::begin(entries_), std::end(entries_), look_for, [](const auto& entry, std::string_view nam) { return entry.name < nam; });
             found != std::end(entries_) && found->name == look_for) {
             for (size_t seq_no = 0; seq_no < found->seqs.size(); ++seq_no)
                 subs.refs_.emplace_back(&*found, seq_no);
         }
-        else if (found != std::end(entries_))
-            fmt::print(stderr, "DEBUG: not found \"{}\"\n", found->name);
-        else
-            fmt::print(stderr, "DEBUG: not found\n", found->name);
+        // else if (found != std::end(entries_))
+        //     fmt::print(stderr, "DEBUG: not found \"{}\"\n", found->name);
+        // else
+        //     fmt::print(stderr, "DEBUG: not found\n", found->name);
     };
 
     const auto subs_initial_size = subs.size();
