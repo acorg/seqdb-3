@@ -126,14 +126,14 @@ namespace local
 
         fmt::format_to(rows, "<tr><td class='fasta-aa-name'>{}</td>", master.seq_id());
         for (auto pos : positions)
-            fmt::format_to(rows, "<td class='aa' title='{pos} {aa} {seq_id}' a{aa}>{aa}</td>", fmt::arg("aa", master_seq[pos]), fmt::arg("pos", pos), fmt::arg("seq_id", master.seq_id()));
+            fmt::format_to(rows, "<td class='aa' title='{pos} {aa} {seq_id}' a{aa}>{aa}</td>", fmt::arg("aa", master_seq[pos]), fmt::arg("pos", pos + 1), fmt::arg("seq_id", master.seq_id()));
         fmt::format_to(rows, "</tr>\n");
 
         const auto make_row = [&](const auto& ref) {
             fmt::format_to(rows, "<tr><td class='fasta-aa-name'>{}</td>", ref.seq_id());
             const auto seq = aligned(ref);
             for (auto pos : positions)
-                fmt::format_to(rows, "<td class='aa' title='{} {} {}' a{}>{}</td>", pos, seq[pos], ref.seq_id(), seq[pos], seq_aa(master_seq[pos], seq, pos));
+                fmt::format_to(rows, "<td class='aa' title='{} {} {}' a{}>{}</td>", pos + 1, seq[pos], ref.seq_id(), seq[pos], seq_aa(master_seq[pos], seq, pos));
             fmt::format_to(rows, "</tr>\n");
         };
 
