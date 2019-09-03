@@ -132,23 +132,23 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                 {
                     to_json::object gisaid_data;
                     if (!seq.isolate_id().empty())
-                        gisaid_data << to_json::key_val("i", to_json::array(seq.isolate_id().begin(), seq.isolate_id().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("i", to_json::array(seq.isolate_id().begin(), seq.isolate_id().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.submitters().empty())
-                        gisaid_data << to_json::key_val("S", to_json::array(seq.submitters().begin(), seq.submitters().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("S", to_json::array(seq.submitters().begin(), seq.submitters().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.sample_id_by_sample_provider().empty())
-                        gisaid_data << to_json::key_val("s", to_json::array(seq.sample_id_by_sample_provider().begin(), seq.sample_id_by_sample_provider().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("s", to_json::array(seq.sample_id_by_sample_provider().begin(), seq.sample_id_by_sample_provider().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.gisaid_last_modified().empty())
-                        gisaid_data << to_json::key_val("m", to_json::array(seq.gisaid_last_modified().begin(), seq.gisaid_last_modified().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("m", to_json::array(seq.gisaid_last_modified().begin(), seq.gisaid_last_modified().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.originating_lab().empty())
-                        gisaid_data << to_json::key_val("o", to_json::array(seq.originating_lab().begin(), seq.originating_lab().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("o", to_json::array(seq.originating_lab().begin(), seq.originating_lab().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.gisaid_segment_number().empty())
-                        gisaid_data << to_json::key_val("n", to_json::array(seq.gisaid_segment_number().begin(), seq.gisaid_segment_number().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("n", to_json::array(seq.gisaid_segment_number().begin(), seq.gisaid_segment_number().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.gisaid_identifier().empty())
-                        gisaid_data << to_json::key_val("t", to_json::array(seq.gisaid_identifier().begin(), seq.gisaid_identifier().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("t", to_json::array(seq.gisaid_identifier().begin(), seq.gisaid_identifier().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.gisaid_dna_accession_no().empty())
-                        gisaid_data << to_json::key_val("D", to_json::array(seq.gisaid_dna_accession_no().begin(), seq.gisaid_dna_accession_no().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("D", to_json::array(seq.gisaid_dna_accession_no().begin(), seq.gisaid_dna_accession_no().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!seq.gisaid_dna_insdc().empty())
-                        gisaid_data << to_json::key_val("d", to_json::array(seq.gisaid_dna_insdc().begin(), seq.gisaid_dna_insdc().end(), to_json::json::compact_output::yes));
+                        gisaid_data << to_json::key_val("d", to_json::array(seq.gisaid_dna_insdc().begin(), seq.gisaid_dna_insdc().end(), to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     if (!gisaid_data.empty())
                         entry_seq << to_json::key_val("G", std::move(gisaid_data));
                 }
