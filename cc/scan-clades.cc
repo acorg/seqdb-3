@@ -133,7 +133,7 @@ namespace local::B
         // };
 
         auto& deletions = sequence.deletions();
-        constexpr size_t b_vic_del_mutants_pos0 = 163 - 1; // Must be 163-1 according to David Burke
+        constexpr size_t b_vic_del_mutants_pos0 = 162 - 1; // Must be 162-1 according to Sarah and CDC
 
         //---------- VICTORIA ----------
 
