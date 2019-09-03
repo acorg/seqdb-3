@@ -230,10 +230,6 @@ void acmacs::seqdb::v3::parse(std::string_view source, std::vector<SeqdbEntry>& 
 } // acmacs::seqdb::v3::parse
 
 // ----------------------------------------------------------------------
-
-
-
-// ----------------------------------------------------------------------
 /// Local Variables:
 /// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
 /// End:
