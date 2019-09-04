@@ -123,7 +123,7 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                     to_json::object lab_ids;
                     for (const auto& [lab, ids] : seq.lab_ids()) {
                         lab_ids << to_json::key_val(lab, to_json::array(
-                                                             std::begin(ids), std::end(ids), [](const auto& lab_id) { return *lab_id; }, to_json::json::compact_output::yes));
+                                                             std::begin(ids), std::end(ids), [](const auto& lab_id) { return *lab_id; }, to_json::json::compact_output::yes, to_json::json::escape_double_quotes::yes));
                     }
                     entry_seq << to_json::key_val("l", std::move(lab_ids));
                 }
