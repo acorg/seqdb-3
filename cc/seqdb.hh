@@ -124,6 +124,18 @@ namespace acmacs::seqdb
 
         // ----------------------------------------------------------------------
 
+        struct aa_at_pos1_t
+        {
+            size_t pos1;
+            char aa;
+        };
+
+        using list_aa_at_pos1_t = std::vector<aa_at_pos1_t>;
+
+        list_aa_at_pos1_t parse_list_aa_at_pos1(std::string_view source); // space or comma separated list, e.g. "183P 141E"
+
+        // ----------------------------------------------------------------------
+
         struct SeqdbSeq
         {
             using lab_ids_t = std::vector<std::string_view>;
@@ -146,6 +158,7 @@ namespace acmacs::seqdb
             }
             bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
             bool has_reassortant(std::string_view reassortant) const { return std::find(std::begin(reassortants), std::end(reassortants), reassortant) != std::end(reassortants); }
+            bool match(const list_aa_at_pos1_t& aa_at_pos1) const;
 
             size_t aa_nuc_shift(std::string_view shift_s) const
             {
@@ -229,6 +242,7 @@ namespace acmacs::seqdb
             bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
             bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
             bool has_hi_names() const { return !seq().hi_names.empty(); }
+            bool match(const list_aa_at_pos1_t& aa_at_pos1) const { return seq().match(aa_at_pos1); }
         };
 
         class subset

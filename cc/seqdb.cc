@@ -10,6 +10,7 @@
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/acmacsd.hh"
+#include "acmacs-base/string-split.hh"
 #include "acmacs-base/in-json-parser.hh"
 #include "acmacs-base/to-json.hh"
 #include "acmacs-virus/virus-name.hh"
@@ -1128,6 +1129,35 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(std::string_view nam
     return *this;
 
 } // acmacs::seqdb::v3::subset::print
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::list_aa_at_pos1_t acmacs::seqdb::v3::parse_list_aa_at_pos1(std::string_view source)
+{
+    // space or comma separated list, e.g. "183P 141E"
+    const auto split = [](std::string_view src) {
+        if (src.find(",") != std::string_view::npos)
+            return string::split(src, ",", string::Split::RemoveEmpty);
+        else
+            return string::split(src, " ", string::Split::RemoveEmpty);
+    };
+
+    const auto fields = split(source);
+    list_aa_at_pos1_t result(fields.size());
+    std::transform(std::begin(fields), std::end(fields), std::begin(result), [](std::string_view field) {
+        return aa_at_pos1_t{::string::from_chars<size_t>(field.substr(0, field.size() - 1)), field.back()};
+    });
+    return result;
+
+} // acmacs::seqdb::v3::parse_list_aa_at_pos1
+
+// ----------------------------------------------------------------------
+
+bool acmacs::seqdb::v3::SeqdbSeq::match(const list_aa_at_pos1_t& aa_at_pos1) const
+{
+    return std::all_of(std::begin(aa_at_pos1), std::end(aa_at_pos1), [this](const auto& en) { return this->aa_at_pos1(en.pos1) == en.aa; });
+
+} // acmacs::seqdb::v3::SeqdbSeq::match
 
 // ----------------------------------------------------------------------
 /// Local Variables:
