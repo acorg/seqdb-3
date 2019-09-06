@@ -935,7 +935,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
 {
     if (do_filter) {
         refs_.erase(std::remove_if(std::next(std::begin(refs_)), std::end(refs_),
-                                   [threshold, base_seq = refs_.front().seq().aa_aligned()](const auto& en) { return hamming_distance(en.seq().aa_aligned(), base_seq) >= threshold; }),
+                                   [threshold, base_seq = refs_.front().seq().aa_aligned()](auto& en) {
+                                       en.hamming_distance = hamming_distance(en.seq().aa_aligned(), base_seq);
+                                       return en.hamming_distance >= threshold;
+                                   }),
                     std::end(refs_));
     }
     return *this;
@@ -1038,7 +1041,7 @@ std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, c
                        fmt::arg("country", entry.entry->country),
                        fmt::arg("continent", entry.entry->continent),
                        fmt::arg("group_no", entry.group_no ? fmt::format("group:{}", entry.group_no) : std::string{}),
-                       fmt::arg("hamming_distance", fmt::format("hamdist:{}", entry.hamming_distance))
+                       fmt::arg("hamming_distance", entry.hamming_distance)
                        );
 
 } // acmacs::seqdb::v3::subset::make_name

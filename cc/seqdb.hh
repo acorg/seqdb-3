@@ -215,7 +215,7 @@ namespace acmacs::seqdb
             size_t seq_index;
             bool to_be_removed{false};  // for subsetting at random
             size_t group_no{0};         // for group_by_hamming_distance
-            size_t hamming_distance{0}; // for group_by_hamming_distance
+            size_t hamming_distance{0}; // for group_by_hamming_distance and nuc_hamming_distance_to_base, printed using {hamming_distance}
 
             ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
             ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
