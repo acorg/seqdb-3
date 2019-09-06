@@ -252,6 +252,8 @@ namespace acmacs::seqdb
             using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
             enum class sorting { none, name_asc, name_desc, date_asc, date_desc };
 
+            subset() = default;
+
             auto empty() const { return refs_.empty(); }
             auto size() const { return refs_.size(); }
             auto begin() const { return refs_.begin(); }
@@ -297,7 +299,6 @@ namespace acmacs::seqdb
           private:
             refs_t refs_;
 
-            subset() = default;
             subset(size_t size) : refs_(size) {}
 
             void sort_by_name_asc()
