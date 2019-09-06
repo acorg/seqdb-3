@@ -19,20 +19,24 @@ namespace local
 
     // ----------------------------------------------------------------------
 
-    template <typename R1, typename R2> inline std::vector<size_t> positions_with_differences(std::string_view master_sequence, R1&& r1, R2&& r2)
+    template <typename Same, typename Range, typename... Ranges> inline bool not_all_same(Same same_f, Range&& rng, Ranges&&... rngs)
+    {
+        if (!ranges::all_of(rng, same_f))
+            return true;
+        if constexpr (sizeof...(rngs) > 0)
+            return not_all_same(same_f, std::forward<Ranges>(rngs)...);
+        return false;
+    }
+
+    template <typename ... Ranges> inline std::vector<size_t> positions_with_differences(std::string_view master_sequence, Ranges&& ... rngs)
     {
         std::vector<size_t> result;
         for (size_t pos = 0; pos < master_sequence.size(); ++pos) {
             const auto aa_same = [aa = master_sequence[pos], pos](std::string_view seq) { return seq.size() <= pos || seq[pos] == aa; };
-            if (!ranges::all_of(r1, aa_same) || !ranges::all_of(r2, aa_same))
+            if (not_all_same(aa_same, std::forward<Ranges>(rngs)...))
                 result.push_back(pos);
         }
         return result;
-    }
-
-    template <typename R> inline std::vector<size_t> positions_with_differences(std::string_view master_sequence, R&& r1)
-    {
-        return positions_with_differences(master_sequence, std::forward<R>(r1), ranges::views::empty<R>());
     }
 
     // ----------------------------------------------------------------------
