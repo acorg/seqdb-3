@@ -84,7 +84,7 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
                            static_cast<std::string>(found_hidb_antigens.front()->lineage()));
         }
         for (const auto& en: found_hidb_antigens)
-            first->sequence.add_date(en->date());
+            first->sequence.add_date(*en->date());
 
         const auto matching = make_matching(first, last, found_hidb_antigens); // for each seq list of matching [[score, min passage len], found_no] - sorted by score desc
         matched = match_greedy(first, found_hidb_antigens, matching);
@@ -148,7 +148,7 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Match
         if (const size_t subtype_size = name.find('/'); subtype_size > 1 && subtype_size <= 8)
             sequence.update_subtype(acmacs::virus::type_subtype_t{name.substr(0, subtype_size)});
         if (const auto& date = found[e.first]->date(); !date.empty())
-            first->sequence.add_date(date);
+            first->sequence.add_date(*date);
         matched = true;
     }
     return matched;
