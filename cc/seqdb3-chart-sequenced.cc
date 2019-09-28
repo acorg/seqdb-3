@@ -49,7 +49,7 @@ int main(int argc, char* const argv[])
             if (const auto subset = seqdb.select_by_name(antigen->name()).aa_at_pos(aa_at_pos); !subset.empty()) {
                 ++matched_by_name;
                 std::string matching_sera;
-                if (const auto serum_indexes = sera->find_by_name(antigen->name()); !serum_indexes.empty())
+                if (const auto serum_indexes = sera->find_by_name(antigen->name()); !serum_indexes->empty())
                     matching_sera = fmt::format("    SR:{}", serum_indexes);
                 fmt::print("{} {}{}\n", ag_no, antigen->full_name(), matching_sera);
                 bool this_reassortant_match = false;
