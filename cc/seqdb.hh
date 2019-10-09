@@ -223,6 +223,7 @@ namespace acmacs::seqdb
             constexpr bool operator==(const ref& rhs) const { return entry == rhs.entry && seq_index == rhs.seq_index; }
             constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
             constexpr explicit operator bool() const { return entry != nullptr; }
+            constexpr bool empty() const { return entry == nullptr; }
 
             const auto& seq() const { return entry->seqs[seq_index]; }
             std::string seq_id() const;
