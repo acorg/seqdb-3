@@ -129,7 +129,7 @@ namespace local
 
         std::unique_ptr<in_json::stack_entry> injson_put_object() override
         {
-            return std::make_unique<seq>(target_.seqs.emplace_back()); // objects are unly under "s"
+            return std::make_unique<seq>(target_.seqs.emplace_back()); // objects are only under "s"
         }
 
         void injson_put_array() override
