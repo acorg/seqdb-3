@@ -13,7 +13,7 @@ TARGETS = \
 
 SEQDB_SOURCES = \
   scan-fasta.cc scan-sequence.cc scan-align.cc scan-deletions.cc scan-clades.cc scan-match-hidb.cc create.cc \
-  seqdb.cc seqdb-parse.cc compare.cc
+  seqdb.cc seqdb-parse.cc compare.cc aa-at-pos.cc
 
 SEQDB_LIB_MAJOR = 3
 SEQDB_LIB_MINOR = 0
