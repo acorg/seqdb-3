@@ -17,7 +17,7 @@ namespace acmacs::seqdb::inline v3
 
     amino_acid_at_pos1_list_t extract_aa_at_pos1(const rjson::value& source);
 
-    constexpr inline bool matches(sequence_aligned_ref_t seq, const amino_acid_at_pos1_list_t& aa_at_pos1)
+    inline bool matches(sequence_aligned_ref_t seq, const amino_acid_at_pos1_list_t& aa_at_pos1) // all_of is not constexpr until c++20 (g++9.1)
     {
         return std::all_of(std::begin(aa_at_pos1), std::end(aa_at_pos1),
                            [seq](const amino_acid_at_pos1_t& pos1_aa) { return (at_pos(seq, std::get<pos1_t>(pos1_aa)) == std::get<char>(pos1_aa)) == std::get<bool>(pos1_aa); });
