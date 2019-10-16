@@ -1,37 +1,33 @@
 #pragma once
 
-namespace acmacs::seqdb
+#include "seqdb-3/sequence.hh"
+
+namespace acmacs::seqdb::inline v3
 {
-    inline namespace v3
+    inline size_t hamming_distance(std::string_view s1, std::string_view s2)
     {
-        template <typename S1, typename S2> inline size_t hamming_distance(S1&& s1, S2&& s2)
-        {
-            auto f1 = std::begin(s1);
-            auto f2 = std::begin(s2);
-            size_t dist = 0;
-            for (; f1 != std::end(s1) && f2 != std::end(s2); ++f1, ++f2) {
-                if (*f1 != *f2)
-                    ++dist;
-            }
-            dist += static_cast<size_t>(std::end(s1) - f1) + static_cast<size_t>(std::end(s2) - f2);
-            return dist;
+        auto f1 = std::begin(s1);
+        auto f2 = std::begin(s2);
+        size_t dist = 0;
+        for (; f1 != std::end(s1) && f2 != std::end(s2); ++f1, ++f2) {
+            if (*f1 != *f2)
+                ++dist;
         }
+        dist += static_cast<size_t>(std::end(s1) - f1) + static_cast<size_t>(std::end(s2) - f2);
+        return dist;
+    }
 
-        template <typename S1, typename S2, typename C> inline size_t hamming_distance_not_considering(S1&& s1, S2&& s2, C not_consider)
-        {
-            auto f1 = std::begin(s1);
-            auto f2 = std::begin(s2);
-            size_t dist = 0;
-            for (; f1 != std::end(s1) && f2 != std::end(s2); ++f1, ++f2) {
-                if (*f1 != *f2 && *f1 != not_consider && *f2 != not_consider)
-                    ++dist;
-            }
-            dist += static_cast<size_t>(std::end(s1) - f1) + static_cast<size_t>(std::end(s2) - f2);
-            return dist;
-        }
+    inline size_t hamming_distance(sequence_aligned_ref_t s1, sequence_aligned_ref_t s2)
+    {
+        return hamming_distance(*s1, *s2);
+    }
 
-    } // namespace v3
-} // namespace acmacs::seqdb
+    inline size_t hamming_distance(sequence_with_alignment_ref_t s1, sequence_with_alignment_ref_t s2)
+    {
+        return hamming_distance(s1.aligned(), s2.aligned());
+    }
+
+} // namespace acmacs::seqdb::inlinev3
 
 // ----------------------------------------------------------------------
 /// Local Variables:

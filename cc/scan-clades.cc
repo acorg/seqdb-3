@@ -63,18 +63,18 @@ namespace local::B
 {
     using deletions_insertions_t = acmacs::seqdb::v3::scan::deletions_insertions_t;
 
-    inline bool no_deletions_after_before(const deletions_insertions_t& deletions, size_t on_or_after_pos1, size_t on_or_before_pos1)
+    inline bool no_deletions_after_before(const deletions_insertions_t& deletions, acmacs::seqdb::pos1_t on_or_after_pos, acmacs::seqdb::pos1_t on_or_before_pos)
     {
         for (const auto& del : deletions.deletions) {
-            if (del.pos >= (on_or_after_pos1 - 1) && del.pos <= (on_or_before_pos1 - 1))
+            if (del.pos >= on_or_after_pos && del.pos <= on_or_before_pos)
                 return false;
         }
         return true;
     }
 
-    inline bool N_deletions_at(const deletions_insertions_t& deletions, size_t num_deletions, size_t pos1)
+    inline bool N_deletions_at(const deletions_insertions_t& deletions, size_t num_deletions, acmacs::seqdb::pos1_t pos)
     {
-        return deletions.deletions.front().pos == (pos1 - 1) && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
+        return deletions.deletions.front().pos == pos && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
     }
 
     // ----------------------------------------------------------------------
@@ -82,10 +82,10 @@ namespace local::B
     inline bool is_yamagata_shifted(acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
         const auto& deletions = sequence.deletions().deletions;
-        return ((deletions.size() == 1 && deletions.front().pos == 158 && deletions.front().num == 1 && sequence.aa_aligned_substr(155, 6) == "MAWVIP") ||
-                (deletions.size() == 1 && deletions.front().pos == 161 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 2) == "VP") ||
-                (deletions.size() == 1 && deletions.front().pos == 160 && deletions.front().num == 1 && sequence.aa_aligned_substr(157, 3) == "WAV") ||
-                (deletions.size() == 1 && deletions.front().pos == 163 && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 3) == "VPK")) &&
+        return ((deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{158} && deletions.front().num == 1 && sequence.aa_aligned_substr(155, 6) == "MAWVIP") ||
+                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{161} && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 2) == "VP") ||
+                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{160} && deletions.front().num == 1 && sequence.aa_aligned_substr(157, 3) == "WAV") ||
+                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{163} && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 3) == "VPK")) &&
                sequence.deletions().insertions.empty();
     }
 
@@ -133,46 +133,46 @@ namespace local::B
         // };
 
         auto& deletions = sequence.deletions();
-        constexpr size_t b_vic_del_mutants_pos0 = 162 - 1; // Must be 162-1 according to Sarah and CDC
+        constexpr acmacs::seqdb::pos1_t b_vic_del_mutants_pos{162}; // Must be 162 according to Sarah and CDC
 
         //---------- VICTORIA ----------
 
-        if (no_deletions_after_before(deletions, 1, 500)) { // may have deletions after 500
+        if (no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{1}, acmacs::seqdb::pos1_t{500})) { // may have deletions after 500
             // VICTORIA
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("no");
         }
-        else if (N_deletions_at(deletions, 2, 162) || N_deletions_at(deletions, 2, 163)) {
+        else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{162}) || N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{163})) {
             // VICTORIA (double) del 2017
             // according to David Burke 2019-07-16 14:27, also see https://jvi.asm.org/content/jvi/73/9/7343.full.pdf
             // B/GUATEMALA/581/2017      VPN--KNKTAT
             // B/COLORADO/6/2017_MDCK1   VPD--KNKTAT
-            deletions.deletions.front().pos = b_vic_del_mutants_pos0;
+            deletions.deletions.front().pos = b_vic_del_mutants_pos;
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria del2017");
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"DEL2017"});
         }
-        else if (N_deletions_at(deletions, 3, 162) || N_deletions_at(deletions, 3, 163) || N_deletions_at(deletions, 3, 164)) {
+        else if (N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{162}) || N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{163}) || N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{164})) {
             // VICTORIA triple del 2017
             // according to David Burke 2019-07-16 14:27
             // VPK---NKTAT
-            deletions.deletions.front().pos = b_vic_del_mutants_pos0;
+            deletions.deletions.front().pos = b_vic_del_mutants_pos;
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria tripledel2017");
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TRIPLEDEL2017"});
         }
-        else if (N_deletions_at(deletions, 6, 164)) {
+        else if (N_deletions_at(deletions, 6, acmacs::seqdb::pos1_t{164})) {
             // VICTORIA sixdel2019 (only from Japan as of 2019-07-19)
             // David Burke 2019-07-19 15:40: These look really
             // unusual. Based on the geometry of the loop, I would
             // tend to align the N with C-terminal side: B/KANAGAWA/AC1867/2019 VPK------NTNP
-            deletions.deletions.front().pos = b_vic_del_mutants_pos0;
+            deletions.deletions.front().pos = b_vic_del_mutants_pos;
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"VICTORIA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
@@ -183,7 +183,7 @@ namespace local::B
 
             //---------- YAMAGATA ----------
 
-        else if (N_deletions_at(deletions, 1, 163) && no_deletions_after_before(deletions, 164, 500)) {
+        else if (N_deletions_at(deletions, 1, acmacs::seqdb::pos1_t{163}) && no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{164}, acmacs::seqdb::pos1_t{500})) {
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
@@ -194,24 +194,24 @@ namespace local::B
                 sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
                 warn("yamagata-shifted");
-            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{162, 1}};
+            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{acmacs::seqdb::pos1_t{162}, 1}};
         }
-        else if (N_deletions_at(deletions, 2, 163) && sequence.year() <= 2013) {
+        else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{163}) && sequence.year() <= 2013) {
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
                 warn("yamagata");
         }
-        else if (N_deletions_at(deletions, 2, 169)) {
+        else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{169})) {
             // 12 sequences from TAIWAN 2010 have deletions 169:2
             sequence.lineage(acmacs::virus::lineage_t{});
             sequence.add_clade(acmacs::seqdb::v3::clade_t{"TAIWAN2010"});
         }
-        else if (N_deletions_at(deletions, 1, 160) && no_deletions_after_before(deletions, 161, 500) && sequence.aa_at_pos1(161) == 'E' && sequence.aa_at_pos1(163) == 'K') {
+        else if (N_deletions_at(deletions, 1, acmacs::seqdb::pos1_t{160}) && no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{161}, acmacs::seqdb::pos1_t{500}) && sequence.aa_at_pos(acmacs::seqdb::pos1_t{161}) == 'E' && sequence.aa_at_pos(acmacs::seqdb::pos1_t{163}) == 'K') {
             // deletion detection was invalid, most probably due to 162X. B/ALICANTE/19_0649/20171219
-            // fmt::print(stderr, "DEBUG: {} 160{} 161{} 162{} 163{}\n", acmacs::seqdb::scan::format(deletions), sequence.aa_at_pos1(160), sequence.aa_at_pos1(161), sequence.aa_at_pos1(162), sequence.aa_at_pos1(163));
+            // fmt::print(stderr, "DEBUG: {} 160{} 161{} 162{} 163{}\n", acmacs::seqdb::scan::format(deletions), sequence.aa_at_pos(acmacs::seqdb::pos1_t{160}), sequence.aa_at_pos(acmacs::seqdb::pos1_t{161}), sequence.aa_at_pos(acmacs::seqdb::pos1_t{162}), sequence.aa_at_pos(acmacs::seqdb::pos1_t{163}));
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
-            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{162, 1}};
+            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{acmacs::seqdb::pos1_t{162}, 1}};
         }
         else if (is_semi_ignored(sequence)) {
             fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
@@ -220,7 +220,7 @@ namespace local::B
             // do not issue warning
         }
         else {
-            fmt::print(stderr, "DEBUG: 1-at-163:{} no-between-164-500:{}\n", N_deletions_at(deletions, 1, 163), no_deletions_after_before(deletions, 164, 500));
+            fmt::print(stderr, "DEBUG: 1-at-163:{} no-between-164-500:{}\n", N_deletions_at(deletions, 1, acmacs::seqdb::pos1_t{163}), no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{164}, acmacs::seqdb::pos1_t{500}));
             warn("unknown", "ERROR");
         }
 
@@ -237,9 +237,9 @@ namespace local::B
     {
         if (sequence.lineage() == acmacs::virus::lineage_t{"VICTORIA"}) {
             // 2018-09-03, Sarah: clades should (technically) be defined by a phylogenetic tree rather than a set of amino acids
-            if (sequence.aa_at_pos1(75) == 'K' && sequence.aa_at_pos1(172) == 'P' && sequence.aa_at_pos1(58) != 'P')
+            if (sequence.aa_at_pos(acmacs::seqdb::pos1_t{75}) == 'K' && sequence.aa_at_pos(acmacs::seqdb::pos1_t{172}) == 'P' && sequence.aa_at_pos(acmacs::seqdb::pos1_t{58}) != 'P')
                 sequence.add_clade(acmacs::seqdb::v3::clade_t{"V1A"});
-            else if (sequence.aa_at_pos1(58) == 'P')
+            else if (sequence.aa_at_pos(acmacs::seqdb::pos1_t{58}) == 'P')
                 sequence.add_clade(acmacs::seqdb::v3::clade_t{"V1B"});
             else
                 sequence.add_clade(acmacs::seqdb::v3::clade_t{"V1"});
@@ -247,7 +247,7 @@ namespace local::B
         else if (sequence.lineage() == acmacs::virus::lineage_t{"YAMAGATA"}) {
             // 165N -> Y2, 165Y -> Y3 (yamagata numeration, 163 is not -)
             // 166N -> Y2, 166Y -> Y3 (victoria numeration, 163 is -)
-            switch (sequence.aa_at_pos1(166)) {
+            switch (sequence.aa_at_pos(acmacs::seqdb::pos1_t{166})) {
                 case 'N':
                     sequence.add_clade(acmacs::seqdb::v3::clade_t{"Y2"});
                     break;
@@ -288,11 +288,11 @@ namespace local::H1
             const auto& del1 = deletions.deletions[0];
             if (sequence.type_subtype() == acmacs::virus::type_subtype_t{"A(H1N2)"} || !host.empty() || year < 2010)
                 sequence.add_clade(acmacs::seqdb::clade_t{"*DEL"});
-            else if (del1.pos == 126 && del1.num == 1 && (year < 2018 || fasta_ref.find("seasonal") != std::string_view::npos))
+            else if (del1.pos == acmacs::seqdb::pos1_t{127} && del1.num == 1 && (year < 2018 || fasta_ref.find("seasonal") != std::string_view::npos))
                 sequence.add_clade(acmacs::seqdb::clade_t{"*DEL-127:1"});
-            else if (del1.pos == 159 && del1.num == 4 && sequence.name() == acmacs::virus::virus_name_t{"A(H1N1)/NEWPORT/323/2019"})
+            else if (del1.pos == acmacs::seqdb::pos1_t{160} && del1.num == 4 && sequence.name() == acmacs::virus::virus_name_t{"A(H1N1)/NEWPORT/323/2019"})
                 fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
-            else if (del1.pos > 400)
+            else if (del1.pos > acmacs::seqdb::pos1_t{400})
                 ; // ignore
             else
                 warn();
@@ -326,13 +326,13 @@ namespace local::H1
 
     void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
-        if (sequence.aa_at_pos1(163) == 'Q') {
+        if (sequence.aa_at_pos(acmacs::seqdb::pos1_t{163}) == 'Q') {
             sequence.add_clade(acmacs::seqdb::clade_t{"6B"});
-            if (sequence.aa_at_pos1(162) == 'N')
+            if (sequence.aa_at_pos(acmacs::seqdb::pos1_t{162}) == 'N')
                 sequence.add_clade(acmacs::seqdb::clade_t{"6B1"});
-            if (sequence.aa_at_pos1(74) == 'R' && sequence.aa_at_pos1(164) == 'T' && sequence.aa_at_pos1(295) == 'V')
+            if (sequence.aa_at_pos(acmacs::seqdb::pos1_t{74}) == 'R' && sequence.aa_at_pos(acmacs::seqdb::pos1_t{164}) == 'T' && sequence.aa_at_pos(acmacs::seqdb::pos1_t{295}) == 'V')
                 sequence.add_clade(acmacs::seqdb::clade_t{"6B1.A"});
-            if (sequence.aa_at_pos1(152) == 'T')
+            if (sequence.aa_at_pos(acmacs::seqdb::pos1_t{152}) == 'T')
                 sequence.add_clade(acmacs::seqdb::clade_t{"6B2"});
         }
 
@@ -372,11 +372,13 @@ namespace local::H3
 
     // ----------------------------------------------------------------------
 
+    using p1 = acmacs::seqdb::pos1_t;
+
     struct clade_desc_t
     {
         struct pos1_aa_t
         {
-            size_t pos1;
+            p1 pos1;
             char aa;
         };
 
@@ -391,33 +393,33 @@ namespace local::H3
 #endif
 
     static const std::array sClades{
-        clade_desc_t{acmacs::seqdb::clade_t{"3C.3"}, {{158, 'N'}, {159, 'F'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{138, 'S'}, {159, 'S'}, {225, 'D'}}}, // R326K causes split in the tree for 2019-0814-tc1, removed on 2019-08-21 {326, 'R'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"3B"},   {{ 62, 'K'}, { 83, 'R'}, {261, 'Q'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A"},   {{158, 'N'}, {159, 'Y'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1"},  {{158, 'N'}, {159, 'Y'}, {171, 'K'}, {406, 'V'}, {484, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1A"}, {{121, 'K'}, {135, 'K'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {406, 'V'}, {479, 'E'}, {484, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1B"}, {{ 92, 'R'}, {121, 'K'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {311, 'Q'}, {406, 'V'}, {484, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1B-135K"},              {{ 92, 'R'}, {121, 'K'}, {135, 'K'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {311, 'Q'}, {406, 'V'}, {484, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1B-135K-137F-193S"},    {{ 92, 'R'}, {121, 'K'}, {135, 'K'}, {137, 'F'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {193, 'S'}, {311, 'Q'}, {406, 'V'}, {484, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A1B-131K"},              {{ 92, 'R'}, {121, 'K'}, {131, 'K'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {311, 'Q'}, {406, 'V'}, {484, 'E'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A2"},  {{131, 'K'}, {142, 'K'}, {158, 'N'}, {159, 'Y'}, {261, 'Q'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A3"},  {{121, 'K'}, {135, 'K'}, {144, 'K'}, {150, 'K'}, {158, 'N'}, {159, 'Y'}, {261, 'Q'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"2A4"},  {{ 31, 'S'}, { 53, 'N'}, {142, 'G'}, {144, 'R'}, {158, 'N'}, {159, 'Y'}, {171, 'K'}, {192, 'T'}, {197, 'H'}}},
-        clade_desc_t{acmacs::seqdb::clade_t{"159S"}, {{159, 'S'}}}, // explicit Derek's request on 2019-04-18
-        clade_desc_t{acmacs::seqdb::clade_t{"159F"}, {{159, 'F'}}}, // explicit Derek's request on 2019-04-18
-        clade_desc_t{acmacs::seqdb::clade_t{"159Y"}, {{159, 'Y'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"3C.3"}, {{p1{158}, 'N'}, {p1{159}, 'F'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3A"},   {{p1{138}, 'S'}, {p1{159}, 'S'}, {p1{225}, 'D'}}}, // R326K causes split in the tree for 2019-0814-tc1, removed on 2019-08-21 {p1{326}, 'R'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"3B"},   {{ p1{62}, 'K'}, { p1{83}, 'R'}, {p1{261}, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A"},   {{p1{158}, 'N'}, {p1{159}, 'Y'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1"},  {{p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{406}, 'V'}, {p1{484}, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1A"}, {{p1{121}, 'K'}, {p1{135}, 'K'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{406}, 'V'}, {p1{479}, 'E'}, {p1{484}, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1B"}, {{ p1{92}, 'R'}, {p1{121}, 'K'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{311}, 'Q'}, {p1{406}, 'V'}, {p1{484}, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1B-135K"},              {{ p1{92}, 'R'}, {p1{121}, 'K'}, {p1{135}, 'K'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{311}, 'Q'}, {p1{406}, 'V'}, {p1{484}, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1B-135K-137F-193S"},    {{ p1{92}, 'R'}, {p1{121}, 'K'}, {p1{135}, 'K'}, {p1{137}, 'F'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{193}, 'S'}, {p1{311}, 'Q'}, {p1{406}, 'V'}, {p1{484}, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A1B-131K"},              {{ p1{92}, 'R'}, {p1{121}, 'K'}, {p1{131}, 'K'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{311}, 'Q'}, {p1{406}, 'V'}, {p1{484}, 'E'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A2"},  {{p1{131}, 'K'}, {p1{142}, 'K'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{261}, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A3"},  {{p1{121}, 'K'}, {p1{135}, 'K'}, {p1{144}, 'K'}, {p1{150}, 'K'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{261}, 'Q'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"2A4"},  {{ p1{31}, 'S'}, { p1{53}, 'N'}, {p1{142}, 'G'}, {p1{144}, 'R'}, {p1{158}, 'N'}, {p1{159}, 'Y'}, {p1{171}, 'K'}, {p1{192}, 'T'}, {p1{197}, 'H'}}},
+        clade_desc_t{acmacs::seqdb::clade_t{"159S"}, {{p1{159}, 'S'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"159F"}, {{p1{159}, 'F'}}}, // explicit Derek's request on 2019-04-18
+        clade_desc_t{acmacs::seqdb::clade_t{"159Y"}, {{p1{159}, 'Y'}}}, // explicit Derek's request on 2019-04-18
     };
 
     // Removed because it makes no sense, GLY cannot be difined this way, search email for sequon
-        // clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'S'}}},
-        // clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{160, 'T'}}},
+        // clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{p1{160}, 'S'}}},
+        // clade_desc_t{acmacs::seqdb::clade_t{"GLY"},  {{p1{160}, 'T'}}},
 
 #pragma GCC diagnostic pop
 
     void clade(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view /*fasta_ref*/)
     {
-        const auto has_aa = [&](const auto& pos1_aa) -> bool { return sequence.aa_at_pos1(pos1_aa.pos1) == pos1_aa.aa; };
+        const auto has_aa = [&](const auto& pos1_aa) -> bool { return sequence.aa_at_pos(pos1_aa.pos1) == pos1_aa.aa; };
 
         for (const auto& clade_desc : sClades) {
             if (std::all_of(clade_desc.pos1_aa.begin(), clade_desc.pos1_aa.end(), has_aa))
@@ -427,9 +429,6 @@ namespace local::H3
     } // clade
 
 } // namespace local::H3
-
-// ----------------------------------------------------------------------
-
 
 // ----------------------------------------------------------------------
 /// Local Variables:

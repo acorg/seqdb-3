@@ -6,6 +6,7 @@
 #include "acmacs-base/date.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/types.hh"
+#include "seqdb-3/sequence.hh"
 
 // ----------------------------------------------------------------------
 
@@ -19,7 +20,7 @@ namespace acmacs::seqdb
             {
                 struct pos_num_t
                 {
-                    size_t pos;
+                    pos0_t pos;
                     size_t num;
                 };
 
@@ -28,7 +29,7 @@ namespace acmacs::seqdb
                 bool empty() const { return deletions.empty() && insertions.empty(); }
 
                 // returns {pos deleted, adjusted pos}
-                std::pair<bool, size_t> apply_deletions(size_t pos)
+                std::pair<bool, pos0_t> apply_deletions(pos0_t pos)
                 {
                     for (const auto& pos_num : deletions) {
                         if (pos_num.pos <= pos) {
@@ -131,19 +132,19 @@ namespace acmacs::seqdb
                 // pos is 0 based
                 // returns '-' if deleted
                 // returns '\0' if beyond the end of sequence or before the beginning
-                char aa_at_pos0(size_t pos)
+                char aa_at_pos(pos0_t pos)
                 {
                     const auto [deleted, pos_with_deletions] = deletions_.apply_deletions(pos);
                     if (deleted)
                         return '-';
-                    else if ((pos_with_deletions + *shift_aa_) > aa_.size())
+                    else if ((pos_with_deletions + *shift_aa_) > pos0_t{aa_.size()})
                         return 0;
                     else
-                        return aa_[pos_with_deletions + *shift_aa_];
+                        return aa_[*pos_with_deletions + *shift_aa_];
                 }
 
                 // pos is 1 based
-                char aa_at_pos1(size_t pos) { return aa_at_pos0(pos - 1); }
+                char aa_at_pos(acmacs::seqdb::pos1_t pos) { return aa_at_pos(pos0_t{*pos - 1}); }
 
                 size_t aa_number_of_X() const
                 {

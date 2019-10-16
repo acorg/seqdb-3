@@ -278,12 +278,12 @@ acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletio
             break; // tails are different, insertions/deletions do not help
         }
         if (tail_deletions.deletions) {
-            deletions.deletions.push_back({to_align_offset, tail_deletions.deletions});
+            deletions.deletions.push_back({pos0_t{to_align_offset}, tail_deletions.deletions});
             update_both(tail_deletions.deletions, tail_deletions.head.head, master_tail, to_align_tail, master_offset, to_align_offset);
         }
         else { // insertions or nothing (in some cases)
             if (tail_deletions.insertions)
-                deletions.insertions.push_back({master_offset, tail_deletions.insertions});
+                deletions.insertions.push_back({pos0_t{master_offset}, tail_deletions.insertions});
             update_both(tail_deletions.insertions, tail_deletions.head.head, to_align_tail, master_tail, to_align_offset, master_offset);
         }
         common += tail_deletions.head.common;

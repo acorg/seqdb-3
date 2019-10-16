@@ -76,11 +76,11 @@ namespace local
                 //     reset_key();
                 //     break;
                 case 'a':
-                    target_.amino_acids = data;
+                    std::get<std::string_view>(target_.amino_acids) = data;
                     reset_key();
                     break;
                 case 'n':
-                    target_.nucs = data;
+                    std::get<std::string_view>(target_.nucs) = data;
                     reset_key();
                     break;
                 case 'A':
@@ -100,11 +100,11 @@ namespace local
             // if (key_.size() == 1) {
             switch (key_[0]) {
                 case 's':
-                    target_.a_shift = data;
+                    std::get<acmacs::seqdb::alignment_t>(target_.amino_acids) = acmacs::seqdb::alignment_t{data};
                     reset_key();
                     break;
                 case 't':
-                    target_.n_shift = data;
+                    std::get<acmacs::seqdb::alignment_t>(target_.nucs) = acmacs::seqdb::alignment_t{data};
                     reset_key();
                     break;
                 default:

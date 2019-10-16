@@ -8,6 +8,7 @@
 #include "acmacs-base/string.hh"
 #include "acmacs-base/uppercase.hh"
 #include "acmacs-base/flat-map.hh"
+#include "seqdb-3/aa-at-pos.hh"
 
 // ----------------------------------------------------------------------
 
@@ -121,27 +122,13 @@ namespace acmacs::seqdb::inline v3
 
     // ----------------------------------------------------------------------
 
-    struct aa_at_pos1_t
-    {
-        size_t pos1;
-        char aa;
-    };
-
-    using list_aa_at_pos1_t = std::vector<aa_at_pos1_t>;
-
-    list_aa_at_pos1_t parse_list_aa_at_pos1(std::string_view source); // space or comma separated list, e.g. "183P 141E"
-
-    // ----------------------------------------------------------------------
-
     struct SeqdbSeq
     {
         using lab_ids_t = std::vector<std::string_view>;
         using labs_t = std::vector<std::pair<std::string_view, lab_ids_t>>;
 
-        std::string_view amino_acids;
-        std::string_view a_shift;
-        std::string_view nucs;
-        std::string_view n_shift;
+        sequence_with_alignment_ref_t amino_acids;
+        sequence_with_alignment_ref_t nucs;
         std::string_view annotations;
         std::vector<std::string_view> reassortants;
         std::vector<std::string_view> passages;
@@ -155,33 +142,17 @@ namespace acmacs::seqdb::inline v3
         }
         bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
         bool has_reassortant(std::string_view reassortant) const { return std::find(std::begin(reassortants), std::end(reassortants), reassortant) != std::end(reassortants); }
-        bool match(const list_aa_at_pos1_t& aa_at_pos1) const;
+        bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(amino_acids), aa_at_pos1_eq); }
+        bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(amino_acids), aa_at_pos1); }
 
-        size_t aa_nuc_shift(std::string_view shift_s) const
-        {
-            if (shift_s.empty())
-                return 0;
-            const auto shift = ::string::from_chars<int>(shift_s);
-            if (shift > 0)
-                throw std::runtime_error(fmt::format("unsupported shift {}, hi_names: {}", shift, hi_names));
-            return static_cast<size_t>(-shift);
-        }
+        constexpr sequence_aligned_ref_t aa_aligned(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(amino_acids, length); }
+        constexpr sequence_aligned_ref_t nuc_aligned(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(nucs, length); }
 
-        std::string_view aa_aligned(size_t length = std::string_view::npos) const { return amino_acids.substr(aa_nuc_shift(a_shift), length); }
-        std::string_view nuc_aligned(size_t length = std::string_view::npos) const { return nucs.substr(aa_nuc_shift(n_shift), length); }
-        size_t aa_aligned_length() const { return amino_acids.size() - aa_nuc_shift(a_shift); }
-        size_t nuc_aligned_length() const { return nucs.size() - aa_nuc_shift(n_shift); }
+        size_t aa_aligned_length() const { return acmacs::seqdb::aligned_length(amino_acids); }
+        size_t nuc_aligned_length() const { return acmacs::seqdb::aligned_length(nucs); }
 
-        char aa_at_pos0(size_t pos0) const
-        {
-            const auto aligned = aa_aligned();
-            if (pos0 < aligned.size())
-                return aligned[pos0];
-            else
-                return '?';
-        }
-
-        char aa_at_pos1(size_t pos1) const { return aa_at_pos0(pos1 - 1); }
+        constexpr char aa_at_pos(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
+        constexpr char aa_at_pos(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
 
         std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
@@ -240,14 +211,14 @@ namespace acmacs::seqdb::inline v3
         bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
         bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
         bool has_hi_names() const { return !seq().hi_names.empty(); }
-        bool match(const list_aa_at_pos1_t& aa_at_pos1) const { return seq().match(aa_at_pos1); }
+        bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
+        bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
     };
 
     class subset
     {
       public:
         using refs_t = std::vector<ref>;
-        using amino_acid_at_pos0_t = std::tuple<size_t, char, bool>; // pos (0-based), aa, equal/not-equal
         enum class sorting { none, name_asc, name_desc, date_asc, date_desc };
 
         subset() = default;
@@ -278,7 +249,7 @@ namespace acmacs::seqdb::inline v3
         subset& subset_by_hamming_distance_random(bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
         subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
         subset& with_hi_name(bool with_hi_name);
-        subset& aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0);
+        subset& aa_at_pos(const amino_acid_at_pos1_eq_list_t& aa_at_pos);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
         subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);

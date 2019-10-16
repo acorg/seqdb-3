@@ -316,7 +316,7 @@ acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for
     for (auto [ag_no, ref] : acmacs::enumerate(match(aAntigens))) {
         if (ref) {
             std::string aa(aPositions1.size(), 'X');
-            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [ref=ref](size_t pos) { return ref.seq().aa_at_pos1(pos); });
+            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [ref=ref](size_t pos) { return ref.seq().aa_at_pos(acmacs::seqdb::pos1_t{pos}); });
             aas_indexes[aa].push_back(ag_no);
         }
     }
@@ -379,8 +379,8 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1(const ac
     for (auto [ag_no, ref] : acmacs::enumerate(match(*chart.antigens(), chart.info()->virus_type()))) {
         if (ref) {
             const auto sequence = ref.seq().aa_aligned();
-            json_antigens << to_json::key_val{std::to_string(ag_no), sequence};
-            for (auto [pos, aa] : acmacs::enumerate(sequence, 1))
+            json_antigens << to_json::key_val{std::to_string(ag_no), *sequence};
+            for (auto [pos, aa] : acmacs::enumerate(*sequence, 1))
                 ++stat_per_pos[pos].aa_count[aa];
         }
     }
@@ -861,20 +861,13 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::with_hi_name(bool with_hi_
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const std::vector<amino_acid_at_pos0_t>& aa_at_pos0)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const amino_acid_at_pos1_eq_list_t& aa_at_pos)
 {
-    if (!aa_at_pos0.empty()) {
+    if (!aa_at_pos.empty()) {
         refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
-                                   [&aa_at_pos0](const auto& en) {
+                                   [&aa_at_pos](const auto& en) {
                                        try {
-                                           constexpr bool keep = false, remove = true;
-                                           if (en.seq().amino_acids.empty())
-                                               return remove;
-                                           for (const auto& [pos0, aa, equal] : aa_at_pos0) {
-                                               if ((en.seq().aa_at_pos0(pos0) == aa) != equal)
-                                                   return remove;
-                                           }
-                                           return keep;
+                                           return en.seq().amino_acids.empty() || !en.seq().matches(aa_at_pos); // true to remove
                                        }
                                        catch (std::exception& err) {
                                            throw std::runtime_error{fmt::format("{}, full_name: {}", err, en.full_name())};
@@ -1053,15 +1046,15 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
     const auto get_seq = [&options](const auto& entry) -> std::string_view {
         if (options.e_format == export_options::format::fasta_aa) {
             if (options.e_aligned)
-                return entry.seq().aa_aligned();
+                return *entry.seq().aa_aligned();
             else
-                return entry.seq().amino_acids;
+                return std::get<std::string_view>(entry.seq().amino_acids);
         }
         else {
             if (options.e_aligned)
-                return entry.seq().nuc_aligned();
+                return *entry.seq().nuc_aligned();
             else
-                return entry.seq().nucs;
+                return std::get<std::string_view>(entry.seq().nucs);
         }
     };
 
@@ -1132,35 +1125,6 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(std::string_view nam
     return *this;
 
 } // acmacs::seqdb::v3::subset::print
-
-// ----------------------------------------------------------------------
-
-acmacs::seqdb::v3::list_aa_at_pos1_t acmacs::seqdb::v3::parse_list_aa_at_pos1(std::string_view source)
-{
-    // space or comma separated list, e.g. "183P 141E"
-    const auto split = [](std::string_view src) {
-        if (src.find(",") != std::string_view::npos)
-            return string::split(src, ",", string::Split::RemoveEmpty);
-        else
-            return string::split(src, " ", string::Split::RemoveEmpty);
-    };
-
-    const auto fields = split(source);
-    list_aa_at_pos1_t result(fields.size());
-    std::transform(std::begin(fields), std::end(fields), std::begin(result), [](std::string_view field) {
-        return aa_at_pos1_t{::string::from_chars<size_t>(field.substr(0, field.size() - 1)), field.back()};
-    });
-    return result;
-
-} // acmacs::seqdb::v3::parse_list_aa_at_pos1
-
-// ----------------------------------------------------------------------
-
-bool acmacs::seqdb::v3::SeqdbSeq::match(const list_aa_at_pos1_t& aa_at_pos1) const
-{
-    return std::all_of(std::begin(aa_at_pos1), std::end(aa_at_pos1), [this](const auto& en) { return this->aa_at_pos1(en.pos1) == en.aa; });
-
-} // acmacs::seqdb::v3::SeqdbSeq::match
 
 // ----------------------------------------------------------------------
 /// Local Variables:

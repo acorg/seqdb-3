@@ -8,14 +8,47 @@
 
 namespace acmacs::seqdb::inline v3
 {
-    using pos0_t = named_size_t<struct seqdb_pos0_tag_t>;
-    using pos1_t = named_size_t<struct seqdb_pos1_tag_t>;
+    struct pos1_t : public named_size_t<struct seqdb_pos1_tag_t>
+    {
+        using named_size_t<struct seqdb_pos1_tag_t>::named_size_t;
+    };
+
+    struct pos0_t : public named_size_t<struct seqdb_pos0_tag_t>
+    {
+        using named_size_t<struct seqdb_pos0_tag_t>::named_size_t;
+        constexpr pos0_t(pos1_t pos1) : named_size_t<struct seqdb_pos0_tag_t>{*pos1 - 1} {}
+        constexpr pos0_t& operator=(pos1_t pos1) { return operator=(pos0_t{*pos1 - 1}); }
+    };
+
+    template <typename P1, typename P2> using enable_if_pos_t = std::enable_if_t<(std::is_same_v<P1, pos0_t> || std::is_same_v<P1, pos1_t>) && (std::is_same_v<P2, pos0_t> || std::is_same_v<P2, pos1_t>), char>;
+
+    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator==(P1 p1, P2 p2) { return p1 == P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator!=(P1 p1, P2 p2) { return !operator==(p1, p2); }
+    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator>(P1 p1, P2 p2) { return p1 > P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator>=(P1 p1, P2 p2) { return p1 >= P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator<(P1 p1, P2 p2) { return p1 < P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator<=(P1 p1, P2 p2) { return p1 <= P1{p2}; }
+
+    // --------------------------------------------------
 
     using sequence_aligned_t = named_string_t<struct seqdb_sequence_aligned_tag_t>;
     using sequence_aligned_ref_t = named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>;
 
     using alignment_t = named_int_from_string_t<struct seqdb_alignment_tag_t>;
-    using sequence_with_alignment_ref_t = std::tuple<std::string_view, alignment_t>;
+
+    struct sequence_with_alignment_ref_t : public std::tuple<std::string_view, alignment_t>
+    {
+        using std::tuple<std::string_view, alignment_t>::tuple;
+        constexpr sequence_with_alignment_ref_t() : std::tuple<std::string_view, alignment_t>{std::string_view{}, alignment_t{0}} {}
+        bool empty() const { return std::get<std::string_view>(*this).empty(); }
+        constexpr sequence_aligned_ref_t aligned(size_t length = std::string_view::npos) const;
+    };
+
+    inline size_t aligned_length(sequence_with_alignment_ref_t source) // std::abs() is not constexpr
+    {
+        // shift is negative in seqdb for historical reasons
+        return std::get<std::string_view>(source).size() - static_cast<size_t>(std::abs(std::get<alignment_t>(source).as_number()));
+    }
 
     constexpr sequence_aligned_ref_t aligned(sequence_with_alignment_ref_t source, size_t length = std::string_view::npos)
     {
@@ -23,12 +56,20 @@ namespace acmacs::seqdb::inline v3
         return sequence_aligned_ref_t{std::get<std::string_view>(source).substr(static_cast<size_t>(std::abs(std::get<alignment_t>(source).as_number())), length)};
     }
 
+    constexpr inline sequence_aligned_ref_t sequence_with_alignment_ref_t::aligned(size_t length) const { return acmacs::seqdb::aligned(*this, length); }
+
     constexpr char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) { return seq->at(*pos0); }
     constexpr char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) { return seq->at(*pos1 - 1); }
     constexpr char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) { return aligned(seq)->at(*pos0); }
     constexpr char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) { return aligned(seq)->at(*pos1 - 1); }
 
 } // namespace acmacs::seqdb::inlinev3
+
+// ----------------------------------------------------------------------
+
+template <> struct fmt::formatter<acmacs::seqdb::pos1_t> : fmt::formatter<size_t> {
+    template <typename FormatCtx> auto format(const acmacs::seqdb::pos1_t& pos1, FormatCtx& ctx) { return fmt::formatter<size_t>::format(pos1.get(), ctx); }
+};
 
 // ----------------------------------------------------------------------
 /// Local Variables:
