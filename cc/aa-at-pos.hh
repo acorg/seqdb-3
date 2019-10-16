@@ -38,10 +38,14 @@ namespace acmacs::seqdb::inline v3
 
     // --------------------------------------------------
 
+    class extract_aa_at_pos_error : public error { public: using error::error; };
+
     amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(const rjson::value& source);
     amino_acid_at_pos1_eq_t extract_aa_at_pos1_eq(std::string_view source); // "!183P"
     amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(std::string_view source); // space or comma separated list, e.g. "183P 141E !123K"
     inline amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(const std::string& source) { return extract_aa_at_pos1_eq_list(std::string_view{source}); }
+
+    // --------------------------------------------------
 
     inline bool matches(sequence_aligned_ref_t seq, const amino_acid_at_pos1_list_t& aa_at_pos1) // all_of is not constexpr until c++20 (g++9.1)
     {

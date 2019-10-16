@@ -3,6 +3,7 @@
 #include <tuple>
 
 #include "acmacs-base/named-type.hh"
+#include "seqdb-3/error.hh"
 
 // ----------------------------------------------------------------------
 
@@ -32,7 +33,12 @@ namespace acmacs::seqdb::inline v3
     // --------------------------------------------------
 
     using sequence_aligned_t = named_string_t<struct seqdb_sequence_aligned_tag_t>;
-    using sequence_aligned_ref_t = named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>;
+
+    struct sequence_aligned_ref_t : public named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>
+    {
+        using named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>::named_string_view_t;
+        constexpr char at(pos0_t pos0) const noexcept { return *pos0 < size() ? operator[](*pos0) : ' '; }
+    };
 
     using alignment_t = named_int_from_string_t<struct seqdb_alignment_tag_t>;
 
@@ -40,7 +46,7 @@ namespace acmacs::seqdb::inline v3
     {
         using std::tuple<std::string_view, alignment_t>::tuple;
         constexpr sequence_with_alignment_ref_t() : std::tuple<std::string_view, alignment_t>{std::string_view{}, alignment_t{0}} {}
-        bool empty() const { return std::get<std::string_view>(*this).empty(); }
+        bool empty() const noexcept { return std::get<std::string_view>(*this).empty(); }
         constexpr sequence_aligned_ref_t aligned(size_t length = std::string_view::npos) const;
     };
 
@@ -50,7 +56,7 @@ namespace acmacs::seqdb::inline v3
         return std::get<std::string_view>(source).size() - static_cast<size_t>(std::abs(std::get<alignment_t>(source).as_number()));
     }
 
-    constexpr sequence_aligned_ref_t aligned(sequence_with_alignment_ref_t source, size_t length = std::string_view::npos)
+    constexpr sequence_aligned_ref_t aligned(sequence_with_alignment_ref_t source, size_t length = std::string_view::npos) noexcept
     {
         // shift is negative in seqdb for historical reasons
         return sequence_aligned_ref_t{std::get<std::string_view>(source).substr(static_cast<size_t>(std::abs(std::get<alignment_t>(source).as_number())), length)};
@@ -58,10 +64,10 @@ namespace acmacs::seqdb::inline v3
 
     constexpr inline sequence_aligned_ref_t sequence_with_alignment_ref_t::aligned(size_t length) const { return acmacs::seqdb::aligned(*this, length); }
 
-    constexpr char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) { return seq->at(*pos0); }
-    constexpr char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) { return seq->at(*pos1 - 1); }
-    constexpr char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) { return aligned(seq)->at(*pos0); }
-    constexpr char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) { return aligned(seq)->at(*pos1 - 1); }
+    constexpr char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) noexcept { return seq.at(pos0); }
+    constexpr char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) noexcept { return seq.at(pos1); }
+    constexpr char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) noexcept { return aligned(seq).at(pos0); }
+    constexpr char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) noexcept { return aligned(seq).at(pos1); }
 
 } // namespace acmacs::seqdb::inlinev3
 

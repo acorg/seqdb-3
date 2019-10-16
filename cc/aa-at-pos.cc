@@ -14,7 +14,7 @@ acmacs::seqdb::amino_acid_at_pos1_eq_t acmacs::seqdb::v3::extract_aa_at_pos1_eq(
     else if (source.size() >= 3 && source.size() <= 5 && source.front() == '!' && std::isdigit(source[1]) && std::isalpha(source.back()))
         return {acmacs::seqdb::pos1_t{::string::from_chars<size_t>(source.substr(1, source.size() - 2))}, source.back(), false};
     else
-        throw std::exception{};
+        throw extract_aa_at_pos_error{fmt::format("invalid aa-pos: \"{}\" (expected 183P or !183P)", source)};
 
 } // acmacs::seqdb::v3::extract_aa_at_pos1_eq
 
