@@ -101,15 +101,15 @@ int main(int argc, char* const argv[])
         };
 
         const auto sorting_order = [](const acmacs::lowercase& desc) -> acmacs::seqdb::subset::sorting {
-            if (desc == "none")
+            if (desc == acmacs::lowercase{"none"})
                 return acmacs::seqdb::subset::sorting::none;
-            if (desc == "name")
+            if (desc == acmacs::lowercase{"name"})
                 return acmacs::seqdb::subset::sorting::name_asc;
-            if (desc == "-name")
+            if (desc == acmacs::lowercase{"-name"})
                 return acmacs::seqdb::subset::sorting::name_desc;
-            if (desc == "date")
+            if (desc == acmacs::lowercase{"date"})
                 return acmacs::seqdb::subset::sorting::date_asc;
-            if (desc == "-date")
+            if (desc == acmacs::lowercase{"-date"})
                 return acmacs::seqdb::subset::sorting::date_desc;
             fmt::print(stderr, "WARNING: unrecognized soriting: {}\n", desc);
             return acmacs::seqdb::subset::sorting::name_asc;
