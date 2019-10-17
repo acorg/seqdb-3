@@ -233,10 +233,8 @@ const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_inde
         hi_name_index_.reserve(entries_.size() * 2);
         for (const auto& entry : entries_) {
             for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
-                for (const auto& hi_name : entry.seqs[seq_no].hi_names) {
-                    ref rf{&entry, seq_no};
-                    hi_name_index_.emplace(hi_name, std::move(rf));
-                }
+                for (const auto& hi_name : entry.seqs[seq_no].hi_names)
+                    hi_name_index_.emplace(hi_name, ref{&entry, seq_no});
             }
         }
         hi_name_index_.sort_by_key();
@@ -313,13 +311,13 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::find_by_seq_ids(const std::v
 acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const
 {
     aas_indexes_t aas_indexes;
-    for (auto [ag_no, ref] : acmacs::enumerate(match(aAntigens))) {
+    acmacs::enumerate(match(aAntigens), [&aas_indexes,&aPositions1](auto ag_no, const auto& ref) {
         if (ref) {
             std::string aa(aPositions1.size(), 'X');
-            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [ref=ref](size_t pos) { return ref.seq().aa_at_pos(acmacs::seqdb::pos1_t{pos}); });
+            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [ref = ref](size_t pos) { return ref.seq().aa_at_pos(acmacs::seqdb::pos1_t{pos}); });
             aas_indexes[aa].push_back(ag_no);
         }
-    }
+    });
     return aas_indexes;
 
 } // acmacs::seqdb::v3::Seqdb::aa_at_pos_for_antigens
@@ -348,7 +346,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) const
 {
     auto antigens = chart.antigens_modify();
-    for (auto [ag_no, ref] : acmacs::enumerate(match(*antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)))) {
+    acmacs::enumerate(match(*antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
         if (ref) {
             auto& antigen = antigens->at(ag_no);
             if (!ref.seq().clades.empty()) {
@@ -359,7 +357,7 @@ void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) con
                 antigen.add_clade("SEQUENCED");
             }
         }
-    }
+    });
 
 } // acmacs::seqdb::v3::Seqdb::add_clades
 
@@ -376,14 +374,13 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1(const ac
     constexpr size_t max_num_pos = 1000;
     std::vector<stat_per_pos_t> stat_per_pos(max_num_pos);
     to_json::object json_antigens;
-    for (auto [ag_no, ref] : acmacs::enumerate(match(*chart.antigens(), chart.info()->virus_type()))) {
+    acmacs::enumerate(match(*chart.antigens(), chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref) {
             const auto sequence = ref.seq().aa_aligned();
             json_antigens << to_json::key_val{std::to_string(ag_no), *sequence};
-            for (auto [pos, aa] : acmacs::enumerate(*sequence, 1))
-                ++stat_per_pos[pos].aa_count[aa];
+            acmacs::enumerate(*sequence, [&stat_per_pos](size_t pos, char aa) {++stat_per_pos[pos].aa_count[aa]; }, 1UL);
         }
-    }
+    });
     for (auto& per_pos : stat_per_pos) {
         const auto sum = std::accumulate(per_pos.aa_count.begin(), per_pos.aa_count.end(), 0UL, [](auto accum, const auto& entry) { return accum + entry.second; });
         const auto shannon_index = -std::accumulate(per_pos.aa_count.begin(), per_pos.aa_count.end(), 0.0, [sum = double(sum)](auto accum, const auto& entry) {
@@ -407,10 +404,10 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::
 {
     auto antigens = chart.antigens();
     std::string fasta;
-    for (auto [ag_no, ref] : acmacs::enumerate(match(*antigens, chart.info()->virus_type()))) {
+    acmacs::enumerate(match(*antigens, chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref)
             fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.seq().nuc_aligned());
-    }
+    });
     return fasta;
 
 } // acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta
