@@ -151,8 +151,8 @@ namespace acmacs::seqdb::inline v3
         size_t aa_aligned_length() const { return acmacs::seqdb::aligned_length(amino_acids); }
         size_t nuc_aligned_length() const { return acmacs::seqdb::aligned_length(nucs); }
 
-        constexpr char aa_at_pos(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
-        constexpr char aa_at_pos(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
+        char aa_at_pos(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
+        char aa_at_pos(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
 
         std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
