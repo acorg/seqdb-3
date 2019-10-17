@@ -37,7 +37,7 @@ namespace acmacs::seqdb::inline v3
     struct sequence_aligned_ref_t : public named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>
     {
         using named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>::named_string_view_t;
-        constexpr char at(pos0_t pos0) const noexcept { return *pos0 < size() ? operator[](*pos0) : ' '; }
+        constexpr char at(pos0_t pos0) const { return *pos0 < size() ? operator[](*pos0) : ' '; }
     };
 
     using alignment_t = named_int_from_string_t<struct seqdb_alignment_tag_t>;
