@@ -64,10 +64,10 @@ namespace acmacs::seqdb::inline v3
 
     constexpr inline sequence_aligned_ref_t sequence_with_alignment_ref_t::aligned(size_t length) const { return acmacs::seqdb::aligned(*this, length); }
 
-    constexpr char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) noexcept { return seq.at(pos0); }
-    constexpr char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) noexcept { return seq.at(pos1); }
-    constexpr char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) noexcept { return aligned(seq).at(pos0); }
-    constexpr char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) noexcept { return aligned(seq).at(pos1); }
+    char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) noexcept { return seq.at(pos0); }
+    char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) noexcept { return seq.at(pos1); }
+    char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) noexcept { return aligned(seq).at(pos0); }
+    char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) noexcept { return aligned(seq).at(pos1); }
 
 } // namespace acmacs::seqdb::inlinev3
 
