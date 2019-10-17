@@ -56,7 +56,7 @@ namespace acmacs::seqdb::inline v3
         return std::get<std::string_view>(source).size() - static_cast<size_t>(std::abs(std::get<alignment_t>(source).as_number()));
     }
 
-    constexpr sequence_aligned_ref_t aligned(sequence_with_alignment_ref_t source, size_t length = std::string_view::npos) noexcept
+    constexpr inline sequence_aligned_ref_t aligned(sequence_with_alignment_ref_t source, size_t length = std::string_view::npos) noexcept
     {
         // shift is negative in seqdb for historical reasons
         return sequence_aligned_ref_t{std::get<std::string_view>(source).substr(static_cast<size_t>(std::abs(std::get<alignment_t>(source).as_number())), length)};
@@ -64,10 +64,10 @@ namespace acmacs::seqdb::inline v3
 
     constexpr inline sequence_aligned_ref_t sequence_with_alignment_ref_t::aligned(size_t length) const { return acmacs::seqdb::aligned(*this, length); }
 
-    char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) noexcept { return seq.at(pos0); }
-    char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) noexcept { return seq.at(pos1); }
-    char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) noexcept { return aligned(seq).at(pos0); }
-    char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) noexcept { return aligned(seq).at(pos1); }
+    inline char at_pos(sequence_aligned_ref_t seq, pos0_t pos0) noexcept { return seq.at(pos0); }
+    inline char at_pos(sequence_aligned_ref_t seq, pos1_t pos1) noexcept { return seq.at(pos1); }
+    inline char at_pos(sequence_with_alignment_ref_t seq, pos0_t pos0) noexcept { return aligned(seq).at(pos0); }
+    inline char at_pos(sequence_with_alignment_ref_t seq, pos1_t pos1) noexcept { return aligned(seq).at(pos1); }
 
 } // namespace acmacs::seqdb::inlinev3
 
