@@ -48,7 +48,7 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
         // sequences msut be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
     for (const std::string_view subtype : {"B", "H1", "H3"}) {
-        auto hidb_antigens = hidb::get(subtype).antigens();
+        auto hidb_antigens = hidb::get(subtype, report_time::no).antigens();
         hidbs.emplace(std::string{subtype}, hidb_ref_t{hidb_antigens, hidb_antigens->sorted_by_labid()});
     }
 

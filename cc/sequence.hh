@@ -77,6 +77,10 @@ template <> struct fmt::formatter<acmacs::seqdb::pos1_t> : fmt::formatter<size_t
     template <typename FormatCtx> auto format(const acmacs::seqdb::pos1_t& pos1, FormatCtx& ctx) { return fmt::formatter<size_t>::format(pos1.get(), ctx); }
 };
 
+template <> struct fmt::formatter<acmacs::seqdb::pos0_t> : fmt::formatter<size_t> {
+    template <typename FormatCtx> auto format(const acmacs::seqdb::pos0_t& pos0, FormatCtx& ctx) { return fmt::formatter<size_t>::format(pos0.get() + 1, ctx); }
+};
+
 // ----------------------------------------------------------------------
 /// Local Variables:
 /// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
