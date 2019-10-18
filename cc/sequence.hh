@@ -9,9 +9,12 @@
 
 namespace acmacs::seqdb::inline v3
 {
+    struct pos0_t;
+
     struct pos1_t : public named_size_t<struct seqdb_pos1_tag_t>
     {
         using named_size_t<struct seqdb_pos1_tag_t>::named_size_t;
+        constexpr pos1_t(pos0_t pos0);
     };
 
     struct pos0_t : public named_size_t<struct seqdb_pos0_tag_t>
@@ -21,14 +24,16 @@ namespace acmacs::seqdb::inline v3
         constexpr pos0_t& operator=(pos1_t pos1) { return operator=(pos0_t{*pos1 - 1}); }
     };
 
-    template <typename P1, typename P2> using enable_if_pos_t = std::enable_if_t<(std::is_same_v<P1, pos0_t> || std::is_same_v<P1, pos1_t>) && (std::is_same_v<P2, pos0_t> || std::is_same_v<P2, pos1_t>), char>;
+    constexpr inline pos1_t::pos1_t(pos0_t pos0) : named_size_t<struct seqdb_pos1_tag_t>{*pos0 + 1} {}
 
-    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator==(P1 p1, P2 p2) { return p1 == P1{p2}; }
-    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator!=(P1 p1, P2 p2) { return !operator==(p1, p2); }
-    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator>(P1 p1, P2 p2) { return p1 > P1{p2}; }
-    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator>=(P1 p1, P2 p2) { return p1 >= P1{p2}; }
-    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator<(P1 p1, P2 p2) { return p1 < P1{p2}; }
-    template <typename P1, typename P2, typename = enable_if_pos_t<P1, P2>> constexpr inline bool operator<=(P1 p1, P2 p2) { return p1 <= P1{p2}; }
+    template <typename P1, typename P2> using enable_if_different_pos_t = std::enable_if_t<(std::is_same_v<P1, pos0_t> || std::is_same_v<P1, pos1_t>) && (std::is_same_v<P2, pos0_t> || std::is_same_v<P2, pos1_t>) && !std::is_same_v<P1, P2>, char>;
+
+    template <typename P1, typename P2, typename = enable_if_different_pos_t<P1, P2>> constexpr inline bool operator==(P1 p1, P2 p2) { return p1 == P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_different_pos_t<P1, P2>> constexpr inline bool operator!=(P1 p1, P2 p2) { return !operator==(p1, p2); }
+    template <typename P1, typename P2, typename = enable_if_different_pos_t<P1, P2>> constexpr inline bool operator>(P1 p1, P2 p2) { return p1 > P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_different_pos_t<P1, P2>> constexpr inline bool operator>=(P1 p1, P2 p2) { return p1 >= P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_different_pos_t<P1, P2>> constexpr inline bool operator<(P1 p1, P2 p2) { return p1 < P1{p2}; }
+    template <typename P1, typename P2, typename = enable_if_different_pos_t<P1, P2>> constexpr inline bool operator<=(P1 p1, P2 p2) { return p1 <= P1{p2}; }
 
     // --------------------------------------------------
 
