@@ -22,9 +22,20 @@ acmacs::seqdb::amino_acid_at_pos1_eq_t acmacs::seqdb::v3::extract_aa_at_pos1_eq(
 
 acmacs::seqdb::amino_acid_at_pos1_eq_list_t acmacs::seqdb::v3::extract_aa_at_pos1_eq_list(const rjson::value& source)
 {
-    amino_acid_at_pos1_eq_list_t pos1_aa_eq;
-    rjson::for_each(source, [&pos1_aa_eq](const rjson::value& entry) { pos1_aa_eq.push_back(extract_aa_at_pos1_eq(entry.to<std::string_view>())); });
-    return pos1_aa_eq;
+    return std::visit(
+        []<typename T>(T && arg) -> amino_acid_at_pos1_eq_list_t {
+            if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
+                return extract_aa_at_pos1_eq_list(std::string_view{arg});
+            }
+            else if constexpr (std::is_same_v<std::decay_t<T>, rjson::array>) {
+                amino_acid_at_pos1_eq_list_t pos1_aa_eq;
+                arg.for_each([&pos1_aa_eq](const rjson::value& entry) { pos1_aa_eq.push_back(extract_aa_at_pos1_eq(entry.to<std::string_view>())); });
+                return pos1_aa_eq;
+            }
+            else
+                throw extract_aa_at_pos_error{fmt::format("invalid aa-ta-pos1 list: {}", arg)};
+        },
+        source.val_());
 
 } // acmacs::seqdb::v3::extract_aa_at_pos_eq_list
 
