@@ -263,7 +263,7 @@ namespace local::B
         }
         else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{169})) {
             // 12 sequences from TAIWAN 2010 have deletions 169:2
-            sequence.lineage(acmacs::virus::lineage_t{});
+            // sequence.lineage(acmacs::virus::lineage_t{});
         }
         else if (N_deletions_at(deletions, 1, acmacs::seqdb::pos1_t{160}) && no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{161}, acmacs::seqdb::pos1_t{500}) && sequence.aa_at_pos(acmacs::seqdb::pos1_t{161}) == 'E' && sequence.aa_at_pos(acmacs::seqdb::pos1_t{163}) == 'K') {
             // deletion detection was invalid, most probably due to 162X. B/ALICANTE/19_0649/20171219
