@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include "acmacs-base/date.hh"
+#include "acmacs-base/string.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/types.hh"
 #include "seqdb-3/sequence.hh"
@@ -29,7 +30,7 @@ namespace acmacs::seqdb
                 bool empty() const { return deletions.empty() && insertions.empty(); }
 
                 // returns {pos deleted, adjusted pos}
-                std::pair<bool, pos0_t> apply_deletions(pos0_t pos)
+                std::pair<bool, pos0_t> apply_deletions(pos0_t pos) const
                 {
                     for (const auto& pos_num : deletions) {
                         if (pos_num.pos <= pos) {
@@ -132,7 +133,7 @@ namespace acmacs::seqdb
                 // pos is 0 based
                 // returns '-' if deleted
                 // returns '\0' if beyond the end of sequence or before the beginning
-                char aa_at_pos(pos0_t pos)
+                char aa_at_pos(pos0_t pos) const
                 {
                     const auto [deleted, pos_with_deletions] = deletions_.apply_deletions(pos);
                     if (deleted)
@@ -144,7 +145,7 @@ namespace acmacs::seqdb
                 }
 
                 // pos is 1 based
-                char aa_at_pos(acmacs::seqdb::pos1_t pos) { return aa_at_pos(pos0_t{*pos - 1}); }
+                char aa_at_pos(acmacs::seqdb::pos1_t pos) const { return aa_at_pos(pos0_t{*pos - 1}); }
 
                 size_t aa_number_of_X() const
                 {
@@ -216,16 +217,16 @@ namespace acmacs::seqdb
                 //         return fmt::format("{} {}", name_, annotations_);
                 // }
 
-                void add_isolate_id(std::string_view src) { isolate_id_.add(std::string{src}); }
-                void add_submitter(std::string_view src) { submitters_.add(std::string{src}); }
-                void add_sample_id_by_sample_provider(std::string_view src) { sample_id_by_sample_provider_.add(std::string{src}); }
-                void add_gisaid_last_modified(std::string_view src) { gisaid_last_modified_.add(std::string(src)); }
-                void add_originating_lab(std::string_view src) { originating_lab_.add(std::string(src)); }
-                void add_gisaid_segment(std::string_view src) { gisaid_segment_.add(std::string(src)); }
-                void add_gisaid_segment_number(std::string_view src) { gisaid_segment_number_.add(std::string(src)); }
-                void add_gisaid_identifier(std::string_view src) { gisaid_identifier_.add(std::string(src)); }
-                void add_gisaid_dna_accession_no(std::string_view src) { gisaid_dna_accession_no_.add(std::string(src)); }
-                void add_gisaid_dna_insdc(std::string_view src) { gisaid_dna_insdc_.add(std::string(src)); }
+                void add_isolate_id(std::string_view src) { isolate_id_.add(std::string{::string::strip(src)}); }
+                void add_submitter(std::string_view src) { submitters_.add(std::string{::string::strip(src)}); }
+                void add_sample_id_by_sample_provider(std::string_view src) { sample_id_by_sample_provider_.add(std::string{::string::strip(src)}); }
+                void add_gisaid_last_modified(std::string_view src) { gisaid_last_modified_.add(std::string{::string::strip(src)}); }
+                void add_originating_lab(std::string_view src) { originating_lab_.add(std::string{::string::strip(src)}); }
+                void add_gisaid_segment(std::string_view src) { gisaid_segment_.add(std::string{::string::strip(src)}); }
+                void add_gisaid_segment_number(std::string_view src) { gisaid_segment_number_.add(std::string{::string::strip(src)}); }
+                void add_gisaid_identifier(std::string_view src) { gisaid_identifier_.add(std::string{::string::strip(src)}); }
+                void add_gisaid_dna_accession_no(std::string_view src) { gisaid_dna_accession_no_.add(std::string{::string::strip(src)}); }
+                void add_gisaid_dna_insdc(std::string_view src) { gisaid_dna_insdc_.add(std::string{::string::strip(src)}); }
 
                 const auto& isolate_id() const { return isolate_id_; }
                 const auto& submitters() const { return submitters_; }
