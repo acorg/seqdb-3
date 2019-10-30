@@ -3,7 +3,7 @@
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "acmacs-base/settings.hh"
-#include "seqdb-3/scan-clades.hh"
+#include "seqdb-3/scan-lineages.hh"
 #include "seqdb-3/scan-fasta.hh"
 #include "seqdb-3/aa-at-pos.hh"
 

@@ -14,7 +14,7 @@
 #include "seqdb-3/hamming-distance.hh"
 #include "seqdb-3/scan-align.hh"
 #include "seqdb-3/scan-deletions.hh"
-#include "seqdb-3/scan-clades.hh"
+#include "seqdb-3/scan-lineages.hh"
 #include "seqdb-3/scan-match-hidb.hh"
 #include "seqdb-3/create.hh"
 
