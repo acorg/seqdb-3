@@ -328,7 +328,7 @@ void acmacs::seqdb::v3::scan::sequence_t::import(std::string_view source)
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::scan::sequence_t acmacs::seqdb::v3::scan::sequence_t::from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source)
+acmacs::seqdb::v3::scan::sequence_t acmacs::seqdb::v3::scan::sequence_t::from_aligned_aa(const acmacs::virus::name_t& name, std::string_view source)
 {
     sequence_t result;
     result.name_ = name;

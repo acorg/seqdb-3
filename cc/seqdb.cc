@@ -416,7 +416,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::
 
 std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
 {
-    if (const auto ho = acmacs::virus::host(acmacs::virus::v2::virus_name_t{name}); !ho.empty())
+    if (const auto ho = acmacs::virus::host(acmacs::virus::v2::name_t{name}); !ho.empty())
         return ho;
     else
         return "HUMAN";

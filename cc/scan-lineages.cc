@@ -313,7 +313,7 @@ namespace local::H1
                 ; // sequence.add_clade(acmacs::seqdb::clade_t{"*DEL"});
             else if (del1.pos == acmacs::seqdb::pos1_t{127} && del1.num == 1 && (year < 2018 || fasta_ref.find("seasonal") != std::string_view::npos))
                 ; // sequence.add_clade(acmacs::seqdb::clade_t{"*DEL-127:1"});
-            else if (del1.pos == acmacs::seqdb::pos1_t{160} && del1.num == 4 && sequence.name() == acmacs::virus::virus_name_t{"A(H1N1)/NEWPORT/323/2019"})
+            else if (del1.pos == acmacs::seqdb::pos1_t{160} && del1.num == 4 && sequence.name() == acmacs::virus::name_t{"A(H1N1)/NEWPORT/323/2019"})
                 fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
             else if (del1.pos > acmacs::seqdb::pos1_t{400})
                 ; // ignore

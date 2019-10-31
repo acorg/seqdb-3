@@ -48,7 +48,7 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
         // sequences msut be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
     for (const std::string_view subtype : {"B", "H1", "H3"}) {
-        auto hidb_antigens = hidb::get(subtype, report_time::no).antigens();
+        auto hidb_antigens = hidb::get(acmacs::virus::type_subtype_t{subtype}, report_time::no).antigens();
         hidbs.emplace(std::string{subtype}, hidb_ref_t{hidb_antigens, hidb_antigens->sorted_by_labid()});
     }
 
@@ -79,9 +79,8 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
     if (!found_hidb_antigens.empty()) {
         const auto& seq = first->sequence;
         if (subtype == "B") {
-            if (const auto hidb_lineage = found_hidb_antigens.front()->lineage(); hidb_lineage != acmacs::chart::BLineage::Unknown && hidb_lineage != *seq.lineage())
-                fmt::print(stderr, "WARNING: lineage mismatch seq: {} vs. hidb: {} {}\n", seq.full_name(), found_hidb_antigens.front()->name(),
-                           static_cast<std::string>(found_hidb_antigens.front()->lineage()));
+            if (const auto hidb_lineage = found_hidb_antigens.front()->lineage(); hidb_lineage != acmacs::chart::BLineage::Unknown && hidb_lineage != acmacs::chart::BLineage{seq.lineage()})
+                fmt::print(stderr, "WARNING: lineage mismatch seq: {} vs. hidb: {} {}\n", seq.full_name(), found_hidb_antigens.front()->name(), found_hidb_antigens.front()->lineage());
         }
         for (const auto& en: found_hidb_antigens)
             first->sequence.add_date(*en->date());

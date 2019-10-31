@@ -68,7 +68,7 @@ namespace acmacs::seqdb
             {
               public:
                 sequence_t() = default;
-                static sequence_t from_aligned_aa(const acmacs::virus::virus_name_t& name, std::string_view source);
+                static sequence_t from_aligned_aa(const acmacs::virus::name_t& name, std::string_view source);
 
                 using shift_t = named_size_t<struct shift_t_tag>;
                 constexpr static const shift_t not_aligned{99999};
@@ -164,7 +164,7 @@ namespace acmacs::seqdb
                     return nuc;
                 }
 
-                constexpr const acmacs::virus::virus_name_t& name() const { return name_; }
+                constexpr const acmacs::virus::name_t& name() const { return name_; }
                 std::string_view annotations() const { return annotations_; }
                 // const acmacs::virus::host_t& host() const { return host_; }
                 constexpr const acmacs::virus::Reassortant& reassortant() const { return reassortant_; }
@@ -187,7 +187,7 @@ namespace acmacs::seqdb
                 void remove_dates() { dates_.clear(); }
                 void add_passage(acmacs::virus::Passage&& a_passage) { passages_.add(std::move(a_passage)); }
                 void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
-                void name(acmacs::virus::virus_name_t&& a_name) { name_ = std::move(a_name); }
+                void name(acmacs::virus::name_t&& a_name) { name_ = std::move(a_name); }
                 // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
                 void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
                 void remove_annotations() { annotations_.clear(); }
@@ -242,7 +242,7 @@ namespace acmacs::seqdb
                 void merge_from(const sequence_t& source);
 
               private:
-                acmacs::virus::virus_name_t name_;
+                acmacs::virus::name_t name_;
                 // acmacs::virus::host_t host_;
                 std::string country_;
                 std::string continent_;
