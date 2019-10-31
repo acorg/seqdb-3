@@ -9,6 +9,7 @@
 #include "acmacs-base/uppercase.hh"
 #include "acmacs-base/flat-map.hh"
 #include "seqdb-3/aa-at-pos.hh"
+#include "seqdb-3/seq-id.hh"
 
 // ----------------------------------------------------------------------
 
@@ -21,7 +22,7 @@ namespace acmacs::seqdb::inline v3
     struct ref;
     class subset;
 
-    using seq_id_index_t = flat_map_t<std::string, ref>;
+    using seq_id_index_t = flat_map_t<seq_id_t, ref>;
     using hi_name_index_t = flat_map_t<std::string_view, ref>;
 
     class Seqdb
@@ -194,7 +195,7 @@ namespace acmacs::seqdb::inline v3
         constexpr bool empty() const { return entry == nullptr; }
 
         const auto& seq() const { return entry->seqs[seq_index]; }
-        std::string seq_id() const;
+        seq_id_t seq_id() const;
         std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
         std::string full_name_with_date() const
         {

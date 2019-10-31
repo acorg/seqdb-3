@@ -425,47 +425,8 @@ std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::ref::seq_id() const
+acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
 {
-    const auto to_remove = [](char cc) {
-        switch (cc) {
-          case '(':
-          case ')':
-          case '[':
-          case ']':
-          case ':':
-          case '\'':
-          case ';':
-              // not in seqdb 2019-07-01, but remove them just in case
-          case '!':
-          case '#':
-          case '*':
-          case '@':
-          case '$':
-              return true;
-        }
-        return false;
-    };
-
-    const auto to_replace_with_underscore = [](char cc) {
-        switch (cc) {
-          case ' ':
-          case '&':
-          case '=':
-              return true;
-        }
-        return false;
-    };
-
-    const auto to_replace_with_slash = [](char cc) {
-        switch (cc) {
-          case ',':
-          case '+':
-              return true;
-        }
-        return false;
-    };
-
     auto source = ::string::join(" ", {entry->name, seq().designation()});
     if (entry->seqs.size() > 1 && seq_index > 0) {
         // there could be multiple seqs with the same designation, but seq_id must be unique, also garli does not like name duplicates
@@ -474,13 +435,7 @@ std::string acmacs::seqdb::v3::ref::seq_id() const
         if (std::count(std::begin(designations), std::end(designations), designations[seq_index]) > 1)
             source.append(fmt::format("_d{}", seq_index));
     }
-    return ranges::to<std::string>(
-        source
-        | ranges::views::remove_if(to_remove)
-        | ranges::views::replace('?', 'x')
-        | ranges::views::replace_if(to_replace_with_slash, '/') // usually in passages
-        | ranges::views::replace_if(to_replace_with_underscore, '_')
-                        );
+    return make_seq_id(source);
 
 } // acmacs::seqdb::v3::ref::seq_id
 
