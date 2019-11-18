@@ -425,6 +425,14 @@ std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
 
 // ----------------------------------------------------------------------
 
+std::string acmacs::seqdb::v3::SeqdbEntry::location() const
+{
+    return ::virus_name::location(acmacs::virus::v2::name_t{name});
+
+} // acmacs::seqdb::v3::SeqdbEntry::location
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
 {
     auto source = ::string::join(" ", {entry->name, seq().designation()});
