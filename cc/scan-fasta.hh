@@ -120,11 +120,17 @@ namespace acmacs::seqdb
 
                 void merge_duplicates(std::vector<fasta::scan_result_t>& sequences);
 
+                struct min_max_dates_t
+                {
+                    std::string min_isolation_date, max_isolation_date, min_submission_date, max_submission_date;
+                };
+
+                min_max_dates_t min_max_dates(const std::vector<scan_result_t>& sequences);
+
                 std::string report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff = std::string::npos); // report aligned having type_subtype that differs from provided with fasta
                 std::string report_not_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_prefix, size_t sequence_cutoff = std::string::npos);
                 std::string report_aa(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff = std::string::npos);
                 std::string report_aa_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff = std::string::npos);
-                std::string report_dates(const std::vector<scan_result_t>& sequences);
 
                 // ----------------------------------------------------------------------
                 // details

@@ -93,8 +93,9 @@ int main(int argc, char* const argv[])
         if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
             fmt::print(stderr, "ERROR: FALSE POSITIVES {}\n{}\n", ranges::count(false_positive, '\n') / 2, false_positive);
 
-        fmt::print(stderr, "{}\n", acmacs::seqdb::scan::fasta::report_dates(all_sequences));
-        report_messages(messages);
+        const auto dates_to_report = acmacs::seqdb::scan::fasta::min_max_dates(all_sequences);
+        fmt::print(stderr, "Isolation date range:  {} .. {}\nSubmission date range: {} .. {}\n",
+                   dates_to_report.min_isolation_date, dates_to_report.max_isolation_date, dates_to_report.min_submission_date, dates_to_report.max_submission_date);
 
         if (opt.print_counter_for->empty()) {
             acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
@@ -135,6 +136,11 @@ int main(int argc, char* const argv[])
 
         if (opt.print_stat)
             report(all_sequences, opt);
+
+        if (opt.filenames->size() == 1 && opt.filenames->front() == "/d/gisaid_epiflu_sequence.fasta") {
+            fmt::print("T=$HOME/ac/sequences-2019/gisaid-{}-{}.fas.xz; if [[ ! -f $T ]]; then xz -9ecv /d/gisaid_epiflu_sequence.fasta >$T; else echo ERROR: $T already exists; false; fi\n",
+                       string::replace(dates_to_report.min_submission_date, "-", ""), string::replace(dates_to_report.max_submission_date, "-", ""));
+        }
 
         return 0;
     }

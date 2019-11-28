@@ -680,25 +680,25 @@ std::string acmacs::seqdb::v3::scan::fasta::report_aa_aligned(const std::vector<
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::scan::fasta::report_dates(const std::vector<scan_result_t>& sequences)
+acmacs::seqdb::v3::scan::fasta::min_max_dates_t acmacs::seqdb::v3::scan::fasta::min_max_dates(const std::vector<scan_result_t>& sequences)
 {
-    std::string min_isolation_date, max_isolation_date, min_submission_date, max_submission_date;
+    min_max_dates_t result;
     for (const auto& sc : sequences) {
         const auto isolation_date = sc.sequence.date_simulated();
-        if (min_isolation_date.empty() || isolation_date < min_isolation_date)
-            min_isolation_date = isolation_date;
-        if (max_isolation_date.empty() || isolation_date > max_isolation_date)
-            max_isolation_date = isolation_date;
+        if (result.min_isolation_date.empty() || isolation_date < result.min_isolation_date)
+            result.min_isolation_date = isolation_date;
+        if (result.max_isolation_date.empty() || isolation_date > result.max_isolation_date)
+            result.max_isolation_date = isolation_date;
         if (const auto& submission_dates = sc.sequence.gisaid_last_modified(); !submission_dates.empty()) {
-            if (min_submission_date.empty() || submission_dates.front() < min_submission_date)
-                min_submission_date = submission_dates.front();
-            if (max_submission_date.empty() || submission_dates.front() > max_submission_date)
-                max_submission_date = submission_dates.front();
+            if (result.min_submission_date.empty() || submission_dates.front() < result.min_submission_date)
+                result.min_submission_date = submission_dates.front();
+            if (result.max_submission_date.empty() || submission_dates.front() > result.max_submission_date)
+                result.max_submission_date = submission_dates.front();
         }
     }
-    return fmt::format("Isolation date range:  {} .. {}\nSubmission date range: {} .. {}\n", min_isolation_date, max_isolation_date, min_submission_date, max_submission_date);
+    return result;
 
-} // acmacs::seqdb::v3::scan::fasta::report_dates
+} // acmacs::seqdb::v3::scan::fasta::min_max_dates
 
 // ----------------------------------------------------------------------
 /// Local Variables:
