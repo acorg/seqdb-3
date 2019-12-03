@@ -29,12 +29,12 @@ class CladeDefinitions : public acmacs::settings::Settings
         }
     }
 
-    bool apply_built_in(std::string_view name) override // returns true if built-in command with that name found and applied
+    bool apply_built_in(std::string_view name, acmacs::verbose verb) override // returns true if built-in command with that name found and applied
     {
         if (name == "clade")
             add(current_virus_type_, getenv("name", ""), acmacs::seqdb::extract_aa_at_pos1_eq_list(getenv("substitutions")));
         else
-            return acmacs::settings::Settings::apply_built_in(name);
+            return acmacs::settings::Settings::apply_built_in(name, verb);
         return true;
     }
 
