@@ -42,6 +42,7 @@ struct Options : public argv
 
     option<str>  output_seqdb{*this, 'o', "output-dir", dflt{""}};
     option<bool> whocc_only{*this, "whocc-only", desc{"create whocc only db (seqdb.json.xz)"}};
+    option<bool> gisaid{*this, "gisaid", desc{"perform gisaid related name fixes and adjustments"}};
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}, desc{"ALL or comma separated: H1N,H3,B"}};
@@ -63,7 +64,9 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
-        auto [all_sequences, messages] = acmacs::seqdb::scan::fasta::scan(opt.filenames, acmacs::seqdb::scan::fasta::scan_options_t(opt.verbose ? acmacs::debug::yes : acmacs::debug::no));
+        const acmacs::seqdb::scan::fasta::scan_options_t scan_options(opt.verbose ? acmacs::debug::yes : acmacs::debug::no,
+                                                                      opt.gisaid ? acmacs::seqdb::scan::fasta::scan_name_adjustments::gisaid : acmacs::seqdb::scan::fasta::scan_name_adjustments::none);
+        auto [all_sequences, messages] = acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options);
         fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
 
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);

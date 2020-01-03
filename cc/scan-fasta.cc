@@ -29,7 +29,6 @@ namespace acmacs::seqdb
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
                 static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
-                static acmacs::virus::parse_result_t parse_and_fix_name(std::string_view name);
 
                 inline void add_message(messages_t& target, messages_t&& to_add)
                 {
@@ -71,7 +70,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                         break;
                 }
                 if (scan_result.has_value()) {
-                    auto messages = normalize_name(*scan_result, options.dbg);
+                    auto messages = normalize_name(*scan_result, options.dbg, options.name_adjustements);
                     if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
                         if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
                             || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
@@ -367,21 +366,27 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg)
+acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements)
 {
-    if (dbg == debug::yes)
-        fmt::print(stderr, "DEBUG: source.fasta.name: {}\n", source.fasta.name);
 
-    fix_gisaid_name(source);
+    switch (name_adjustements) {
+      case scan_name_adjustments::gisaid:
+          fix_gisaid_name(source, dbg);
+          break;
+      case scan_name_adjustments::none:
+          // if (dbg == debug::yes)
+          //     fmt::print(stderr, "DEBUG: source.fasta.name: {}\n", source.fasta.name);
+          break;
+    }
 
-    auto name_parse_result = parse_and_fix_name(source.fasta.name);
+    auto name_parse_result = acmacs::virus::parse_name(source.fasta.name);
     source.sequence.name(std::move(name_parse_result.name));
     if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
         fmt::print(stderr, "{}:{}: warning: no year at the end of name: {}\n", source.fasta.filename, source.fasta.line_no, source.sequence.name());
     // if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
     //     fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
-    if (dbg == debug::yes)
-        fmt::print(stderr, "DEBUG: source.sequence.name: {}\n", source.sequence.name());
+    // if (dbg == debug::yes)
+    //     fmt::print(stderr, "DEBUG: source.sequence.name: {}\n", source.sequence.name());
 
     // source.sequence.host(std::move(name_parse_result.host));
     source.sequence.country(std::move(name_parse_result.country));
@@ -425,20 +430,30 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
 // ----------------------------------------------------------------------
 
-acmacs::virus::parse_result_t acmacs::seqdb::v3::scan::fasta::parse_and_fix_name(std::string_view name)
-{
-    auto result = acmacs::virus::parse_name(name);
-    for (const auto& msg : result.messages) {
-        if (msg == "location-not-found") {
-            if (msg.value == "HK") { // gisaid has many of that kind
-                result = acmacs::virus::parse_name(::string::replace(name, "/HK/", "/HONG KONG/"));
-                break;
-            }
-        }
-    }
-    return result;
+// acmacs::virus::parse_result_t acmacs::seqdb::v3::scan::fasta::parse_and_fix_name(std::string_view name)
+// {
+//     auto result = acmacs::virus::parse_name(name);
+//     for (const auto& msg : result.messages) {
+//         if (msg == "location-not-found") {
+//             if (msg.value == "HK") { // gisaid has many of that kind
+//                 result = acmacs::virus::parse_name(::string::replace(name, "/HK/", "/HONG KONG/"));
+//                 break;
+//             }
+//             else if (name.find("/CRIE/") != std::string_view::npos) {
+//                 if (std::cmatch match; std::regex_search(std::begin(name), std::end(name), match, std::regex{"/([0-9]+)/CRIE/"})) {
+//                     result = acmacs::virus::parse_name(fmt::format("{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match.position(0))), match.str(1), name.substr(static_cast<size_t>(match.position(0) + match.length(0)))));
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+//     if (!result.messages.empty())
+//         fmt::print(stderr, "WARNING: parse_and_fix_name: {} -> {}\n", name, result);
+//     else
+//         fmt::print(stderr, "DEBUG: parse_and_fix_name: {} -> {}\n", name, result);
+//     return result;
 
-} // acmacs::seqdb::v3::scan::fasta::parse_and_fix_name
+// } // acmacs::seqdb::v3::scan::fasta::parse_and_fix_name
 
 // ----------------------------------------------------------------------
 
@@ -447,25 +462,43 @@ acmacs::virus::parse_result_t acmacs::seqdb::v3::scan::fasta::parse_and_fix_name
 static const std::regex re_CSISP_name{"/[\\d_]+(_)(20\\d\\d)\\d\\d\\d\\d$"};
 static const std::regex re_year_at_end_of_name{"(19\\d\\d|20[0-2]\\d)$"};
 // static const std::regex re_year_3000{"/(30)([0-2]\\d)$"};
+static const std::regex re_HK_name{"/HK/"};
+static const std::regex re_CRIE1_name{"/([0-9]+)/CRIE/"};
+static const std::regex re_CRIE2_name{"([^0-9])/CRIE/([0-9]+)/([0-9]+)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source)
+void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debug dbg)
 {
+    const std::string_view name{source.fasta.name};
+    const std::string name_orig{dbg == debug::yes ? name : std::string_view{}};
     // CSISP has names with the isolation date: A/Valencia/07_0435_20171111 -> A/Valencia/07_0435/2017
-    if (std::smatch match_CSISP_name; std::regex_search(source.fasta.name, match_CSISP_name, re_CSISP_name)) {
+    if (std::cmatch match_CSISP_name; std::regex_search(std::begin(name), std::end(name), match_CSISP_name, re_CSISP_name)) {
         // fmt::print("INFO: {}\n", source.fasta.name);
-        source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match_CSISP_name.position(1))), '/', match_CSISP_name.str(2));
+        source.fasta.name = fmt::format("{}/{}", name.substr(0, static_cast<size_t>(match_CSISP_name.position(1))), match_CSISP_name.str(2));
         // fmt::print("INFO: {}\n", source.fasta.name);
     }
-    else if (std::smatch match_year_at_end_of_name; source.fasta.name.size() > 4 && source.fasta.name[source.fasta.name.size() - 5] != '/' && std::regex_search(source.fasta.name, match_year_at_end_of_name, re_year_at_end_of_name)) {
+    else if (std::cmatch match_year_at_end_of_name; name.size() > 4 && name[source.fasta.name.size() - 5] != '/' && std::regex_search(std::begin(name), std::end(name), match_year_at_end_of_name, re_year_at_end_of_name)) {
         // A/Iasi/2416022019
-        source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), '/', match_year_at_end_of_name.str(1));
+        source.fasta.name = fmt::format("{}/{}", name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), match_year_at_end_of_name.str(1));
     }
-    // else if (std::smatch match_year_3000; std::regex_search(source.fasta.name, match_year_3000, re_year_3000)) {
+    // else if (std::cmatch match_year_3000; std::regex_search(std::begin(name), std::end(name), match_year_3000, re_year_3000)) {
     //     // A/OMSK/3296/3018
-    //     source.fasta.name = ::string::concat(source.fasta.name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), "/20", match_year_at_end_of_name.str(2));
+    //     source.fasta.name = fmt::format("{}/20{}", name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), match_year_at_end_of_name.str(2));
     // }
+    else if (const auto hk_pos = source.fasta.name.find("/HK/"); hk_pos != std::string::npos) {
+        source.fasta.name = fmt::format("{}/HONG KONG/{}", name.substr(0, hk_pos), name.substr(hk_pos + 4));
+    }
+    else if (std::cmatch match_crie1; name.size() > 6 && std::regex_search(std::begin(name), std::end(name), match_crie1, re_CRIE1_name)) {
+        // A/Moscow/14/CRIE/2019
+        source.fasta.name = fmt::format("{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match_crie1.position(0))), match_crie1.str(1), name.substr(static_cast<size_t>(match_crie1.position(0) + match_crie1.length(0))));
+    }
+    else if (std::cmatch match_crie2; name.size() > 6 && std::regex_search(std::begin(name), std::end(name), match_crie2, re_CRIE2_name)) {
+        // A/Moscow/14/CRIE/2019
+        source.fasta.name = fmt::format("{}{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match_crie2.position(0))), match_crie2.str(1), match_crie2.str(2), match_crie2.str(3));
+    }
+    if (dbg == debug::yes && name_orig != source.fasta.name)
+        fmt::print(stderr, "DEBUG: \"{}\" -> \"{}\"\n", name_orig, source.fasta.name);
 
 } // acmacs::seqdb::v3::scan::fasta::fix_gisaid_name
 

@@ -74,12 +74,16 @@ namespace acmacs::seqdb
                     manually_excluded(std::string_view msg) : std::runtime_error{std::string{msg}} {}
                 };
 
+                enum class scan_name_adjustments { none, gisaid };
+
                 struct scan_options_t
                 {
-                    scan_options_t(debug a_dbg) : dbg{a_dbg} {}
-                    scan_options_t(size_t a_remove_too_short_nucs, debug a_dbg = debug::no) : remove_too_short_nucs{a_remove_too_short_nucs}, dbg{a_dbg} {}
+                    scan_options_t(debug a_dbg, scan_name_adjustments na = scan_name_adjustments::none) : dbg{a_dbg}, name_adjustements{na} {}
+                    scan_options_t(size_t a_remove_too_short_nucs, debug a_dbg = debug::no, scan_name_adjustments na = scan_name_adjustments::none)
+                        : remove_too_short_nucs{a_remove_too_short_nucs}, dbg{a_dbg}, name_adjustements{na} {}
                     size_t remove_too_short_nucs{100}; // remove nuc sequences shorter than this (if value 1000, sequence of length 1000 is kept)
                     debug dbg;
+                    scan_name_adjustments name_adjustements{scan_name_adjustments::none};
                 };
 
                 struct scan_input_t
@@ -143,8 +147,8 @@ namespace acmacs::seqdb
                 std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
                 // returns error and warning messages
-                messages_t normalize_name(scan_result_t& source, debug dbg);
-                void fix_gisaid_name(scan_result_t& source);
+                messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements);
+                void fix_gisaid_name(scan_result_t& source, debug dbg);
 
                 bool import_sequence(std::string_view raw_sequence, sequence_t& sequence_data, const scan_options_t& options);
 
