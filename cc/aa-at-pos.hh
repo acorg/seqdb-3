@@ -63,9 +63,8 @@ namespace acmacs::seqdb::inline v3
 
 // ----------------------------------------------------------------------
 
-template <> struct fmt::formatter<acmacs::seqdb::amino_acid_at_pos1_eq_t>
+template <> struct fmt::formatter<acmacs::seqdb::amino_acid_at_pos1_eq_t> : public fmt::formatter<acmacs::fmt_default_formatter>
 {
-    template <typename ParseContext> constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
     template <typename FormatContext> auto format(const acmacs::seqdb::amino_acid_at_pos1_eq_t& pos1_aa_eq, FormatContext& ctx)
     {
         if (std::get<bool>(pos1_aa_eq))
