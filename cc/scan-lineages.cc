@@ -31,24 +31,37 @@ class CladeDefinitions : public acmacs::settings::Settings
 
     bool apply_built_in(std::string_view name, acmacs::verbose verb) override // returns true if built-in command with that name found and applied
     {
-        if (name == "clade")
-            add(current_virus_type_, getenv("name", ""), acmacs::seqdb::extract_aa_at_pos1_eq_list(getenv("substitutions")));
+        if (name == "clade") {
+            const auto& aa_field = getenv("aa");
+            auto aa = aa_field.is_null() ? acmacs::seqdb::amino_acid_at_pos1_eq_list_t{} : acmacs::seqdb::extract_aa_at_pos1_eq_list(aa_field);
+            const auto& nuc_field = getenv("nuc");
+            auto nuc = nuc_field.is_null() ? acmacs::seqdb::nucleotide_at_pos1_eq_list_t{} : acmacs::seqdb::extract_nuc_at_pos1_eq_list(nuc_field);
+            add(current_virus_type_, getenv("name", ""), std::move(aa), std::move(nuc));
+        }
         else
             return acmacs::settings::Settings::apply_built_in(name, verb);
         return true;
     }
 
-    bool matches(const acmacs::seqdb::v3::scan::sequence_t& seq, const acmacs::seqdb::amino_acid_at_pos1_eq_list_t& substitutions) const
+    bool matches(const acmacs::seqdb::v3::scan::sequence_t& seq, const acmacs::seqdb::amino_acid_at_pos1_eq_list_t& aa_at_pos) const
     {
-        return std::all_of(std::begin(substitutions), std::end(substitutions),
-                           [&seq](const acmacs::seqdb::amino_acid_at_pos1_eq_t& pos1_aa) { return (seq.aa_at_pos(std::get<acmacs::seqdb::pos1_t>(pos1_aa)) == std::get<char>(pos1_aa)) == std::get<bool>(pos1_aa); });
+        return std::all_of(std::begin(aa_at_pos), std::end(aa_at_pos), [&seq](const acmacs::seqdb::amino_acid_at_pos1_eq_t& pos1_aa) {
+            return (seq.aa_at_pos(std::get<acmacs::seqdb::pos1_t>(pos1_aa)) == std::get<char>(pos1_aa)) == std::get<bool>(pos1_aa);
+        });
+    }
+
+    bool matches(const acmacs::seqdb::v3::scan::sequence_t& seq, const acmacs::seqdb::nucleotide_at_pos1_eq_list_t& nuc_at_pos) const
+    {
+        return std::all_of(std::begin(nuc_at_pos), std::end(nuc_at_pos), [&seq](const acmacs::seqdb::nucleotide_at_pos1_eq_t& pos1_nuc) {
+            return (seq.nuc_at_pos(std::get<acmacs::seqdb::pos1_t>(pos1_nuc)) == std::get<char>(pos1_nuc)) == std::get<bool>(pos1_nuc);
+        });
     }
 
     void add_clades(acmacs::seqdb::v3::scan::sequence_t& sequence, const std::string& virus_type)
     {
         if (auto found = data_.find(virus_type); found != std::end(data_)) {
-            for (const auto& [clade_name, substitutions] : found->second) {
-                if (matches(sequence, substitutions))
+            for (const auto& [clade_name, aa_at_pos, nuc_at_pos] : found->second) {
+                if ((aa_at_pos.empty() || matches(sequence, aa_at_pos)) && (nuc_at_pos.empty() || matches(sequence, nuc_at_pos)))
                     sequence.add_clade(clade_name);
             }
         }
@@ -58,11 +71,11 @@ class CladeDefinitions : public acmacs::settings::Settings
 
   private:
     std::string current_virus_type_;
-    std::map<std::string, std::vector<std::pair<acmacs::seqdb::v3::clade_t, acmacs::seqdb::amino_acid_at_pos1_eq_list_t>>, std::less<>> data_;
+    std::map<std::string, std::vector<std::tuple<acmacs::seqdb::v3::clade_t, acmacs::seqdb::amino_acid_at_pos1_eq_list_t, acmacs::seqdb::nucleotide_at_pos1_eq_list_t>>, std::less<>> data_;
 
-    void add(const std::string& virus_type, std::string_view clade_name, acmacs::seqdb::amino_acid_at_pos1_eq_list_t&& substitutions)
+    void add(const std::string& virus_type, std::string_view clade_name, acmacs::seqdb::amino_acid_at_pos1_eq_list_t&& aa_at_pos, acmacs::seqdb::nucleotide_at_pos1_eq_list_t&& nuc_at_pos)
     {
-        data_[virus_type].emplace_back(acmacs::seqdb::v3::clade_t{clade_name}, std::move(substitutions));
+        data_[virus_type].emplace_back(acmacs::seqdb::v3::clade_t{clade_name}, std::move(aa_at_pos), std::move(nuc_at_pos));
     }
 };
 

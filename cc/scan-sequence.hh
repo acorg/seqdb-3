@@ -30,7 +30,7 @@ namespace acmacs::seqdb
                 bool empty() const { return deletions.empty() && insertions.empty(); }
 
                 // returns {pos deleted, adjusted pos}
-                std::pair<bool, pos0_t> apply_deletions(pos0_t pos) const
+                std::pair<bool, pos0_t> aa_apply_deletions(pos0_t pos) const
                 {
                     for (const auto& pos_num : deletions) {
                         if (pos_num.pos <= pos) {
@@ -43,6 +43,13 @@ namespace acmacs::seqdb
                             break;
                     }
                     return {false, pos};
+                }
+
+                // returns {pos deleted, adjusted pos}
+                std::pair<bool, pos0_t> nuc_apply_deletions(pos0_t pos) const
+                {
+                    const auto [pos_deleted, adjusted_pos_aa] = aa_apply_deletions(pos.nuc_to_aa());
+                    return {pos_deleted, pos0_t{(*adjusted_pos_aa * 3) + pos.nuc_offset()}};
                 }
 
             }; // struct deletions_insertions_t
@@ -133,10 +140,9 @@ namespace acmacs::seqdb
                 // pos is 0 based
                 // returns '-' if deleted
                 // returns '\0' if beyond the end of sequence or before the beginning
-                char aa_at_pos(pos0_t pos) const
+                char aa_at_pos(pos0_t pos0) const
                 {
-                    const auto [deleted, pos_with_deletions] = deletions_.apply_deletions(pos);
-                    if (deleted)
+                    if (const auto [deleted, pos_with_deletions] = deletions_.aa_apply_deletions(pos0); deleted)
                         return '-';
                     else if ((pos_with_deletions + *shift_aa_) > pos0_t{aa_.size()})
                         return 0;
@@ -146,6 +152,22 @@ namespace acmacs::seqdb
 
                 // pos is 1 based
                 char aa_at_pos(acmacs::seqdb::pos1_t pos) const { return aa_at_pos(pos0_t{*pos - 1}); }
+
+                // pos is 0 based
+                // returns '-' if deleted
+                // returns '\0' if beyond the end of sequence or before the beginning
+                char nuc_at_pos(pos0_t pos0) const
+                {
+                    const auto [deleted, pos_with_deletions] = deletions_.nuc_apply_deletions(pos0);
+                    if (deleted)
+                        return '-';
+                    else if ((pos_with_deletions + *shift_nuc_) > pos0_t{nuc_.size()})
+                        return 0;
+                    else
+                        return nuc_[*pos_with_deletions + *shift_nuc_];
+                }
+
+                char nuc_at_pos(acmacs::seqdb::pos1_t pos) const { return nuc_at_pos(pos0_t{*pos - 1}); }
 
                 size_t aa_number_of_X() const
                 {
