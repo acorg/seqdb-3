@@ -873,8 +873,12 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend_single_matching(st
 {
     if (!re.empty()) {
         auto candidates = seqdb.select_by_regex(re);
-        if (candidates.size() != 1)
+        if (candidates.size() != 1) {
+            fmt::print(stderr, "WARNING: Selected sequences: {}\n", candidates.size());
+            for (const auto& candidate : candidates)
+                fmt::print(stderr, "    {}\n", candidate.seq_id());
             throw std::runtime_error{fmt::format("regular expression must select single sequence: \"{}\", selected: {}", re, candidates.size())};
+        }
         refs_.erase(std::remove(std::begin(refs_), std::end(refs_), candidates.front()), std::end(refs_)); // remove it, if selected earlier
         refs_.insert(std::begin(refs_), candidates.front());
     }
