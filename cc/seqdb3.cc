@@ -31,6 +31,7 @@ struct Options : public argv
     option<str>       country{*this, "country"};
     option<str>       clade{*this, "clade"};
     option<str>       aa_at_pos{*this, "aa-at-pos", desc{"comma separated list: 162N,74R,!167X"}};
+    option<str>       nuc_at_pos{*this, "nuc-at-pos", desc{"comma separated list: 618C"}};
     option<size_t>    recent{*this, "recent", dflt{0UL}};
     option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent,\n                                       then add num2 older which are also matched against hidb"}};
     option<size_t>    random{*this, "random", dflt{0UL}};
@@ -119,6 +120,10 @@ int main(int argc, char* const argv[])
         if (!opt.aa_at_pos->empty())
             aa_at_pos = acmacs::seqdb::extract_aa_at_pos1_eq_list(*opt.aa_at_pos);
 
+        acmacs::seqdb::nucleotide_at_pos1_eq_list_t nuc_at_pos;
+        if (!opt.nuc_at_pos->empty())
+            nuc_at_pos = acmacs::seqdb::extract_nuc_at_pos1_eq_list(*opt.nuc_at_pos);
+
         if (opt.name_format->empty()) {
             if (opt.fasta->empty())
                 opt.name_format.add("{full_name} {lineage} {dates} {country} {clades}");
@@ -137,6 +142,7 @@ int main(int argc, char* const argv[])
             .country(fix_country(acmacs::uppercase{*opt.country}))
             .clade(acmacs::uppercase{*opt.clade})
             .aa_at_pos(aa_at_pos)
+            .nuc_at_pos(nuc_at_pos)
             .multiple_dates(opt.multiple_dates)
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)

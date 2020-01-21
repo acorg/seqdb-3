@@ -841,6 +841,26 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const amino_acid
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_at_pos(const nucleotide_at_pos1_eq_list_t& nuc_at_pos)
+{
+    if (!nuc_at_pos.empty()) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
+                                   [&nuc_at_pos](const auto& en) {
+                                       try {
+                                           return en.seq().nucs.empty() || !en.seq().matches(nuc_at_pos); // true to remove
+                                       }
+                                       catch (std::exception& err) {
+                                           throw std::runtime_error{fmt::format("{}, full_name: {}", err, en.full_name())};
+                                       }
+                                   }),
+                    std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::nuc_at_pos
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::names_matching_regex(const std::vector<std::string_view>& regex_list)
 {
     if (!regex_list.empty()) {

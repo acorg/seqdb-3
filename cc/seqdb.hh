@@ -145,6 +145,8 @@ namespace acmacs::seqdb::inline v3
         bool has_reassortant(std::string_view reassortant) const { return std::find(std::begin(reassortants), std::end(reassortants), reassortant) != std::end(reassortants); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(amino_acids), aa_at_pos1_eq); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(amino_acids), aa_at_pos1); }
+        bool matches(const nucleotide_at_pos1_eq_list_t& nuc_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1_eq); }
+        bool matches(const nucleotide_at_pos1_list_t& nuc_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1); }
 
         constexpr sequence_aligned_ref_t aa_aligned(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(amino_acids, length); }
         constexpr sequence_aligned_ref_t nuc_aligned(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(nucs, length); }
@@ -252,6 +254,7 @@ namespace acmacs::seqdb::inline v3
         subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
         subset& with_hi_name(bool with_hi_name);
         subset& aa_at_pos(const amino_acid_at_pos1_eq_list_t& aa_at_pos);
+        subset& nuc_at_pos(const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
         subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
