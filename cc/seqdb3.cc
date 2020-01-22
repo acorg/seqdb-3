@@ -27,7 +27,7 @@ struct Options : public argv
     option<str>       lineage{*this, "lineage"};
     option<str>       start_date{*this, "start-date"};
     option<str>       end_date{*this, "end-date"};
-    option<str>       continent{*this, "continent"};
+    option<str>       continent{*this, "continent", desc{"africa antarctica asia australia-oceania central-america europe middle-east north-america russia south-america"}};
     option<str>       country{*this, "country"};
     option<str>       clade{*this, "clade"};
     option<str>       aa_at_pos{*this, "aa-at-pos", desc{"comma separated list: 162N,74R,!167X"}};
