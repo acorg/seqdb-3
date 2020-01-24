@@ -465,6 +465,7 @@ static const std::regex re_year_at_end_of_name{"(19\\d\\d|20[0-2]\\d)$"};
 static const std::regex re_HK_name{"/HK/"};
 static const std::regex re_CRIE1_name{"/([0-9]+)/CRIE/"};
 static const std::regex re_CRIE2_name{"([^0-9])/CRIE/([0-9]+)/([0-9]+)$"};
+static const std::regex re_INCMNSZ_name("/INCMNSZ/([^/]+)/[A-Z][A-Z][A-Z](20[0-9][0-9])/H[0-9]+N[0-9]+", std::regex_constants::icase | std::regex_constants::ECMAScript);
 
 #include "acmacs-base/diagnostics-pop.hh"
 
@@ -496,6 +497,10 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
     else if (std::cmatch match_crie2; name.size() > 6 && std::regex_search(std::begin(name), std::end(name), match_crie2, re_CRIE2_name)) {
         // A/Moscow/14/CRIE/2019
         source.fasta.name = fmt::format("{}{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match_crie2.position(0))), match_crie2.str(1), match_crie2.str(2), match_crie2.str(3));
+    }
+    else if (std::cmatch match_incmnsz; name.size() > 20 && std::regex_search(std::begin(name), std::end(name), match_incmnsz, re_INCMNSZ_name)) {
+        // A/MEXICO/INCMNSZ/BMR090/JAN2020/H1N1PDM09 -> A/MEXICO/BMR090/2020
+        source.fasta.name = fmt::format("{}/{}/{}", name.substr(0, static_cast<size_t>(match_incmnsz.position(0))), match_incmnsz.str(1), match_incmnsz.str(2));
     }
     if (dbg == debug::yes && name_orig != source.fasta.name)
         fmt::print(stderr, "DEBUG: \"{}\" -> \"{}\"\n", name_orig, source.fasta.name);
