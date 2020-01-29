@@ -263,12 +263,12 @@ namespace acmacs::seqdb::inline v3
         subset& recent(size_t recent);
         subset& recent_matched(const std::vector<size_t>& recent_matched);
         subset& random(size_t random);
-        subset& group_by_hamming_distance(size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
-        subset& subset_by_hamming_distance_random(bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
-        subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
+        subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
+        subset& subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
+        subset& remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched);
         subset& with_hi_name(bool with_hi_name);
-        subset& aa_at_pos(const amino_acid_at_pos1_eq_list_t& aa_at_pos);
-        subset& nuc_at_pos(const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
+        subset& aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos);
+        subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
         subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);

@@ -47,7 +47,7 @@ int main(int argc, char* const argv[])
         auto sera = chart->sera();
         size_t matched_by_name = 0, matched_by_name_reassortant = 0;
         for (auto [ag_no, antigen] : acmacs::enumerate(*antigens)) {
-            if (const auto subset = seqdb.select_by_name(antigen->name()).aa_at_pos(aa_at_pos); !subset.empty()) {
+            if (const auto subset = seqdb.select_by_name(antigen->name()).aa_at_pos(seqdb, aa_at_pos); !subset.empty()) {
                 ++matched_by_name;
                 std::string matching_sera;
                 if (const auto serum_indexes = sera->find_by_name(antigen->name()); !serum_indexes->empty())

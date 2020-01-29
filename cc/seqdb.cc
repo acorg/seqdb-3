@@ -311,10 +311,10 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::find_by_seq_ids(const std::v
 acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const
 {
     aas_indexes_t aas_indexes;
-    acmacs::enumerate(match(aAntigens), [&aas_indexes,&aPositions1](auto ag_no, const auto& ref) {
+    acmacs::enumerate(match(aAntigens), [this,&aas_indexes,&aPositions1](auto ag_no, const auto& ref) {
         if (ref) {
             std::string aa(aPositions1.size(), 'X');
-            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [ref = ref](size_t pos) { return ref.seq().aa_at_pos(acmacs::seqdb::pos1_t{pos}); });
+            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [this, ref = ref](size_t pos) { return ref.seq().with_sequence(*this).aa_at_pos(acmacs::seqdb::pos1_t{pos}); });
             aas_indexes[aa].push_back(ag_no);
         }
     });
@@ -378,7 +378,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1(const ac
     to_json::object json_antigens;
     acmacs::enumerate(match(*chart.antigens(), chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref) {
-            const auto sequence = ref.seq().aa_aligned();
+            const auto sequence = ref.seq().with_sequence(*this).aa_aligned();
             json_antigens << to_json::key_val{std::to_string(ag_no), *sequence};
             acmacs::enumerate(*sequence, [&stat_per_pos](size_t pos, char aa) {++stat_per_pos[pos].aa_count[aa]; }, 1UL);
         }
@@ -408,7 +408,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::
     std::string fasta;
     acmacs::enumerate(match(*antigens, chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref)
-            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.seq().nuc_aligned());
+            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.seq().with_sequence(*this).nuc_aligned());
     });
     return fasta;
 
@@ -634,11 +634,11 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
 // second sequence in each group (if group size > 1). Do it until
 // output_size sequences selected.
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(size_t dist_threshold, size_t output_size)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size)
 {
     if (dist_threshold > 0) {
-        const auto compute_hamming_distance = [](std::string_view master_aa, auto first, auto last) {
-            std::for_each(first, last, [master_aa](auto& ref) { ref.hamming_distance = hamming_distance(master_aa, ref.seq().aa_aligned()); });
+        const auto compute_hamming_distance = [&seqdb](std::string_view master_aa, auto first, auto last) {
+            std::for_each(first, last, [&seqdb,master_aa](auto& ref) { ref.hamming_distance = hamming_distance(master_aa, ref.seq().with_sequence(seqdb).aa_aligned()); });
         };
 
         const auto sort_by_hamming_distance = [](auto first, auto last) { std::sort(first, last, [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; }); };
@@ -659,7 +659,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
         auto group_first = std::begin(refs_);
         acmacs::Counter<ssize_t> counter_group_size;
         for (size_t group_no = 1; group_first != std::end(refs_); ++group_no) {
-            const auto group_master_aa_aligned = group_first->seq().aa_aligned();
+            const auto group_master_aa_aligned = group_first->seq().with_sequence(seqdb).aa_aligned();
             const auto group_second = std::next(group_first);
             // fmt::print("DEBUG: group {} master: {} {} rest size: {}\n", group_no, group_first->seq_id(), group_first->entry->date(), std::end(refs_) - group_first);
             compute_hamming_distance(group_master_aa_aligned, group_second, std::end(refs_));
@@ -739,7 +739,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 //
 // No. The size of selection must be the same (as close to 4k as possible).
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance_random(bool do_subset, size_t output_size)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size)
 {
     if (do_subset && !refs_.empty()) {
         std::mt19937 generator{std::random_device()()};
@@ -748,8 +748,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
             return std::next(first, distribution(generator));
         };
 
-        const auto minimal_distance_less_than = [](auto first, auto last, std::string_view picked_aa, size_t distance_threshold) -> bool {
-            return std::any_of(first, last, [picked_aa, distance_threshold](const auto& en) { return hamming_distance(picked_aa, en.seq().aa_aligned()) < distance_threshold; });
+        const auto minimal_distance_less_than = [&seqdb](auto first, auto last, std::string_view picked_aa, size_t distance_threshold) -> bool {
+            return std::any_of(first, last, [&seqdb, picked_aa, distance_threshold](const auto& en) { return hamming_distance(picked_aa, en.seq().with_sequence(seqdb).aa_aligned()) < distance_threshold; });
         };
 
         decltype(refs_) best_data;
@@ -759,7 +759,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
             auto selection_start = std::begin(data), selection_end = std::next(selection_start), discarded_start = std::end(data);
             while (discarded_start > selection_end) {
                 auto picked = random_from(selection_end, discarded_start);
-                if (minimal_distance_less_than(selection_start, selection_end, picked->seq().aa_aligned(), distance_threshold)) { // discard
+                if (minimal_distance_less_than(selection_start, selection_end, picked->seq().with_sequence(seqdb).aa_aligned(), distance_threshold)) { // discard
                     --discarded_start;
                     std::iter_swap(discarded_start, picked);
                 }
@@ -786,11 +786,11 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(bool do_remove, bool keep_hi_matched)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched)
 {
     if (do_remove) {
-        const acmacs::Counter counter_nuc_length(refs_, [](const auto& en) { return en.seq().nuc_aligned_length(); });
-        const auto nuc = [nuc_common_length = counter_nuc_length.max().first](const auto& en) { return en.seq().nuc_aligned(nuc_common_length); };
+        const acmacs::Counter counter_nuc_length(refs_, [&seqdb](const auto& en) { return en.seq().with_sequence(seqdb).nuc_aligned_length(); });
+        const auto nuc = [&seqdb, nuc_common_length = counter_nuc_length.max().first](const auto& en) { return en.seq().with_sequence(seqdb).nuc_aligned(nuc_common_length); };
         const auto hi_names = [](const auto& en) { return en.seq().hi_names.size(); };
         std::sort(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) {
             if (const auto n1 = nuc(e1), n2 = nuc(e2); n1 == n2)
@@ -839,13 +839,14 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::with_hi_name(bool with_hi_
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const amino_acid_at_pos1_eq_list_t& aa_at_pos)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos)
 {
     if (!aa_at_pos.empty()) {
         refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
-                                   [&aa_at_pos](const auto& en) {
+                                   [&aa_at_pos,&seqdb](const auto& en) {
                                        try {
-                                           return en.seq().amino_acids.empty() || !en.seq().matches(aa_at_pos); // true to remove
+                                           const auto& seq = en.seq().with_sequence(seqdb);
+                                           return seq.amino_acids.empty() || !seq.matches(aa_at_pos); // true to remove
                                        }
                                        catch (std::exception& err) {
                                            throw std::runtime_error{fmt::format("{}, full_name: {}", err, en.full_name())};
@@ -859,13 +860,14 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::aa_at_pos(const amino_acid
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_at_pos(const nucleotide_at_pos1_eq_list_t& nuc_at_pos)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos)
 {
     if (!nuc_at_pos.empty()) {
         refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
-                                   [&nuc_at_pos](const auto& en) {
+                                   [&nuc_at_pos,&seqdb](const auto& en) {
                                        try {
-                                           return en.seq().nucs.empty() || !en.seq().matches(nuc_at_pos); // true to remove
+                                           const auto& seq = en.seq().with_sequence(seqdb);
+                                           return seq.nucs.empty() || !seq.matches(nuc_at_pos); // true to remove
                                        }
                                        catch (std::exception& err) {
                                            throw std::runtime_error{fmt::format("{}, full_name: {}", err, en.full_name())};
