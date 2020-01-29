@@ -1,5 +1,5 @@
 {"_": "-*- js-indent-level: 4 -*-",
- "  version": "sequence-database-v2",
+ "  version": "sequence-database-v3",
  "  date": "2019-01-01 01:01:01 CEST",
  "data": [
      {
@@ -10,17 +10,18 @@
          "l": "VICTORIA",  //? VICTORIA, YAMAGATA, 2009PDM, SEASONAL
          "s": [
              {
-                 "a": "sequence-amino-acids",
-                 "c": ["clade"],
-                 "g": "gene: HA|NA", //? HA if omitted
+                 "R": {"N": "<name>", "p": "<passage>", "r": "<reassortant>", "A": "{annotations}"},             //? reference to the seq entry with the same sequence (sequence-database-v3)
+                 "a": "sequence-amino-acids",              //? absent if "R" given
+                 "s": <shift (int) for aa sequence>,       //? absent if "R" given
+                 "n": "sequence-nucleotides",              //? absent if "R" given
+                 "t": <shift (int) for nuc sequence>,      //? absent if "R" given
+                 "c": ["clade"],                           //? absent if "R" given
+                 "g": "gene: HA|NA",                       //? HA if omitted
                  "h": ["hi-name"],
                  "l": {"lab": ["lab_id"]},
-                 "n": "sequence-nucleotides",
                  "p": ["passage"],
                  "r": ["reassortant"],
                  "A": "annotations",
-                 "s": <shift (int) for aa sequence>,
-                 "t": <shift (int) for nuc sequence>,
                  "G": {         //? gisaid data, added 2019-08-27
                      "i": ["isolate_id"],
                      "S": ["submitters"],

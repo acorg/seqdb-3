@@ -198,7 +198,7 @@ namespace local
         void injson_put_string(std::string_view data) override
         {
             if (key_ == "  version") {
-                if (data != "sequence-database-v2")
+                if (data != "sequence-database-v2" && data != "sequence-database-v3")
                     throw in_json::parse_error(fmt::format("unsupported version: {}", data));
                 reset_key();
             }

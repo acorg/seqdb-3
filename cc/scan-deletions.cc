@@ -35,7 +35,7 @@ void acmacs::seqdb::v3::scan::detect_insertions_deletions(std::vector<fasta::sca
 
 // #pragma omp parallel for default(shared) schedule(static) // , 100)
     for (auto sc_p = sequence_data.begin(); sc_p != sequence_data.end(); ++sc_p) {
-        if (sc_p->sequence.aligned()) { //  && sc_p->sequence.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
+        if (!sc_p->reference && sc_p->sequence.aligned()) { //  && sc_p->sequence.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
             if (const auto* master = masters.find(sc_p->sequence.type_subtype().h_or_b())->second; master != &sc_p->sequence)
                 deletions_insertions(*master, sc_p->sequence);
         }

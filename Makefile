@@ -13,7 +13,7 @@ TARGETS = \
   $(DIST)/test-insertions-deletions
 
 SEQDB_SOURCES = \
-  scan-fasta.cc scan-sequence.cc scan-align.cc scan-deletions.cc scan-lineages.cc scan-match-hidb.cc create.cc \
+  scan-fasta.cc scan-sequence.cc scan-align.cc eliminate-identical.cc scan-deletions.cc scan-lineages.cc scan-match-hidb.cc create.cc \
   seq-id.cc seqdb.cc seqdb-parse.cc compare.cc aa-at-pos.cc
 
 SEQDB_LIB_MAJOR = 3

@@ -13,6 +13,7 @@
 #include "acmacs-base/counter.hh"
 #include "seqdb-3/hamming-distance.hh"
 #include "seqdb-3/scan-align.hh"
+#include "seqdb-3/eliminate-identical.hh"
 #include "seqdb-3/scan-deletions.hh"
 #include "seqdb-3/scan-lineages.hh"
 #include "seqdb-3/scan-match-hidb.hh"
@@ -43,6 +44,7 @@ struct Options : public argv
     option<str>  output_seqdb{*this, 'o', "output-dir", dflt{""}};
     option<bool> whocc_only{*this, "whocc-only", desc{"create whocc only db (seqdb.json.xz)"}};
     option<bool> gisaid{*this, "gisaid", desc{"perform gisaid related name fixes and adjustments"}};
+    option<bool> dont_eliminate_identical{*this, "dont-eliminate-identical", desc{"do not find identical sequences"}};
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}, desc{"ALL or comma separated: H1N,H3,B"}};
@@ -72,6 +74,8 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::translate_align(all_sequences);
+        if (!opt.dont_eliminate_identical)
+            acmacs::seqdb::scan::eliminate_identical(all_sequences);
         acmacs::seqdb::scan::detect_insertions_deletions(all_sequences);
         acmacs::seqdb::scan::detect_lineages_clades(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_name(all_sequences);

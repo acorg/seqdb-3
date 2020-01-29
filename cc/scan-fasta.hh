@@ -33,6 +33,7 @@ namespace acmacs::seqdb
                 {
                     data_t fasta;
                     sequence_t sequence;
+                    const scan_result_t* reference{nullptr}; // master entry with identical nuc sequence and nuc_shift
                     bool remove{false};
                 };
 
