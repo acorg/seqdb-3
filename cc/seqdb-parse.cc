@@ -25,6 +25,37 @@ namespace local
         acmacs::seqdb::SeqdbSeq::labs_t& target_;
     };
 
+    class reference : public in_json::stack_entry
+    {
+      public:
+        reference(acmacs::seqdb::SeqdbSeq::reference_t& target) : target_{target} {}
+        const char* injson_name() override { return "reference"; }
+
+        void injson_put_string(std::string_view data) override
+        {
+            switch (key_[0]) {
+                case 'N':
+                    target_.name = data;
+                    break;
+                case 'p':
+                    target_.passage = data;
+                    break;
+                case 'r':
+                    target_.reassortant = data;
+                    break;
+                case 'A':
+                    target_.annotations = data;
+                    break;
+                default:
+                    throw in_json::parse_error(fmt::format("seq reference (\"R\"): unexpected key: \"{}\"", key_));
+            }
+            reset_key();
+        }
+
+      private:
+        acmacs::seqdb::SeqdbSeq::reference_t& target_;
+    };
+
     class seq : public in_json::stack_entry
     {
       public:
@@ -34,12 +65,19 @@ namespace local
 
         std::unique_ptr<in_json::stack_entry> injson_put_object() override
         {
-            // if (key_[0] == 'l') {
-            reset_key();
-            return std::make_unique<labs>(target_.lab_ids);
-            // }
-            // else
-            //     throw in_json::parse_error(fmt::format("seq: unexpected sub-object, key: \"{}\"", key_));
+            switch (key_[0]) {
+              case 'l':
+                  reset_key();
+                  return std::make_unique<labs>(target_.lab_ids);
+              case 'G':         // gisaid data
+                  reset_key();
+                  return std::make_unique<in_json::ignore>();
+              case 'R':         // master with identical sequence reference
+                  reset_key();
+                  return std::make_unique<reference>(target_.reference);
+              default:
+                  throw in_json::parse_error(fmt::format("seq: unexpected sub-object, key: \"{}\"", key_));
+            }
         }
 
         void injson_put_array() override

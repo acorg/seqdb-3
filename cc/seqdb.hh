@@ -128,6 +128,15 @@ namespace acmacs::seqdb::inline v3
         using lab_ids_t = std::vector<std::string_view>;
         using labs_t = std::vector<std::pair<std::string_view, lab_ids_t>>;
 
+        struct reference_t
+        {
+            std::string_view name;
+            std::string_view annotations;
+            std::string_view reassortant;
+            std::string_view passage;
+        };
+
+        reference_t reference;
         sequence_with_alignment_ref_t amino_acids;
         sequence_with_alignment_ref_t nucs;
         std::string_view annotations;
