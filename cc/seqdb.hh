@@ -170,6 +170,10 @@ namespace acmacs::seqdb::inline v3
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
         std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
         std::string designation() const { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), passage()}); }
+
+        bool is_reference() const { return !reference.name.empty(); }
+        const SeqdbSeq& with_sequence(const Seqdb& seqdb) const { return is_reference() ? referenced(seqdb) : *this; }
+        const SeqdbSeq& referenced(const Seqdb& seqdb) const;
     };
 
     struct SeqdbEntry
@@ -206,7 +210,8 @@ namespace acmacs::seqdb::inline v3
         constexpr explicit operator bool() const { return entry != nullptr; }
         constexpr bool empty() const { return entry == nullptr; }
 
-        const auto& seq() const { return entry->seqs[seq_index]; }
+        const SeqdbSeq& seq() const { return entry->seqs[seq_index]; }
+        const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const { return entry->seqs[seq_index].with_sequence(seqdb); }
         seq_id_t seq_id() const;
         std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
         std::string full_name_with_date() const
@@ -269,7 +274,7 @@ namespace acmacs::seqdb::inline v3
         subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);
-        subset& export_sequences(std::string_view filename, const export_options& options);
+        subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
         subset& print(std::string_view name_format, bool do_print = true);
         subset& report_stat(bool do_report = true);
 
@@ -319,7 +324,7 @@ namespace acmacs::seqdb::inline v3
 
         using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
         using collected_t = std::vector<collected_entry_t>;
-        collected_t export_collect(const export_options& options) const;
+        collected_t export_collect(const Seqdb& seqdb, const export_options& options) const;
         std::string export_fasta(const collected_t& entries, const export_options& options);
         std::string make_name(std::string_view name_format, const ref& entry) const;
 

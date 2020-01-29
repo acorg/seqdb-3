@@ -433,6 +433,22 @@ std::string acmacs::seqdb::v3::SeqdbEntry::location() const
 
 // ----------------------------------------------------------------------
 
+const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::referenced(const Seqdb& seqdb) const
+{
+    for (const auto& ref : seqdb.select_by_name(reference.name)) {
+        for (const auto& seq : ref.entry->seqs) {
+            if (seq.annotations == reference.annotations &&
+                ((reference.reassortant.empty() && seq.reassortants.empty()) || std::find(std::begin(seq.reassortants), std::end(seq.reassortants), reference.reassortant) != std::end(seq.reassortants)) &&
+                ((reference.passage.empty() && seq.passages.empty()) || std::find(std::begin(seq.passages), std::end(seq.passages), reference.passage) != std::end(seq.passages)))
+                return seq;
+        }
+    }
+    throw std::runtime_error{"internal in SeqdbSeq::referenced: invalid reference"};
+
+} // acmacs::seqdb::v3::SeqdbSeq::referenced
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
 {
     auto source = ::string::join(" ", {entry->name, seq().designation()});
@@ -976,10 +992,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const export_options& options)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options)
 {
     if (!filename.empty()) {
-        auto to_export = export_collect(options);
+        auto to_export = export_collect(seqdb, options);
 
         if (options.e_most_common_length) {
             const acmacs::Counter counter(to_export, [](const auto& en) { return en.second.size(); });
@@ -1025,20 +1041,21 @@ std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, c
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect(const export_options& options) const
+acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect(const Seqdb& seqdb, const export_options& options) const
 {
-    const auto get_seq = [&options](const auto& entry) -> std::string_view {
+    const auto get_seq = [&options,&seqdb](const auto& entry) -> std::string_view {
+        const auto& seq = entry.seq().with_sequence(seqdb);
         if (options.e_format == export_options::format::fasta_aa) {
             if (options.e_aligned)
-                return *entry.seq().aa_aligned();
+                return *seq.aa_aligned();
             else
-                return std::get<std::string_view>(entry.seq().amino_acids);
+                return std::get<std::string_view>(seq.amino_acids);
         }
         else {
             if (options.e_aligned)
-                return *entry.seq().nuc_aligned();
+                return *seq.nuc_aligned();
             else
-                return std::get<std::string_view>(entry.seq().nucs);
+                return std::get<std::string_view>(seq.nucs);
         }
     };
 

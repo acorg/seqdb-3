@@ -156,7 +156,7 @@ int main(int argc, char* const argv[])
             .report_stat() // static_cast<bool>(opt.fasta))
             .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
-            .export_sequences(opt.fasta,
+            .export_sequences(opt.fasta, seqdb,
                               acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
             .print(opt.name_format, opt.print /* || opt.fasta */);
 
