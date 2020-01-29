@@ -140,7 +140,7 @@ int main(int argc, char* const argv[])
             .dates(fix_date(opt.start_date), fix_date(opt.end_date))
             .continent(acmacs::uppercase{*opt.continent})
             .country(fix_country(acmacs::uppercase{*opt.country}))
-            .clade(acmacs::uppercase{*opt.clade})
+            .clade(seqdb, acmacs::uppercase{*opt.clade})
             .aa_at_pos(aa_at_pos)
             .nuc_at_pos(nuc_at_pos)
             .multiple_dates(opt.multiple_dates)
@@ -158,7 +158,7 @@ int main(int argc, char* const argv[])
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_regex)
             .export_sequences(opt.fasta, seqdb,
                               acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
-            .print(opt.name_format, opt.print /* || opt.fasta */);
+            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */);
 
         return 0;
     }

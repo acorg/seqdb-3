@@ -227,7 +227,7 @@ namespace acmacs::seqdb::inline v3
                 return std::string{seq().hi_names.front()};
         }
         bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
-        bool has_clade(std::string_view clade) const { return seq().has_clade(clade); }
+        bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade(clade); }
         bool has_hi_names() const { return !seq().hi_names.empty(); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
@@ -259,7 +259,7 @@ namespace acmacs::seqdb::inline v3
         subset& dates(std::string_view start, std::string_view end);
         subset& continent(const acmacs::uppercase& continent);
         subset& country(const acmacs::uppercase& country);
-        subset& clade(const acmacs::uppercase& clade);
+        subset& clade(const Seqdb& seqdb, const acmacs::uppercase& clade);
         subset& recent(size_t recent);
         subset& recent_matched(const std::vector<size_t>& recent_matched);
         subset& random(size_t random);
@@ -275,7 +275,7 @@ namespace acmacs::seqdb::inline v3
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);
         subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
-        subset& print(std::string_view name_format, bool do_print = true);
+        subset& print(const Seqdb& seqdb, std::string_view name_format, bool do_print = true);
         subset& report_stat(bool do_report = true);
 
         subset& append(const subset& another);
@@ -326,7 +326,7 @@ namespace acmacs::seqdb::inline v3
         using collected_t = std::vector<collected_entry_t>;
         collected_t export_collect(const Seqdb& seqdb, const export_options& options) const;
         std::string export_fasta(const collected_t& entries, const export_options& options);
-        std::string make_name(std::string_view name_format, const ref& entry) const;
+        std::string make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const;
 
         friend class Seqdb;
     };

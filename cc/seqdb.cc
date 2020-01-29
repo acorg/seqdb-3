@@ -329,13 +329,14 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
     clades_t result;
     bool clades_found = false;
     for (const auto& ref : select_by_name(name)) {
+        const auto& seq = ref.seq().with_sequence(*this);
         if (inclusive == clades_for_name_inclusive::yes || !clades_found) {
-            std::copy(std::begin(ref.seq().clades), std::end(ref.seq().clades), std::back_inserter(result));
+            std::copy(std::begin(seq.clades), std::end(seq.clades), std::back_inserter(result));
         }
         else {
-            result.erase(std::remove_if(std::begin(result), std::end(result), [&ref](const auto& clade) { return !ref.seq().has_clade(clade); }), std::end(result));
+            result.erase(std::remove_if(std::begin(result), std::end(result), [&seq](const auto& clade) { return !seq.has_clade(clade); }), std::end(result));
         }
-        clades_found |= !ref.seq().clades.empty();
+        clades_found |= !seq.clades.empty();
     }
     return result;
 
@@ -348,9 +349,10 @@ void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) con
     auto antigens = chart.antigens_modify();
     acmacs::enumerate(match(*antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
         if (ref) {
+            const auto& seq = ref.seq().with_sequence(*this);
             auto& antigen = antigens->at(ag_no);
-            if (!ref.seq().clades.empty()) {
-                for (const auto& clade : ref.seq().clades)
+            if (!seq.clades.empty()) {
+                for (const auto& clade : seq.clades)
                     antigen.add_clade(std::string{clade});
             }
             else {
@@ -557,10 +559,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::country(const acmacs::uppe
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::clade(const acmacs::uppercase& clade)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::clade(const Seqdb& seqdb, const acmacs::uppercase& clade)
 {
     if (!clade.empty())
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [clade=static_cast<std::string_view>(clade)](const auto& en) { return !en.has_clade(clade); }), std::end(refs_));
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [&seqdb,clade=static_cast<std::string_view>(clade)](const auto& en) { return !en.has_clade(seqdb, clade); }), std::end(refs_));
     return *this;
 
 } // acmacs::seqdb::v3::subset::clade
@@ -1015,7 +1017,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, const ref& entry) const
+std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const
 {
     return fmt::format(name_format,
                        fmt::arg("seq_id", entry.seq_id()),
@@ -1029,7 +1031,7 @@ std::string acmacs::seqdb::v3::subset::make_name(std::string_view name_format, c
                        fmt::arg("dates", entry.entry->dates),
                        fmt::arg("lab_id", entry.seq().lab_id()),
                        fmt::arg("passage", entry.seq().passage()),
-                       fmt::arg("clades", entry.seq().clades),
+                       fmt::arg("clades", entry.seq().with_sequence(seqdb).clades),
                        fmt::arg("lab", entry.seq().lab()),
                        fmt::arg("country", entry.entry->country),
                        fmt::arg("continent", entry.entry->continent),
@@ -1061,7 +1063,7 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
 
     collected_t result(refs_.size()); // {seq_id, sequence}
     std::transform(std::begin(refs_), std::end(refs_), std::begin(result),
-                   [this, &options, &get_seq](const auto& en) -> collected_entry_t { return std::pair(make_name(options.e_name_format, en), std::string{get_seq(en)}); });
+                   [this, &options, &get_seq, &seqdb](const auto& en) -> collected_entry_t { return std::pair(make_name(seqdb, options.e_name_format, en), std::string{get_seq(en)}); });
     return result;
 
 } // acmacs::seqdb::v3::subset::export_collect
@@ -1117,11 +1119,11 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::subset::filter_by_indexes(const acm
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(std::string_view name_format, bool do_print)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(const Seqdb& seqdb, std::string_view name_format, bool do_print)
 {
     if (do_print) {
         for (const auto& ref : *this)
-            fmt::print("{}\n", make_name(name_format, ref));
+            fmt::print("{}\n", make_name(seqdb, name_format, ref));
     }
     return *this;
 

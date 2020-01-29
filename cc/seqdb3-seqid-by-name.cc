@@ -24,7 +24,7 @@ int main(int argc, char* const argv[])
         const auto& seqdb = acmacs::seqdb::get();
         for (const auto& name : *opt.names) {
             if (auto subset = seqdb.select_by_name(name); !subset.empty())
-                subset.print("{seq_id}");
+                subset.print(seqdb, "{seq_id}");
             else
                 fmt::print(stderr, "ERROR: \"{}\" not found\n", name);
         }
