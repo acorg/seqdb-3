@@ -459,6 +459,9 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
 #include "acmacs-base/global-constructors-push.hh"
 
+static const std::regex re_subtype_at_the_end("\\(H[0-9]+(N[0-9]+)?\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
+static const std::regex re_artefact_at_the_beginning("^[^A-Z]([AB]/)", std::regex_constants::icase | std::regex_constants::ECMAScript);
+
 static const std::regex re_CSISP_name{"/[\\d_]+(_)(20\\d\\d)\\d\\d\\d\\d$"};
 static const std::regex re_year_at_end_of_name{"(19\\d\\d|20[0-2]\\d)$"};
 // static const std::regex re_year_3000{"/(30)([0-2]\\d)$"};
@@ -471,8 +474,14 @@ static const std::regex re_INCMNSZ_name("/INCMNSZ/([^/]+)/[A-Z][A-Z][A-Z](20[0-9
 
 void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debug dbg)
 {
+    const std::string name_orig{dbg == debug::yes ? source.fasta.name : std::string{}};
+
+    if (std::smatch match_subtype_at_the_end; std::regex_search(source.fasta.name, match_subtype_at_the_end, re_subtype_at_the_end))
+        source.fasta.name.erase(static_cast<size_t>(match_subtype_at_the_end.position(0)));
+    if (std::smatch match_artefact_at_the_beginning; std::regex_search(source.fasta.name, match_artefact_at_the_beginning, re_artefact_at_the_beginning))
+        source.fasta.name.erase(0, static_cast<size_t>(match_artefact_at_the_beginning.position(1)));
+
     const std::string_view name{source.fasta.name};
-    const std::string name_orig{dbg == debug::yes ? name : std::string_view{}};
     // CSISP has names with the isolation date: A/Valencia/07_0435_20171111 -> A/Valencia/07_0435/2017
     if (std::cmatch match_CSISP_name; std::regex_search(std::begin(name), std::end(name), match_CSISP_name, re_CSISP_name)) {
         // fmt::print("INFO: {}\n", source.fasta.name);
