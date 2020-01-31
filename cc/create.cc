@@ -107,13 +107,13 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                     entry_seq << to_json::key_val("p", to_json::array(
                                                            seq.passages().begin(), seq.passages().end(), [](const auto& passage) { return *passage; }, to_json::json::compact_output::yes));
                 if (en.reference) {
-                    to_json::object reference = to_json::object(to_json::key_val("N", en.reference->sequence.name().get()));
-                    if (!en.reference->sequence.annotations().empty())
-                        reference << to_json::key_val("A", en.reference->sequence.annotations());
-                    if (!en.reference->sequence.reassortant().empty())
-                        reference << to_json::key_val("r", *en.reference->sequence.reassortant());
-                    if (!en.reference->sequence.passages().empty())
-                        reference << to_json::key_val("p", *en.reference->sequence.passages().front());
+                    to_json::object reference = to_json::object(to_json::key_val("N", *en.reference->name));
+                    if (!en.reference->annotations.empty())
+                        reference << to_json::key_val("A", en.reference->annotations);
+                    if (!en.reference->reassortant.empty())
+                        reference << to_json::key_val("r", *en.reference->reassortant);
+                    if (!en.reference->passage.empty())
+                        reference << to_json::key_val("p", *en.reference->passage);
                     reference.make_compact();
                     entry_seq << to_json::key_val("R", std::move(reference));
                 }

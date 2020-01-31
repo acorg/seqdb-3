@@ -191,6 +191,7 @@ namespace acmacs::seqdb
                 // const acmacs::virus::host_t& host() const { return host_; }
                 constexpr const acmacs::virus::Reassortant& reassortant() const { return reassortant_; }
                 constexpr const auto& passages() const { return passages_; }
+                acmacs::virus::Passage passage() const { return passages_.empty() ? acmacs::virus::Passage{} : passages_.front(); }
                 std::string full_name() const;
                 constexpr auto shift_aa() const { return shift_aa_; }
                 constexpr auto shift_nuc() const { return shift_nuc_; }

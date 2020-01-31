@@ -44,6 +44,7 @@ namespace acmacs::seqdb
 
 acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan(const std::vector<std::string_view>& filenames, const scan_options_t& options)
 {
+    using namespace std::string_view_literals;
     using namespace fmt::literals;
 
     get_locdb(); // load locbd outside of threading code, it is not thread safe
@@ -76,6 +77,8 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                             || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
                             scan_result->sequence.remove_dates();
                         }
+                        if (scan_result->fasta.type_subtype.h_or_b() == "B" && scan_result->fasta.lineage.empty())
+                            messages.push_back({message_t{"invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name)}, scan_result->fasta.filename, scan_result->fasta.line_no});
                         sequences_per_file[f_no].push_back(std::move(*scan_result));
                         add_message(messages_per_file[f_no], std::move(messages));
                     }

@@ -29,11 +29,19 @@ namespace acmacs::seqdb
                     std::vector<acmacs::virus::parse_result_t::message_t> messages;
                 };
 
+                struct reference_t
+                {
+                    acmacs::virus::name_t name;
+                    std::string annotations;
+                    acmacs::virus::Reassortant reassortant;
+                    acmacs::uppercase passage;
+                };
+
                 struct scan_result_t
                 {
                     data_t fasta;
                     sequence_t sequence;
-                    const scan_result_t* reference{nullptr}; // master entry with identical nuc sequence and nuc_shift
+                    std::optional<reference_t> reference; // master entry with identical nuc sequence and nuc_shift
                     bool remove{false};
                 };
 
