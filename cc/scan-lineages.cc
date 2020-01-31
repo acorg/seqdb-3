@@ -131,6 +131,19 @@ void acmacs::seqdb::v3::scan::detect_lineages_clades(std::vector<fasta::scan_res
         }
     }
 
+    // populate lineage for references
+    std::map<acmacs::virus::name_t, std::vector<fasta::scan_result_t*>> referenced;
+    for (auto& seq : sequences) {
+        if (seq.reference)
+            referenced[seq.reference->name].push_back(&seq);
+    }
+    for (auto& seq : sequences) {
+        if (const auto found = referenced.find(seq.sequence.name()); found != referenced.end() && !seq.sequence.lineage().empty()) {
+            for (auto* ref : found->second)
+                ref->sequence.lineage(seq.sequence.lineage());
+        }
+    }
+
 } // acmacs::seqdb::v3::scan::detect_lineages_clades
 
 // ****************************************************************************************************
