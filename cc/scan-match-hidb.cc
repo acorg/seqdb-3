@@ -80,7 +80,7 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
         const auto& seq = first->sequence;
         if (subtype == "B") {
             if (const auto hidb_lineage = found_hidb_antigens.front()->lineage(); hidb_lineage != acmacs::chart::BLineage::Unknown && hidb_lineage != acmacs::chart::BLineage{seq.lineage()})
-                fmt::print(stderr, "WARNING: lineage mismatch seq: {} {} vs. hidb: {} {}\n", seq.full_name(), acmacs::chart::BLineage{seq.lineage()}, found_hidb_antigens.front()->name(), found_hidb_antigens.front()->lineage());
+                fmt::print(stderr, "WARNING: lineage mismatch seq: {} vs. hidb: {} {}\n", seq.full_name(), found_hidb_antigens.front()->name(), found_hidb_antigens.front()->lineage());
         }
         for (const auto& en: found_hidb_antigens)
             first->sequence.add_date(*en->date());
