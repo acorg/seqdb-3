@@ -150,21 +150,28 @@ namespace acmacs::seqdb::inline v3
         {
             return std::any_of(std::begin(lab_ids), std::end(lab_ids), [lab](const auto& en) { return en.first == lab; });
         }
-        bool has_clade(std::string_view clade) const { return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades); }
         bool has_reassortant(std::string_view reassortant) const { return std::find(std::begin(reassortants), std::end(reassortants), reassortant) != std::end(reassortants); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(amino_acids), aa_at_pos1_eq); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(amino_acids), aa_at_pos1); }
         bool matches(const nucleotide_at_pos1_eq_list_t& nuc_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1_eq); }
         bool matches(const nucleotide_at_pos1_list_t& nuc_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1); }
 
-        constexpr sequence_aligned_ref_t aa_aligned(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(amino_acids, length); }
-        constexpr sequence_aligned_ref_t nuc_aligned(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(nucs, length); }
+        // must not be used for references
+        bool has_clade_not_reference(std::string_view clade) const
+        {
+            if (is_reference())
+                throw std::runtime_error(fmt::format("SeqdbSeq::has_clade_not_reference is used for seq with the reference to {}, hi_names: {}", reference.name, hi_names));
+            return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades);
+        }
 
-        size_t aa_aligned_length() const { return acmacs::seqdb::aligned_length(amino_acids); }
-        size_t nuc_aligned_length() const { return acmacs::seqdb::aligned_length(nucs); }
+        constexpr sequence_aligned_ref_t aa_aligned_not_reference(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(amino_acids, length); }
+        constexpr sequence_aligned_ref_t nuc_aligned_not_reference(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(nucs, length); }
 
-        char aa_at_pos(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
-        char aa_at_pos(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
+        size_t aa_aligned_length_not_reference() const { return acmacs::seqdb::aligned_length(amino_acids); }
+        size_t nuc_aligned_length_not_reference() const { return acmacs::seqdb::aligned_length(nucs); }
+
+        char aa_at_pos_not_reference(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
+        char aa_at_pos_not_reference(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
 
         std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
@@ -227,10 +234,17 @@ namespace acmacs::seqdb::inline v3
                 return std::string{seq().hi_names.front()};
         }
         bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
-        bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade(clade); }
+        bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade_not_reference(clade); }
         bool has_hi_names() const { return !seq().hi_names.empty(); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
+
+        sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_not_reference(length); }
+        sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_not_reference(length); }
+        size_t aa_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).aa_aligned_length_not_reference(); }
+        size_t nuc_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).nuc_aligned_length_not_reference(); }
+        char aa_at_pos(const Seqdb& seqdb, pos0_t pos0) const { return seq_with_sequence(seqdb).aa_at_pos_not_reference(pos0); }
+        char aa_at_pos(const Seqdb& seqdb, pos1_t pos1) const { return seq_with_sequence(seqdb).aa_at_pos_not_reference(pos1); }
     };
 
     class subset

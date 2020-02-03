@@ -314,7 +314,7 @@ acmacs::seqdb::v3::Seqdb::aas_indexes_t acmacs::seqdb::v3::Seqdb::aa_at_pos1_for
     acmacs::enumerate(match(aAntigens), [this,&aas_indexes,&aPositions1](auto ag_no, const auto& ref) {
         if (ref) {
             std::string aa(aPositions1.size(), 'X');
-            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [this, ref = ref](size_t pos) { return ref.seq().with_sequence(*this).aa_at_pos(acmacs::seqdb::pos1_t{pos}); });
+            std::transform(aPositions1.begin(), aPositions1.end(), aa.begin(), [this, ref = ref](size_t pos) { return ref.aa_at_pos(*this, acmacs::seqdb::pos1_t{pos}); });
             aas_indexes[aa].push_back(ag_no);
         }
     });
@@ -334,7 +334,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
             std::copy(std::begin(seq.clades), std::end(seq.clades), std::back_inserter(result));
         }
         else {
-            result.erase(std::remove_if(std::begin(result), std::end(result), [&seq](const auto& clade) { return !seq.has_clade(clade); }), std::end(result));
+            result.erase(std::remove_if(std::begin(result), std::end(result), [&seq](const auto& clade) { return !seq.has_clade_not_reference(clade); }), std::end(result));
         }
         clades_found |= !seq.clades.empty();
     }
@@ -378,7 +378,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1(const ac
     to_json::object json_antigens;
     acmacs::enumerate(match(*chart.antigens(), chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref) {
-            const auto sequence = ref.seq().with_sequence(*this).aa_aligned();
+            const auto sequence = ref.aa_aligned(*this);
             json_antigens << to_json::key_val{std::to_string(ag_no), *sequence};
             acmacs::enumerate(*sequence, [&stat_per_pos](size_t pos, char aa) {++stat_per_pos[pos].aa_count[aa]; }, 1UL);
         }
@@ -408,7 +408,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::
     std::string fasta;
     acmacs::enumerate(match(*antigens, chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref)
-            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.seq().with_sequence(*this).nuc_aligned());
+            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.nuc_aligned(*this));
     });
     return fasta;
 
@@ -441,7 +441,8 @@ const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::referenced(const
         for (const auto& seq : ref.entry->seqs) {
             if (seq.annotations == reference.annotations &&
                 ((reference.reassortant.empty() && seq.reassortants.empty()) || std::find(std::begin(seq.reassortants), std::end(seq.reassortants), reference.reassortant) != std::end(seq.reassortants)) &&
-                ((reference.passage.empty() && seq.passages.empty()) || std::find(std::begin(seq.passages), std::end(seq.passages), reference.passage) != std::end(seq.passages)))
+                ((reference.passage.empty() && seq.passages.empty()) || seq.passages.front() == reference.passage))
+                 // || std::find(std::begin(seq.passages), std::end(seq.passages), reference.passage) != std::end(seq.passages)))
                 return seq;
         }
     }
@@ -638,7 +639,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
 {
     if (dist_threshold > 0) {
         const auto compute_hamming_distance = [&seqdb](std::string_view master_aa, auto first, auto last) {
-            std::for_each(first, last, [&seqdb,master_aa](auto& ref) { ref.hamming_distance = hamming_distance(master_aa, ref.seq().with_sequence(seqdb).aa_aligned()); });
+            std::for_each(first, last, [&seqdb,master_aa](auto& ref) { ref.hamming_distance = hamming_distance(master_aa, ref.aa_aligned(seqdb)); });
         };
 
         const auto sort_by_hamming_distance = [](auto first, auto last) { std::sort(first, last, [](const auto& e1, const auto& e2) { return e1.hamming_distance < e2.hamming_distance; }); };
@@ -659,7 +660,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
         auto group_first = std::begin(refs_);
         acmacs::Counter<ssize_t> counter_group_size;
         for (size_t group_no = 1; group_first != std::end(refs_); ++group_no) {
-            const auto group_master_aa_aligned = group_first->seq().with_sequence(seqdb).aa_aligned();
+            const auto group_master_aa_aligned = group_first->aa_aligned(seqdb);
             const auto group_second = std::next(group_first);
             // fmt::print("DEBUG: group {} master: {} {} rest size: {}\n", group_no, group_first->seq_id(), group_first->entry->date(), std::end(refs_) - group_first);
             compute_hamming_distance(group_master_aa_aligned, group_second, std::end(refs_));
@@ -749,7 +750,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
         };
 
         const auto minimal_distance_less_than = [&seqdb](auto first, auto last, std::string_view picked_aa, size_t distance_threshold) -> bool {
-            return std::any_of(first, last, [&seqdb, picked_aa, distance_threshold](const auto& en) { return hamming_distance(picked_aa, en.seq().with_sequence(seqdb).aa_aligned()) < distance_threshold; });
+            return std::any_of(first, last, [&seqdb, picked_aa, distance_threshold](const auto& en) { return hamming_distance(picked_aa, en.aa_aligned(seqdb)) < distance_threshold; });
         };
 
         decltype(refs_) best_data;
@@ -759,7 +760,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
             auto selection_start = std::begin(data), selection_end = std::next(selection_start), discarded_start = std::end(data);
             while (discarded_start > selection_end) {
                 auto picked = random_from(selection_end, discarded_start);
-                if (minimal_distance_less_than(selection_start, selection_end, picked->seq().with_sequence(seqdb).aa_aligned(), distance_threshold)) { // discard
+                if (minimal_distance_less_than(selection_start, selection_end, picked->aa_aligned(seqdb), distance_threshold)) { // discard
                     --discarded_start;
                     std::iter_swap(discarded_start, picked);
                 }
@@ -789,8 +790,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched)
 {
     if (do_remove) {
-        const acmacs::Counter counter_nuc_length(refs_, [&seqdb](const auto& en) { return en.seq().with_sequence(seqdb).nuc_aligned_length(); });
-        const auto nuc = [&seqdb, nuc_common_length = counter_nuc_length.max().first](const auto& en) { return en.seq().with_sequence(seqdb).nuc_aligned(nuc_common_length); };
+        const acmacs::Counter counter_nuc_length(refs_, [&seqdb](const auto& en) { return en.nuc_aligned_length(seqdb); });
+        const auto nuc = [&seqdb, nuc_common_length = counter_nuc_length.max().first](const auto& en) { return en.nuc_aligned(seqdb, nuc_common_length); };
         const auto hi_names = [](const auto& en) { return en.seq().hi_names.size(); };
         std::sort(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) {
             if (const auto n1 = nuc(e1), n2 = nuc(e2); n1 == n2)
@@ -931,9 +932,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend_single_matching(st
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_base(size_t threshold, bool do_filter)
 {
     if (do_filter) {
+        const auto& seqdb = acmacs::seqdb::get();
         refs_.erase(std::remove_if(std::next(std::begin(refs_)), std::end(refs_),
-                                   [threshold, base_seq = refs_.front().seq().aa_aligned()](auto& en) {
-                                       en.hamming_distance = hamming_distance(en.seq().aa_aligned(), base_seq);
+                                   [threshold, &seqdb, base_seq = refs_.front().aa_aligned(seqdb)](auto& en) {
+                                       en.hamming_distance = hamming_distance(en.aa_aligned(seqdb), base_seq);
                                        return en.hamming_distance >= threshold;
                                    }),
                     std::end(refs_));
@@ -1051,13 +1053,13 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
         const auto& seq = entry.seq().with_sequence(seqdb);
         if (options.e_format == export_options::format::fasta_aa) {
             if (options.e_aligned)
-                return *seq.aa_aligned();
+                return *seq.aa_aligned_not_reference();
             else
                 return std::get<std::string_view>(seq.amino_acids);
         }
         else {
             if (options.e_aligned)
-                return *seq.nuc_aligned();
+                return *seq.nuc_aligned_not_reference();
             else
                 return std::get<std::string_view>(seq.nucs);
         }

@@ -79,7 +79,7 @@ namespace local
         const auto aligned = [](const auto& ref) -> std::string_view {
             if (!ref)
                 throw std::runtime_error("compare_report_text: sequence not found in seqdb");
-            return ref.seq().aa_aligned();
+            return ref.aa_aligned(acmacs::seqdb::get());
         };
         const std::string_view master_seq = aligned(master);
         const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::views::transform(aligned));
@@ -149,10 +149,11 @@ namespace local
         if (!master)
             throw std::runtime_error("compare_report_html: master sequence not found in seqdb");
 
-        const auto aligned = [](const auto& ref) -> std::string_view {
+        const auto& seqdb = acmacs::seqdb::get();
+        const auto aligned = [&seqdb](const auto& ref) -> std::string_view {
             if (!ref)
                 throw std::runtime_error("compare_report_text: sequence not found in seqdb");
-            return ref.seq().aa_aligned();
+            return ref.aa_aligned(seqdb);
         };
         const std::string_view master_seq = aligned(master);
         const auto seq1 = ranges::to<std::vector<std::string_view>>(r1 | ranges::views::transform(aligned));
