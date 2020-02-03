@@ -441,8 +441,7 @@ const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::referenced(const
         for (const auto& seq : ref.entry->seqs) {
             if (seq.annotations == reference.annotations &&
                 ((reference.reassortant.empty() && seq.reassortants.empty()) || std::find(std::begin(seq.reassortants), std::end(seq.reassortants), reference.reassortant) != std::end(seq.reassortants)) &&
-                ((reference.passage.empty() && seq.passages.empty()) || seq.passages.front() == reference.passage))
-                 // || std::find(std::begin(seq.passages), std::end(seq.passages), reference.passage) != std::end(seq.passages)))
+                ((reference.passage.empty() && seq.passages.empty()) || (!seq.passages.empty() && seq.passages.front() == reference.passage))) // the first passage must match
                 return seq;
         }
     }
