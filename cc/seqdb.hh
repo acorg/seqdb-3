@@ -287,6 +287,7 @@ namespace acmacs::seqdb::inline v3
         subset& country(const acmacs::uppercase& country);
         subset& clade(const Seqdb& seqdb, const acmacs::uppercase& clade);
         subset& recent(size_t recent);
+        subset& recent_master(size_t recent_master);
         subset& recent_matched(const std::vector<size_t>& recent_matched);
         subset& random(size_t random);
         subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
@@ -297,6 +298,7 @@ namespace acmacs::seqdb::inline v3
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
+        subset& keep_master_only();
         subset& prepend(std::string_view seq_id, const Seqdb& seqdb);
         subset& prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb);
         // subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);

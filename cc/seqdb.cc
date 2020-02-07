@@ -579,6 +579,21 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent(size_t recent)
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_master(size_t recent_master)
+{
+    if (recent_master > 0) {
+        keep_master_only();
+        if (refs_.size() > recent_master) {
+            sort_by_date_recent_first();
+            refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent_master)), std::end(refs_));
+        }
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::recent
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched(const std::vector<size_t>& recent_matched)
 {
     if (recent_matched.size() > 1 && refs_.size() > recent_matched[0]) {
@@ -589,6 +604,15 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched(const std::
     return *this;
 
 } // acmacs::seqdb::v3::subset::recent_matched
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::keep_master_only()
+{
+    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return !en.is_master(); }), std::end(refs_));
+    return *this;
+
+} // acmacs::seqdb::v3::subset::keep_master_only
 
 // ----------------------------------------------------------------------
 

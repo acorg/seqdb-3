@@ -33,6 +33,7 @@ struct Options : public argv
     option<str>       aa_at_pos{*this, "aa-at-pos", desc{"comma separated list: 162N,74R,!167X"}};
     option<str>       nuc_at_pos{*this, "nuc-at-pos", desc{"comma separated list: 618C"}};
     option<size_t>    recent{*this, "recent", dflt{0UL}};
+    option<size_t>    recent_master{*this, "recent-master", dflt{0UL}, desc{"most recent master sequences"}};
     option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent,\n                                       then add num2 older which are also matched against hidb"}};
     option<size_t>    random{*this, "random", dflt{0UL}};
     option<bool>      with_hi_name{*this, "with-hi-name", desc{"matched against hidb"}};
@@ -148,6 +149,7 @@ int main(int argc, char* const argv[])
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)
             .recent(opt.recent)
+            .recent_master(opt.recent_master)
             .recent_matched(acmacs::string::split_into_size_t(*opt.recent_matched, ","))
             .random(opt.random)
             .group_by_hamming_distance(seqdb, opt.group_by_hamming_distance, opt.output_size)
