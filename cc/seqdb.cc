@@ -439,9 +439,7 @@ const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::referenced(const
 {
     for (const auto& ref : seqdb.select_by_name(reference.name)) {
         for (const auto& seq : ref.entry->seqs) {
-            if (!seq.is_reference() && seq.annotations == reference.annotations &&
-                ((reference.reassortant.empty() && seq.reassortants.empty()) || std::find(std::begin(seq.reassortants), std::end(seq.reassortants), reference.reassortant) != std::end(seq.reassortants)) &&
-                ((reference.passage.empty() && seq.passages.empty()) || (!seq.passages.empty() && seq.passages.front() == reference.passage))) // the first passage must match
+            if (!seq.is_reference() && seq.matches_without_name(reference))
                 return seq;
         }
     }
@@ -786,29 +784,49 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(bool do_remove, bool keep_hi_matched)
 {
     if (do_remove) {
-        const acmacs::Counter counter_nuc_length(refs_, [&seqdb](const auto& en) { return en.nuc_aligned_length(seqdb); });
-        const auto nuc = [&seqdb, nuc_common_length = counter_nuc_length.max().first](const auto& en) { return en.nuc_aligned(seqdb, nuc_common_length); };
-        const auto hi_names = [](const auto& en) { return en.seq().hi_names.size(); };
-        std::sort(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) {
-            if (const auto n1 = nuc(e1), n2 = nuc(e2); n1 == n2)
-                return hi_names(e1) > hi_names(e2);
-            else
-                return n1 < n2;
+        // non-references and hi matched (if requested) in the [std::begin(refs_), to_remove_candidates_start] range
+        const auto to_remove_canditates_start =
+            std::partition(std::begin(refs_), std::end(refs_), [keep_hi_matched](const auto& ref) { return !ref.is_reference() || (keep_hi_matched && ref.is_hi_matched()); });
+        // move references from [to_remove_canditates_start, std::end(refs_)] that reference to
+        // a sequence in [std::begin(refs_), to_remove_candidates_start]
+        // to the [to_remove_start, std::end(refs_)] range
+        const auto to_remove_start = std::partition(to_remove_canditates_start, std::end(refs_), [beg = std::begin(refs_), end = to_remove_canditates_start](const auto& ref1) {
+            return std::find_if(beg, end, [&ref1](const auto& ref2) { return ref2.matches(ref1.seq().reference); }) == end;
         });
-        if (keep_hi_matched) {
-            refs_.erase(std::unique(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) { return nuc(e1) == nuc(e2) && (hi_names(e1) == 0 || hi_names(e2) == 0); }),
-                        std::end(refs_));
-        }
-        else {
-            refs_.erase(std::unique(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) { return nuc(e1) == nuc(e2); }), std::end(refs_));
-        }
+        refs_.erase(to_remove_start, std::end(refs_));
     }
     return *this;
 
 } // acmacs::seqdb::v3::subset::remove_nuc_duplicates
+
+// ----------------------------------------------------------------------
+
+// acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched)
+// {
+//     if (do_remove) {
+//         const acmacs::Counter counter_nuc_length(refs_, [&seqdb](const auto& en) { return en.nuc_aligned_length(seqdb); });
+//         const auto nuc = [&seqdb, nuc_common_length = counter_nuc_length.max().first](const auto& en) { return en.nuc_aligned(seqdb, nuc_common_length); };
+//         const auto hi_names = [](const auto& en) { return en.seq().hi_names.size(); };
+//         std::sort(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) {
+//             if (const auto n1 = nuc(e1), n2 = nuc(e2); n1 == n2)
+//                 return hi_names(e1) > hi_names(e2);
+//             else
+//                 return n1 < n2;
+//         });
+//         if (keep_hi_matched) {
+//             refs_.erase(std::unique(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) { return nuc(e1) == nuc(e2) && (hi_names(e1) == 0 || hi_names(e2) == 0); }),
+//                         std::end(refs_));
+//         }
+//         else {
+//             refs_.erase(std::unique(std::begin(refs_), std::end(refs_), [=](const auto& e1, const auto& e2) { return nuc(e1) == nuc(e2); }), std::end(refs_));
+//         }
+//     }
+//     return *this;
+
+// } // acmacs::seqdb::v3::subset::remove_nuc_duplicates
 
 // ----------------------------------------------------------------------
 

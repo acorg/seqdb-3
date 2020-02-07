@@ -156,6 +156,13 @@ namespace acmacs::seqdb::inline v3
         bool matches(const nucleotide_at_pos1_eq_list_t& nuc_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1_eq); }
         bool matches(const nucleotide_at_pos1_list_t& nuc_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1); }
 
+        bool matches_without_name(const reference_t& other_reference) const
+        {
+            return annotations == other_reference.annotations &&
+                   ((other_reference.reassortant.empty() && reassortants.empty()) || std::find(std::begin(reassortants), std::end(reassortants), other_reference.reassortant) != std::end(reassortants)) &&
+                   ((other_reference.passage.empty() && passages.empty()) || (!passages.empty() && passages.front() == other_reference.passage)); // the first passage must match
+        }
+
         // must not be used for references
         bool has_clade_not_reference(std::string_view clade) const
         {
@@ -219,6 +226,8 @@ namespace acmacs::seqdb::inline v3
 
         const SeqdbSeq& seq() const { return entry->seqs[seq_index]; }
         const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const { return entry->seqs[seq_index].with_sequence(seqdb); }
+        bool is_reference() const { return seq().is_reference(); }
+        bool is_hi_matched() const { return !seq().hi_names.empty(); }
         seq_id_t seq_id() const;
         std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
         std::string full_name_with_date() const
@@ -238,6 +247,7 @@ namespace acmacs::seqdb::inline v3
         bool has_hi_names() const { return !seq().hi_names.empty(); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
+        bool matches(const SeqdbSeq::reference_t& reference) const { return entry->name == reference.name && seq().matches_without_name(reference); }
 
         sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_not_reference(length); }
         sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_not_reference(length); }
@@ -279,7 +289,7 @@ namespace acmacs::seqdb::inline v3
         subset& random(size_t random);
         subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
         subset& subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
-        subset& remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched);
+        subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
         subset& with_hi_name(bool with_hi_name);
         subset& aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos);
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
