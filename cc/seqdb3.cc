@@ -37,6 +37,7 @@ struct Options : public argv
     option<size_t>    random{*this, "random", dflt{0UL}};
     option<bool>      with_hi_name{*this, "with-hi-name", desc{"matched against hidb"}};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
+    option<str_array> prepend{*this, "prepend", desc{"prepend with seq by seq-id, multiple possible, always included"}};
     option<str>       base_seq_id{*this, "base-seq-id", desc{"single base sequence (outgroup), always included"}};
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
@@ -154,8 +155,9 @@ int main(int argc, char* const argv[])
             .remove_nuc_duplicates(seqdb, opt.remove_nuc_duplicates, opt.keep_all_hi_matched)
             .sort(sorting_order(opt.sort_by))
             .report_stat() // static_cast<bool>(opt.fasta))
-                .prepend(opt.base_seq_id, seqdb)
-                // .prepend_single_matching(opt.base_seq_regex, seqdb)
+            .prepend(opt.prepend, seqdb)
+            .prepend(opt.base_seq_id, seqdb)
+            // .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_id)
             .export_sequences(opt.fasta, seqdb,
                               acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
