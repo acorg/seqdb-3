@@ -285,7 +285,9 @@ namespace acmacs::seqdb::inline v3
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
-        subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
+        subset& prepend(std::string_view seq_id, const Seqdb& seqdb);
+        subset& prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb);
+        // subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);
         subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);

@@ -909,22 +909,53 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::dates(std::string_view sta
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend_single_matching(std::string_view re, const Seqdb& seqdb)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend(std::string_view seq_id, const Seqdb& seqdb)
 {
-    if (!re.empty()) {
-        auto candidates = seqdb.select_by_regex(re);
-        if (candidates.size() != 1) {
-            fmt::print(stderr, "WARNING: Selected sequences: {}\n", candidates.size());
-            for (const auto& candidate : candidates)
-                fmt::print(stderr, "    {}\n", candidate.seq_id());
-            throw std::runtime_error{fmt::format("regular expression must select single sequence: \"{}\", selected: {}", re, candidates.size())};
-        }
+    if (!seq_id.empty()) {
+        auto candidates = seqdb.select_by_seq_id(seq_id);
+        if (candidates.empty())
+            throw std::runtime_error{fmt::format("no sequences with seq-id \"{}\" found", seq_id)};
         refs_.erase(std::remove(std::begin(refs_), std::end(refs_), candidates.front()), std::end(refs_)); // remove it, if selected earlier
         refs_.insert(std::begin(refs_), candidates.front());
     }
     return *this;
 
-} // acmacs::seqdb::v3::subset::prepend_single_matching
+} // prepend
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb)
+{
+    if (!seq_ids.empty()) {
+        auto candidates = seqdb.select_by_seq_id(seq_ids);
+        if (candidates.empty())
+            throw std::runtime_error{fmt::format("no sequences by seq-ids found to prepend")};
+        const auto select_to_remove = [&candidates](const auto& ref) { return std::find(std::begin(candidates), std::end(candidates), ref) != std::end(candidates); };
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), select_to_remove), std::end(refs_)); // remove it, if selected earlier
+        refs_.insert(std::begin(refs_), std::begin(candidates), std::end(candidates));
+    }
+    return *this;
+
+} // prepend
+
+// ----------------------------------------------------------------------
+
+// acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend_single_matching(std::string_view re, const Seqdb& seqdb)
+// {
+//     if (!re.empty()) {
+//         auto candidates = seqdb.select_by_regex(re);
+//         if (candidates.size() != 1) {
+//             fmt::print(stderr, "WARNING: Selected sequences: {}\n", candidates.size());
+//             for (const auto& candidate : candidates)
+//                 fmt::print(stderr, "    {}\n", candidate.seq_id());
+//             throw std::runtime_error{fmt::format("regular expression must select single sequence: \"{}\", selected: {}", re, candidates.size())};
+//         }
+//         refs_.erase(std::remove(std::begin(refs_), std::end(refs_), candidates.front()), std::end(refs_)); // remove it, if selected earlier
+//         refs_.insert(std::begin(refs_), candidates.front());
+//     }
+//     return *this;
+
+// } // acmacs::seqdb::v3::subset::prepend_single_matching
 
 // ----------------------------------------------------------------------
 
