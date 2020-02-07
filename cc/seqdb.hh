@@ -146,6 +146,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<std::string_view> clades; // for master only
         std::vector<std::string_view> hi_names;
         labs_t lab_ids;
+        mutable std::unique_ptr<std::vector<ref>> slaves; // for master only, list of slaves pointing to this master
 
         bool has_lab(std::string_view lab) const
         {
@@ -190,6 +191,7 @@ namespace acmacs::seqdb::inline v3
         // bool is_slave() const { return !is_master(); }
         const SeqdbSeq& with_sequence(const Seqdb& seqdb) const { return is_master() ? *this : find_master(seqdb); }
         const SeqdbSeq& find_master(const Seqdb& seqdb) const;
+        const std::vector<ref>& find_slaves(const Seqdb& seqdb, std::string_view name) const;
     };
 
     struct SeqdbEntry
@@ -250,6 +252,7 @@ namespace acmacs::seqdb::inline v3
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const SeqdbSeq::master_ref_t& master) const { return entry->name == master.name && seq().matches_without_name(master); }
+        const std::vector<ref>& find_slaves(const Seqdb& seqdb) const { return seq().find_slaves(seqdb, entry->name); }
 
         sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_master(length); }
         sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_master(length); }
@@ -289,6 +292,7 @@ namespace acmacs::seqdb::inline v3
         subset& recent(size_t recent);
         subset& recent_master(size_t recent_master);
         subset& recent_matched(const std::vector<size_t>& recent_matched);
+        subset& recent_matched_master(const Seqdb& seqdb, const std::vector<size_t>& recent_matched_master);
         subset& random(size_t random);
         subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
         subset& subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23

@@ -449,6 +449,22 @@ const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::find_master(cons
 
 // ----------------------------------------------------------------------
 
+const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::find_slaves(const Seqdb& seqdb, std::string_view name) const
+{
+    if (!slaves) {
+        slaves = std::make_unique<std::vector<ref>>();
+        const master_ref_t self{name, annotations, reassortants.empty() ? std::string_view{} : reassortants.front(), passages.empty() ? std::string_view{} : passages.front()};
+        for (const auto& ref : seqdb.select_by_name(name)) {
+            if (ref.seq().matches_without_name(self))
+                slaves->push_back(ref);
+        }
+    }
+    return *slaves;
+
+} // acmacs::seqdb::v3::SeqdbSeq::find_slaves
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
 {
     auto source = ::string::join(" ", {entry->name, seq().designation()});
@@ -598,8 +614,35 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched(const std::
 {
     if (recent_matched.size() > 1 && refs_.size() > recent_matched[0]) {
         sort_by_date_recent_first();
-        std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0])), std::end(refs_), [](const auto& en) { return !en.has_hi_names(); });
-        refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0] + recent_matched[1])), std::end(refs_));
+        const auto usable_size = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0])), std::end(refs_), [](const auto& en) { return !en.has_hi_names(); }) - std::begin(refs_);
+        refs_.erase(std::next(std::begin(refs_), std::min(usable_size, static_cast<ssize_t>(recent_matched[0] + recent_matched[1]))), std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::recent_matched
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched_master(const Seqdb& seqdb, const std::vector<size_t>& recent_matched_master)
+{
+    if (recent_matched_master.size() > 1) {
+        keep_master_only();
+        sort_by_date_recent_first();
+        // if ref (master) has no hi names and one of its slaves has hi name, replace ref with slave that has hi names and return false
+        // if ref (master) has no hi names and none of its slaves has hi name, return true (to remove from refs_)
+        const auto without_hi_names = [&seqdb](auto& ref) {
+            if (ref.has_hi_names())
+                return false;   // keep it
+            const auto& slaves = ref.find_slaves(seqdb);
+            if (const auto slave_to_use = std::find_if(std::begin(slaves), std::end(slaves), [](const auto& slave) { return slave.has_hi_names(); }); slave_to_use != std::end(slaves)) {
+                ref = *slave_to_use;
+                return false;   // keep it
+            }
+            else
+                return true;    // remove
+        };
+        const auto usable_size = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched_master[0])), std::end(refs_), without_hi_names) - std::begin(refs_);
+        refs_.erase(std::next(std::begin(refs_), std::min(usable_size, static_cast<ssize_t>(recent_matched_master[0] + recent_matched_master[1]))), std::end(refs_));
     }
     return *this;
 
