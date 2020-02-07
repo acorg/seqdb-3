@@ -790,13 +790,21 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(bool
         // non-references and hi matched (if requested) in the [std::begin(refs_), to_remove_candidates_start] range
         const auto to_remove_canditates_start =
             std::partition(std::begin(refs_), std::end(refs_), [keep_hi_matched](const auto& ref) { return !ref.is_reference() || (keep_hi_matched && ref.is_hi_matched()); });
+
+
+#if 0
+        refs_.erase(to_remove_canditates_start, std::end(refs_));
+#else
         // move references from [to_remove_canditates_start, std::end(refs_)] that reference to
         // a sequence in [std::begin(refs_), to_remove_candidates_start]
         // to the [to_remove_start, std::end(refs_)] range
         const auto to_remove_start = std::partition(to_remove_canditates_start, std::end(refs_), [beg = std::begin(refs_), end = to_remove_canditates_start](const auto& ref1) {
             return std::find_if(beg, end, [&ref1](const auto& ref2) { return ref2.matches(ref1.seq().reference); }) == end;
         });
+
         refs_.erase(to_remove_start, std::end(refs_));
+#endif
+
     }
     return *this;
 
