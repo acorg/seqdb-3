@@ -334,7 +334,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
             std::copy(std::begin(seq.clades), std::end(seq.clades), std::back_inserter(result));
         }
         else {
-            result.erase(std::remove_if(std::begin(result), std::end(result), [&seq](const auto& clade) { return !seq.has_clade_not_reference(clade); }), std::end(result));
+            result.erase(std::remove_if(std::begin(result), std::end(result), [&seq](const auto& clade) { return !seq.has_clade_master(clade); }), std::end(result));
         }
         clades_found |= !seq.clades.empty();
     }
@@ -435,17 +435,17 @@ std::string acmacs::seqdb::v3::SeqdbEntry::location() const
 
 // ----------------------------------------------------------------------
 
-const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::referenced(const Seqdb& seqdb) const
+const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::find_master(const Seqdb& seqdb) const
 {
-    for (const auto& ref : seqdb.select_by_name(reference.name)) {
+    for (const auto& ref : seqdb.select_by_name(master.name)) {
         for (const auto& seq : ref.entry->seqs) {
-            if (!seq.is_reference() && seq.matches_without_name(reference))
+            if (seq.is_master() && seq.matches_without_name(master))
                 return seq;
         }
     }
-    throw std::runtime_error{"internal in SeqdbSeq::referenced: invalid reference"};
+    throw std::runtime_error{"internal in SeqdbSeq::find_master: invalid master ref"};
 
-} // acmacs::seqdb::v3::SeqdbSeq::referenced
+} // acmacs::seqdb::v3::SeqdbSeq::find_master
 
 // ----------------------------------------------------------------------
 
@@ -787,19 +787,19 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(bool do_remove, bool keep_hi_matched)
 {
     if (do_remove) {
-        // non-references and hi matched (if requested) in the [std::begin(refs_), to_remove_candidates_start] range
+        // master sequences and hi matched (if requested) in the [std::begin(refs_), to_remove_candidates_start] range
         const auto to_remove_canditates_start =
-            std::partition(std::begin(refs_), std::end(refs_), [keep_hi_matched](const auto& ref) { return !ref.is_reference() || (keep_hi_matched && ref.is_hi_matched()); });
+            std::partition(std::begin(refs_), std::end(refs_), [keep_hi_matched](const auto& ref) { return ref.is_master() || (keep_hi_matched && ref.is_hi_matched()); });
 
 
 #if 0
         refs_.erase(to_remove_canditates_start, std::end(refs_));
 #else
-        // move references from [to_remove_canditates_start, std::end(refs_)] that reference to
+        // move slave seq from [to_remove_canditates_start, std::end(refs_)] that reference to
         // a sequence in [std::begin(refs_), to_remove_candidates_start]
         // to the [to_remove_start, std::end(refs_)] range
         const auto to_remove_start = std::partition(to_remove_canditates_start, std::end(refs_), [beg = std::begin(refs_), end = to_remove_canditates_start](const auto& ref1) {
-            return std::find_if(beg, end, [&ref1](const auto& ref2) { return ref2.matches(ref1.seq().reference); }) == end;
+            return std::find_if(beg, end, [&ref1](const auto& ref2) { return ref2.matches(ref1.seq().master); }) == end;
         });
 
         refs_.erase(to_remove_start, std::end(refs_));
@@ -1109,13 +1109,13 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
         const auto& seq = entry.seq().with_sequence(seqdb);
         if (options.e_format == export_options::format::fasta_aa) {
             if (options.e_aligned)
-                return *seq.aa_aligned_not_reference();
+                return *seq.aa_aligned_master();
             else
                 return std::get<std::string_view>(seq.amino_acids);
         }
         else {
             if (options.e_aligned)
-                return *seq.nuc_aligned_not_reference();
+                return *seq.nuc_aligned_master();
             else
                 return std::get<std::string_view>(seq.nucs);
         }

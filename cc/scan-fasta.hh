@@ -29,7 +29,7 @@ namespace acmacs::seqdb
                     std::vector<acmacs::virus::parse_result_t::message_t> messages;
                 };
 
-                struct reference_t
+                struct master_ref_t
                 {
                     acmacs::virus::name_t name;
                     std::string annotations;
@@ -41,7 +41,7 @@ namespace acmacs::seqdb
                 {
                     data_t fasta;
                     sequence_t sequence;
-                    std::optional<reference_t> reference; // master entry with identical nuc sequence and nuc_shift
+                    std::optional<master_ref_t> reference; // master entry with identical nuc sequence and nuc_shift
                     bool remove{false};
                 };
 

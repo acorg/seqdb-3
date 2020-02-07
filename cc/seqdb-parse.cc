@@ -28,7 +28,7 @@ namespace local
     class reference : public in_json::stack_entry
     {
       public:
-        reference(acmacs::seqdb::SeqdbSeq::reference_t& target) : target_{target} {}
+        reference(acmacs::seqdb::SeqdbSeq::master_ref_t& target) : target_{target} {}
         const char* injson_name() override { return "reference"; }
 
         void injson_put_string(std::string_view data) override
@@ -53,7 +53,7 @@ namespace local
         }
 
       private:
-        acmacs::seqdb::SeqdbSeq::reference_t& target_;
+        acmacs::seqdb::SeqdbSeq::master_ref_t& target_;
     };
 
     class seq : public in_json::stack_entry
@@ -74,7 +74,7 @@ namespace local
                   return std::make_unique<in_json::ignore>();
               case 'R':         // master with identical sequence reference
                   reset_key();
-                  return std::make_unique<reference>(target_.reference);
+                  return std::make_unique<reference>(target_.master);
               default:
                   throw in_json::parse_error(fmt::format("seq: unexpected sub-object, key: \"{}\"", key_));
             }

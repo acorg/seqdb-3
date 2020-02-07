@@ -128,7 +128,7 @@ namespace acmacs::seqdb::inline v3
         using lab_ids_t = std::vector<std::string_view>;
         using labs_t = std::vector<std::pair<std::string_view, lab_ids_t>>;
 
-        struct reference_t
+        struct master_ref_t
         {
             std::string_view name;
             std::string_view annotations;
@@ -136,13 +136,14 @@ namespace acmacs::seqdb::inline v3
             std::string_view passage;
         };
 
-        reference_t reference;
-        sequence_with_alignment_ref_t amino_acids;
-        sequence_with_alignment_ref_t nucs;
+        // sequence either contains nucs, amino_acids, clades or reference master sequence with the same nucs
+        master_ref_t master; // for slave only
+        sequence_with_alignment_ref_t amino_acids; // for master only
+        sequence_with_alignment_ref_t nucs; // for master only
         std::string_view annotations;
         std::vector<std::string_view> reassortants;
         std::vector<std::string_view> passages;
-        std::vector<std::string_view> clades;
+        std::vector<std::string_view> clades; // for master only
         std::vector<std::string_view> hi_names;
         labs_t lab_ids;
 
@@ -156,38 +157,39 @@ namespace acmacs::seqdb::inline v3
         bool matches(const nucleotide_at_pos1_eq_list_t& nuc_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1_eq); }
         bool matches(const nucleotide_at_pos1_list_t& nuc_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1); }
 
-        bool matches_without_name(const reference_t& other_reference) const
+        bool matches_without_name(const master_ref_t& other_reference) const
         {
             return annotations == other_reference.annotations &&
                    ((other_reference.reassortant.empty() && reassortants.empty()) || std::find(std::begin(reassortants), std::end(reassortants), other_reference.reassortant) != std::end(reassortants)) &&
                    ((other_reference.passage.empty() && passages.empty()) || (!passages.empty() && passages.front() == other_reference.passage)); // the first passage must match
         }
 
-        // must not be used for references
-        bool has_clade_not_reference(std::string_view clade) const
+        // must not be used for slaves
+        bool has_clade_master(std::string_view clade) const
         {
-            if (is_reference())
-                throw std::runtime_error(fmt::format("SeqdbSeq::has_clade_not_reference is used for seq with the reference to {}, hi_names: {}", reference.name, hi_names));
+            if (!is_master())
+                throw std::runtime_error(fmt::format("SeqdbSeq::has_clade_master is used for seq with the reference to {}, hi_names: {}", master.name, hi_names));
             return std::find(std::begin(clades), std::end(clades), clade) != std::end(clades);
         }
 
-        constexpr sequence_aligned_ref_t aa_aligned_not_reference(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(amino_acids, length); }
-        constexpr sequence_aligned_ref_t nuc_aligned_not_reference(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(nucs, length); }
+        constexpr sequence_aligned_ref_t aa_aligned_master(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(amino_acids, length); }
+        constexpr sequence_aligned_ref_t nuc_aligned_master(size_t length = std::string_view::npos) const { return acmacs::seqdb::aligned(nucs, length); }
 
-        size_t aa_aligned_length_not_reference() const { return acmacs::seqdb::aligned_length(amino_acids); }
-        size_t nuc_aligned_length_not_reference() const { return acmacs::seqdb::aligned_length(nucs); }
+        size_t aa_aligned_length_master() const { return acmacs::seqdb::aligned_length(amino_acids); }
+        size_t nuc_aligned_length_master() const { return acmacs::seqdb::aligned_length(nucs); }
 
-        char aa_at_pos_not_reference(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
-        char aa_at_pos_not_reference(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
+        char aa_at_pos_master(pos0_t pos0) const { return acmacs::seqdb::at_pos(amino_acids, pos0); }
+        char aa_at_pos_master(pos1_t pos1) const { return acmacs::seqdb::at_pos(amino_acids, pos1); }
 
         std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
         std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
         std::string designation() const { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), passage()}); }
 
-        bool is_reference() const { return !reference.name.empty(); }
-        const SeqdbSeq& with_sequence(const Seqdb& seqdb) const { return is_reference() ? referenced(seqdb) : *this; }
-        const SeqdbSeq& referenced(const Seqdb& seqdb) const;
+        bool is_master() const { return !nucs.empty() && master.name.empty(); }
+        // bool is_slave() const { return !is_master(); }
+        const SeqdbSeq& with_sequence(const Seqdb& seqdb) const { return is_master() ? *this : find_master(seqdb); }
+        const SeqdbSeq& find_master(const Seqdb& seqdb) const;
     };
 
     struct SeqdbEntry
@@ -226,7 +228,7 @@ namespace acmacs::seqdb::inline v3
 
         const SeqdbSeq& seq() const { return entry->seqs[seq_index]; }
         const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const { return entry->seqs[seq_index].with_sequence(seqdb); }
-        bool is_reference() const { return seq().is_reference(); }
+        bool is_master() const { return seq().is_master(); }
         bool is_hi_matched() const { return !seq().hi_names.empty(); }
         seq_id_t seq_id() const;
         std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
@@ -243,18 +245,18 @@ namespace acmacs::seqdb::inline v3
                 return std::string{seq().hi_names.front()};
         }
         bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
-        bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade_not_reference(clade); }
+        bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade_master(clade); }
         bool has_hi_names() const { return !seq().hi_names.empty(); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
-        bool matches(const SeqdbSeq::reference_t& reference) const { return entry->name == reference.name && seq().matches_without_name(reference); }
+        bool matches(const SeqdbSeq::master_ref_t& master) const { return entry->name == master.name && seq().matches_without_name(master); }
 
-        sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_not_reference(length); }
-        sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_not_reference(length); }
-        size_t aa_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).aa_aligned_length_not_reference(); }
-        size_t nuc_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).nuc_aligned_length_not_reference(); }
-        char aa_at_pos(const Seqdb& seqdb, pos0_t pos0) const { return seq_with_sequence(seqdb).aa_at_pos_not_reference(pos0); }
-        char aa_at_pos(const Seqdb& seqdb, pos1_t pos1) const { return seq_with_sequence(seqdb).aa_at_pos_not_reference(pos1); }
+        sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_master(length); }
+        sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_master(length); }
+        size_t aa_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).aa_aligned_length_master(); }
+        size_t nuc_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).nuc_aligned_length_master(); }
+        char aa_at_pos(const Seqdb& seqdb, pos0_t pos0) const { return seq_with_sequence(seqdb).aa_at_pos_master(pos0); }
+        char aa_at_pos(const Seqdb& seqdb, pos1_t pos1) const { return seq_with_sequence(seqdb).aa_at_pos_master(pos1); }
     };
 
     class subset
