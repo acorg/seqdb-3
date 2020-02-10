@@ -1126,7 +1126,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
     if (!filename.empty()) {
         auto to_export = export_collect(seqdb, options);
 
-        if (options.e_most_common_length) {
+        if (options.e_most_common_length == export_options::most_common_length::yes) {
             const acmacs::Counter counter(to_export, [](const auto& en) { return en.second.size(); });
             ranges::for_each(to_export, [most_common_length = counter.max().first](auto& en) { en.second.resize(most_common_length, '-'); });
         }
@@ -1147,7 +1147,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_distance(bool do_report, const Seqdb& seqdb)
 {
     if (do_report) {
-        auto to_report = export_collect(seqdb, {export_options::format::fasta_nuc, 0, true, true, "{seq_id}"});
+        auto to_report = export_collect(seqdb, {export_options::format::fasta_nuc, 0, export_options::aligned::yes, export_options::most_common_length::no, "{seq_id}"});
 
         struct entry_t
         {
@@ -1158,7 +1158,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_distance(bo
 
         std::vector<entry_t> data(to_report.size());
         std::transform(std::begin(to_report), std::end(to_report), std::begin(data), [&to_report](const auto& source) -> entry_t {
-            return {source.first, source.second, hamming_distance(to_report.front().second, source.second)};
+            return {source.first, source.second, hamming_distance(to_report.front().second, source.second, hamming_distance_by_shortest::yes)};
         });
         std::sort(std::begin(data), std::end(data), [](const auto& e1, const auto& e2) { return e1.hamming_distance > e2.hamming_distance; });
         for (const auto& en : data)
@@ -1201,13 +1201,13 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
     const auto get_seq = [&options,&seqdb](const auto& entry) -> std::string_view {
         const auto& seq = entry.seq().with_sequence(seqdb);
         if (options.e_format == export_options::format::fasta_aa) {
-            if (options.e_aligned)
+            if (options.e_aligned == export_options::aligned::yes)
                 return *seq.aa_aligned_master();
             else
                 return std::get<std::string_view>(seq.amino_acids);
         }
         else {
-            if (options.e_aligned)
+            if (options.e_aligned == export_options::aligned::yes)
                 return *seq.nuc_aligned_master();
             else
                 return std::get<std::string_view>(seq.nucs);

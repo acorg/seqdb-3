@@ -165,7 +165,12 @@ int main(int argc, char* const argv[])
             // .prepend_single_matching(opt.base_seq_regex, seqdb)
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_id)
             .export_sequences(opt.fasta, seqdb,
-                              acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
+                              acmacs::seqdb::export_options{}
+                                  .fasta(opt.nucs)
+                                  .wrap(opt.wrap ? 80 : 0)
+                                  .aligned(opt.not_aligned ? acmacs::seqdb::export_options::aligned::no : acmacs::seqdb::export_options::aligned::yes)
+                                  .most_common_length(opt.most_common_length ? acmacs::seqdb::export_options::most_common_length::yes : acmacs::seqdb::export_options::most_common_length::no)
+                                  .name_format(opt.name_format))
             .print(seqdb, opt.name_format, opt.print /* || opt.fasta */)
             .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty(), seqdb);
 

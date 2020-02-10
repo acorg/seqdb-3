@@ -82,11 +82,13 @@ namespace acmacs::seqdb::inline v3
     struct export_options
     {
         enum class format { fasta_aa, fasta_nuc };
+        enum class aligned { no, yes };
+        enum class most_common_length { no, yes };
 
         format e_format{format::fasta_nuc};
         size_t e_wrap_at{0};
-        bool e_aligned{true};
-        bool e_most_common_length{false};
+        aligned e_aligned{aligned::yes};
+        most_common_length e_most_common_length{most_common_length::no};
         std::string e_name_format{"{seq_id}"};
 
         export_options& fasta(bool nucs)
@@ -104,14 +106,14 @@ namespace acmacs::seqdb::inline v3
             e_wrap_at = 0;
             return *this;
         }
-        export_options& aligned(bool aligned = true)
+        export_options& aligned(aligned a_aligned = aligned::yes)
         {
-            e_aligned = aligned;
+            e_aligned = a_aligned;
             return *this;
         }
-        export_options& most_common_length(bool most_common_length = true)
+        export_options& most_common_length(most_common_length a_most_common_length = most_common_length::yes)
         {
-            e_most_common_length = most_common_length;
+            e_most_common_length = a_most_common_length;
             return *this;
         }
         export_options& name_format(std::string_view name_format)

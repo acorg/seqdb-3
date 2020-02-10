@@ -4,7 +4,9 @@
 
 namespace acmacs::seqdb::inline v3
 {
-    inline size_t hamming_distance(std::string_view s1, std::string_view s2)
+    enum class hamming_distance_by_shortest { no, yes };
+
+    inline size_t hamming_distance(std::string_view s1, std::string_view s2, hamming_distance_by_shortest shortest = hamming_distance_by_shortest::no)
     {
         auto f1 = std::begin(s1);
         auto f2 = std::begin(s2);
@@ -13,7 +15,8 @@ namespace acmacs::seqdb::inline v3
             if (*f1 != *f2)
                 ++dist;
         }
-        dist += static_cast<size_t>(std::end(s1) - f1) + static_cast<size_t>(std::end(s2) - f2);
+        if (shortest == hamming_distance_by_shortest::no)
+            dist += static_cast<size_t>(std::end(s1) - f1) + static_cast<size_t>(std::end(s2) - f2);
         return dist;
     }
 
