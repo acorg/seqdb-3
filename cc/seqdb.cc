@@ -1144,6 +1144,32 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_distance(bool do_report, const Seqdb& seqdb)
+{
+    if (do_report) {
+        auto to_report = export_collect(seqdb, {export_options::format::fasta_nuc, 0, true, true, "{seq_id}"});
+
+        struct entry_t
+        {
+            std::string seq_id;
+            std::string nucs;
+            size_t hamming_distance;
+        };
+
+        std::vector<entry_t> data(to_report.size());
+        std::transform(std::begin(to_report), std::end(to_report), std::begin(data), [&to_report](const auto& source) -> entry_t {
+            return {source.first, source.second, hamming_distance(to_report.front().second, source.second)};
+        });
+        std::sort(std::begin(data), std::end(data), [](const auto& e1, const auto& e2) { return e1.hamming_distance > e2.hamming_distance; });
+        for (const auto& en : data)
+            fmt::print("{:4d}  {}\n", en.hamming_distance, en.seq_id);
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::report_hamming_distance
+
+// ----------------------------------------------------------------------
+
 std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const
 {
     return fmt::format(name_format,

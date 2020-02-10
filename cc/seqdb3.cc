@@ -53,6 +53,7 @@ struct Options : public argv
 
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
+    option<bool>      report_hamming_distance{*this, "report-hamming", desc{"Report hamming distance from base for all strains."}};
 
     // export
     option<str>       fasta{*this, "fasta", desc{"export to fasta, - for stdout"}};
@@ -165,7 +166,8 @@ int main(int argc, char* const argv[])
             .nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_id)
             .export_sequences(opt.fasta, seqdb,
                               acmacs::seqdb::export_options{}.fasta(opt.nucs).wrap(opt.wrap ? 80 : 0).aligned(!opt.not_aligned).most_common_length(opt.most_common_length).name_format(opt.name_format))
-            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */);
+            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */)
+            .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty(), seqdb);
 
         return 0;
     }
