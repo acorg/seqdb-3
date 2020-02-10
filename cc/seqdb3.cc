@@ -172,7 +172,7 @@ int main(int argc, char* const argv[])
                                   .most_common_length(opt.most_common_length ? acmacs::seqdb::export_options::most_common_length::yes : acmacs::seqdb::export_options::most_common_length::no)
                                   .name_format(opt.name_format))
             .print(seqdb, opt.name_format, opt.print /* || opt.fasta */)
-            .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty(), seqdb);
+            .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty());
 
         return 0;
     }
