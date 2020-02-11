@@ -218,7 +218,6 @@ namespace acmacs::seqdb::inline v3
     {
         const SeqdbEntry* entry;
         size_t seq_index;
-        bool to_be_removed{false};  // for subsetting at random
         size_t group_no{0};         // for group_by_hamming_distance
         size_t hamming_distance{0}; // for group_by_hamming_distance and nuc_hamming_distance_to_base, printed using {hamming_distance}
 
@@ -323,6 +322,7 @@ namespace acmacs::seqdb::inline v3
 
       private:
         refs_t refs_;
+        using ref_indexes = std::vector<size_t>;
 
         subset(size_t size) : refs_(size) {}
 
@@ -348,14 +348,8 @@ namespace acmacs::seqdb::inline v3
         }
 
         refs_t::iterator most_recent_with_hi_name();
-        void remove_marked()
-        {
-            refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.to_be_removed; }), std::end(refs_));
-        }
-        void set_remove_marker(bool marker)
-        {
-            std::for_each(std::begin(refs_), std::end(refs_), [marker](auto& en) { en.to_be_removed = marker; });
-        }
+        void remove(ref_indexes& to_remove);
+        void keep(ref_indexes& to_keep);
 
         void resize(size_t size) { refs_.resize(size); }
 

@@ -659,15 +659,54 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::keep_master_only()
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::subset::remove(ref_indexes& to_remove)
+{
+    std::sort(std::begin(to_remove), std::end(to_remove));
+    const auto rm_end = std::unique(std::begin(to_remove), std::end(to_remove));
+    auto rm_iter = std::begin(to_remove);
+    size_t current_index{0};
+    const auto remove_predicate = [&current_index,&rm_iter,rm_end](const auto&) {
+        if (rm_iter != rm_end && *rm_iter == current_index++) {
+            ++rm_iter;
+            return true;
+        }
+        else
+            return false;
+    };
+    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), remove_predicate), std::end(refs_));
+
+} // acmacs::seqdb::v3::subset::remove
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::subset::keep(ref_indexes& to_keep)
+{
+    std::sort(std::begin(to_keep), std::end(to_keep));
+    const auto keep_end = std::unique(std::begin(to_keep), std::end(to_keep));
+    auto keep_iter = std::begin(to_keep);
+    size_t current_index{0};
+    const auto remove_predicate = [&current_index,&keep_iter,keep_end](const auto&) {
+        if (keep_iter != keep_end && *keep_iter == current_index++) {
+            ++keep_iter;
+            return false;
+        }
+        else
+            return true;
+    };
+    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), remove_predicate), std::end(refs_));
+
+} // acmacs::seqdb::v3::subset::keep
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
 {
     if (random > 0 && refs_.size() > random) {
         std::mt19937 generator{std::random_device()()};
         std::uniform_int_distribution<size_t> distribution(0, refs_.size() - 1);
-        set_remove_marker(true);
-        for (size_t no = 0; no < random; ++no)
-            refs_[distribution(generator)].to_be_removed = false;
-        remove_marked();
+        ref_indexes to_keep(random);
+        std::generate_n(to_keep.begin(), random, [&distribution,&generator]() { return distribution(generator); });
+        keep(to_keep);
     }
     return *this;
 
@@ -739,28 +778,30 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
         // fmt::print(stderr, "DEBUG: total groups: {}\n", refs_.back().group_no);
         if (refs_.back().group_no > output_size) {
             // too many groups, take one seq from each group starting with group 1, ignore groups with high numbers (furtherst from the recent strain)
+            ref_indexes to_remove;
             size_t prev_group = 0;
-            for (auto& ref : refs_) {
+            for (auto [index, ref] : acmacs::enumerate(refs_)) {
                 if (ref.group_no == prev_group)
-                    ref.to_be_removed = true;
+                    to_remove.push_back(index);
                 else {
                     prev_group = ref.group_no;
                     if (prev_group > output_size)
-                        ref.to_be_removed = true;
+                        to_remove.push_back(index);
                 }
             }
+            remove(to_remove);
         }
         else {
             // too few groups
-            set_remove_marker(true);
+            ref_indexes to_keep_indexes;
             size_t to_keep = 0;
             size_t prev_to_keep = output_size;
             while (to_keep < output_size && prev_to_keep != to_keep) {
                 prev_to_keep = to_keep;
                 size_t group_no = 1;
-                for (auto& ref : refs_) {
-                    if (ref.group_no >= group_no && ref.to_be_removed) {
-                        ref.to_be_removed = false;
+                for (auto [index, ref] : acmacs::enumerate(refs_)) {
+                    if (ref.group_no >= group_no) {
+                        to_keep_indexes.push_back(index);
                         ++to_keep;
                         group_no = ref.group_no + 1;
                     }
@@ -769,8 +810,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::group_by_hamming_distance(
                 }
                 // fmt::print(stderr, "DEBUG: to_keep {} group_no {}\n", to_keep, group_no);
             }
+            keep(to_keep_indexes);
         }
-        remove_marked();
     }
     return *this;
 
