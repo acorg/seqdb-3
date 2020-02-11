@@ -195,7 +195,7 @@ namespace acmacs::seqdb::inline v3
         std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
         std::string designation() const { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), passage()}); }
 
-        bool is_master() const { return !nucs.empty() && master.name.empty(); }
+        bool is_master() const { return master.name.empty(); }
         // bool is_slave() const { return !is_master(); }
         const SeqdbSeq& with_sequence(const Seqdb& seqdb) const { return is_master() ? *this : find_master(seqdb); }
         const SeqdbSeq& find_master(const Seqdb& seqdb) const;

@@ -465,6 +465,9 @@ void acmacs::seqdb::v3::Seqdb::find_slaves() const
 
 const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::find_master(const Seqdb& seqdb) const
 {
+    if (master.name.empty())
+        throw std::runtime_error{fmt::format("internal in SeqdbSeq::find_master: not a slave (name empty): {} {} {} {}", master.name, master.annotations, master.reassortant, master.passage)};
+
     for (const auto& ref : seqdb.select_by_name(master.name)) {
         for (const auto& seq : ref.entry->seqs) {
             if (seq.is_master() && seq.matches_without_name(master))
