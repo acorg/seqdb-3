@@ -284,7 +284,7 @@ std::string local::translate_nucleotides_to_amino_acids(std::string_view nucleot
 
     std::string result((nucleotides.size() - offset) / 3 + 1, '-');
     auto result_p = result.begin();
-    for (auto off = offset; off < nucleotides.size(); off += 3, ++result_p) {
+    for (auto off = offset; off < (nucleotides.size() - 2); off += 3, ++result_p) {
         if (const auto it = CODON_TO_PROTEIN.find(std::string_view(nucleotides.data() + static_cast<diff_t>(off), 3)); it != CODON_TO_PROTEIN.end())
             *result_p = it->second;
         else
