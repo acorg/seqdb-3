@@ -63,11 +63,14 @@ namespace acmacs::seqdb::inline v3
         // returns sequences in the fasta format
         std::string sequences_of_chart_as_fasta(const acmacs::chart::Chart& chart) const;
 
+        void find_slaves() const;
+
       private:
         std::string json_text_;
         std::vector<SeqdbEntry> entries_;
         mutable seq_id_index_t seq_id_index_;
         mutable hi_name_index_t hi_name_index_;
+        mutable bool slaves_found_{false};
 
         Seqdb(std::string_view filename);
         // Seqdb(std::string&& source);
@@ -151,7 +154,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<std::string_view> clades; // for master only
         std::vector<std::string_view> hi_names;
         labs_t lab_ids;
-        mutable std::unique_ptr<std::vector<ref>> slaves; // for master only, list of slaves pointing to this master
+        mutable std::unique_ptr<std::vector<ref>> slaves_; // for master only, list of slaves pointing to this master
 
         bool has_lab(std::string_view lab) const
         {
@@ -196,7 +199,8 @@ namespace acmacs::seqdb::inline v3
         // bool is_slave() const { return !is_master(); }
         const SeqdbSeq& with_sequence(const Seqdb& seqdb) const { return is_master() ? *this : find_master(seqdb); }
         const SeqdbSeq& find_master(const Seqdb& seqdb) const;
-        const std::vector<ref>& find_slaves(const Seqdb& seqdb, std::string_view name) const;
+        void add_slave(const ref& slave) const;
+        const std::vector<ref>& slaves() const;
     };
 
     struct SeqdbEntry
@@ -256,7 +260,6 @@ namespace acmacs::seqdb::inline v3
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const SeqdbSeq::master_ref_t& master) const { return entry->name == master.name && seq().matches_without_name(master); }
-        const std::vector<ref>& find_slaves(const Seqdb& seqdb) const { return seq().find_slaves(seqdb, entry->name); }
 
         sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_master(length); }
         sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_master(length); }

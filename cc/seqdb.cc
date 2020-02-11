@@ -451,6 +451,18 @@ std::string acmacs::seqdb::v3::SeqdbEntry::location() const
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::Seqdb::find_slaves() const
+{
+    if (!slaves_found_) {
+        for (const auto& slave : select_slaves())
+            slave.seq().find_master(*this).add_slave(slave);
+        slaves_found_ = true;
+    }
+
+} // acmacs::seqdb::v3::Seqdb::find_slaves
+
+// ----------------------------------------------------------------------
+
 const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::find_master(const Seqdb& seqdb) const
 {
     for (const auto& ref : seqdb.select_by_name(master.name)) {
@@ -459,25 +471,29 @@ const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::find_master(cons
                 return seq;
         }
     }
-    throw std::runtime_error{"internal in SeqdbSeq::find_master: invalid master ref"};
+    throw std::runtime_error{fmt::format("internal in SeqdbSeq::find_master: invalid master ref: {} {} {} {}", master.name, master.annotations, master.reassortant, master.passage)};
 
 } // acmacs::seqdb::v3::SeqdbSeq::find_master
 
 // ----------------------------------------------------------------------
 
-const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::find_slaves(const Seqdb& seqdb, std::string_view name) const
+void acmacs::seqdb::v3::SeqdbSeq::add_slave(const ref& slave) const
 {
-    if (!slaves) {
-        slaves = std::make_unique<std::vector<ref>>();
-        const master_ref_t self{name, annotations, reassortants.empty() ? std::string_view{} : reassortants.front(), passages.empty() ? std::string_view{} : passages.front()};
-        for (const auto& ref : seqdb.select_slaves()) {
-            if (ref.seq().master == self)
-                slaves->push_back(ref);
-        }
-    }
-    return *slaves;
+    if (!slaves_)
+        slaves_ = std::make_unique<std::vector<ref>>();
+    slaves_->push_back(slave);
 
-} // acmacs::seqdb::v3::SeqdbSeq::find_slaves
+} // acmacs::seqdb::v3::SeqdbSeq::add_slave
+
+// ----------------------------------------------------------------------
+
+const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::slaves() const
+{
+    if (!slaves_)
+        slaves_ = std::make_unique<std::vector<ref>>();
+    return *slaves_;
+
+} // acmacs::seqdb::v3::SeqdbSeq::slaves
 
 // ----------------------------------------------------------------------
 
@@ -643,22 +659,35 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched_master(cons
 {
     if (recent_matched_master.size() > 1) {
         keep_master_only();
-        sort_by_date_recent_first();
-        // if ref (master) has no hi names and one of its slaves has hi name, replace ref with slave that has hi names and return false
-        // if ref (master) has no hi names and none of its slaves has hi name, return true (to remove from refs_)
-        const auto without_hi_names = [&seqdb](auto& ref) {
-            if (ref.has_hi_names())
-                return false;   // keep it
-            const auto& slaves = ref.find_slaves(seqdb);
-            if (const auto slave_to_use = std::find_if(std::begin(slaves), std::end(slaves), [](const auto& slave) { return slave.has_hi_names(); }); slave_to_use != std::end(slaves)) {
-                ref = *slave_to_use;
-                return false;   // keep it
-            }
-            else
-                return true;    // remove
-        };
-        const auto usable_size = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched_master[0])), std::end(refs_), without_hi_names) - std::begin(refs_);
-        refs_.erase(std::next(std::begin(refs_), std::min(usable_size, static_cast<ssize_t>(recent_matched_master[0] + recent_matched_master[1]))), std::end(refs_));
+        fmt::print(stderr, "DEBUG: master only {}\n", refs_.size());
+        if (recent_matched_master[0] < refs_.size()) {
+            sort_by_date_recent_first();
+            seqdb.find_slaves();
+            // if ref (master) has no hi names and one of its slaves has hi name, replace ref with slave that has hi names and return false
+            // if ref (master) has no hi names and none of its slaves has hi name, return true (to remove from refs_)
+            size_t number_to_keep = recent_matched_master[1];
+            const auto without_hi_names = [&number_to_keep, remove = true, keep = false](auto& ref) {
+                if (number_to_keep == 0)
+                    return remove;
+                if (ref.has_hi_names()) {
+                    --number_to_keep;
+                    return keep;
+                }
+                const auto& slaves = ref.seq().slaves();
+                if (const auto slave_to_use = std::find_if(std::begin(slaves), std::end(slaves), [](const auto& slave) { return slave.has_hi_names(); }); slave_to_use != std::end(slaves)) {
+                //     ref = *slave_to_use;
+                    --number_to_keep;
+                    return keep;
+                }
+                else
+                    return remove;
+            };
+
+            // const auto end = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched_master[0])), std::end(refs_), without_hi_names);
+            const auto end = std::remove_if(std::begin(refs_), std::end(refs_), without_hi_names);
+            refs_.erase(end, std::end(refs_));
+            fmt::print(stderr, "DEBUG: keep {}\n", refs_.size());
+        }
     }
     return *this;
 
