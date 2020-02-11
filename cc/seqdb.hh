@@ -209,7 +209,7 @@ namespace acmacs::seqdb::inline v3
         std::string_view virus_type;
         std::vector<SeqdbSeq> seqs;
 
-        std::string_view host() const;
+        std::string host() const;
         bool date_within(std::string_view start, std::string_view end) const { return !dates.empty() && (start.empty() || dates.front() >= start) && (end.empty() || dates.front() < end); }
         std::string_view date() const { return dates.empty() ? name.substr(name.size() - 4) : dates.front(); }
         std::string location() const;

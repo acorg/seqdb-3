@@ -431,9 +431,10 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::
 
 // ----------------------------------------------------------------------
 
-std::string_view acmacs::seqdb::v3::SeqdbEntry::host() const
+// cannot return std::string_view because ho below would point to temporary
+std::string acmacs::seqdb::v3::SeqdbEntry::host() const
 {
-    if (const auto ho = acmacs::virus::host(acmacs::virus::v2::name_t{name}); !ho.empty())
+    if (const std::string ho{acmacs::virus::host(acmacs::virus::v2::name_t{name})}; !ho.empty())
         return ho;
     else
         return "HUMAN";
