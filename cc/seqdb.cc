@@ -197,6 +197,21 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_regex(std::string_
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_slaves() const
+{
+    subset ss;
+    for (const auto& entry : entries_) {
+        for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
+            if (ref candidate{&entry, seq_no}; !candidate.is_master())
+                ss.refs_.push_back(std::move(candidate));
+        }
+    }
+    return ss;
+
+} // acmacs::seqdb::v3::Seqdb::select_slaves
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::ref acmacs::seqdb::v3::Seqdb::find_hi_name(std::string_view full_name) const
 {
     const auto& hi_name_index = acmacs::seqdb::get().hi_name_index();
@@ -454,8 +469,8 @@ const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::find_sla
     if (!slaves) {
         slaves = std::make_unique<std::vector<ref>>();
         const master_ref_t self{name, annotations, reassortants.empty() ? std::string_view{} : reassortants.front(), passages.empty() ? std::string_view{} : passages.front()};
-        for (const auto& ref : seqdb.select_by_name(name)) {
-            if (ref.seq().matches_without_name(self))
+        for (const auto& ref : seqdb.select_slaves()) {
+            if (ref.seq().master == self)
                 slaves->push_back(ref);
         }
     }

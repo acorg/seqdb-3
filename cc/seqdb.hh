@@ -37,6 +37,7 @@ namespace acmacs::seqdb::inline v3
         subset select_by_name(std::string_view name) const;
         subset select_by_name(const std::vector<std::string_view>& names) const;
         subset select_by_regex(std::string_view re) const;
+        subset select_slaves() const;
         ref find_hi_name(std::string_view full_name) const;
         const seq_id_index_t& seq_id_index() const;
         const hi_name_index_t& hi_name_index() const;
@@ -136,6 +137,8 @@ namespace acmacs::seqdb::inline v3
             std::string_view annotations;
             std::string_view reassortant;
             std::string_view passage;
+            constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && annotations == rhs.annotations && reassortant == rhs.reassortant && passage == rhs.passage; }
+            constexpr bool operator!=(const master_ref_t& rhs) const { return !operator==(rhs); }
         };
 
         // sequence either contains nucs, amino_acids, clades or reference master sequence with the same nucs
