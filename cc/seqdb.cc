@@ -662,8 +662,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched_master(cons
 {
     if (recent_matched_master.size() > 1) {
         keep_master_only();
-        fmt::print(stderr, "DEBUG: master only {}\n", refs_.size());
-        if (recent_matched_master[0] < refs_.size()) {
+        if ((recent_matched_master[0] + recent_matched_master[1]) < refs_.size()) {
             sort_by_date_recent_first();
             seqdb.find_slaves();
             // if ref (master) has no hi names and one of its slaves has hi name, replace ref with slave that has hi names and return false
@@ -686,10 +685,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched_master(cons
                     return remove;
             };
 
-            // const auto end = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched_master[0])), std::end(refs_), without_hi_names);
-            const auto end = std::remove_if(std::begin(refs_), std::end(refs_), without_hi_names);
+            const auto end = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched_master[0])), std::end(refs_), without_hi_names);
             refs_.erase(end, std::end(refs_));
-            fmt::print(stderr, "DEBUG: keep {}\n", refs_.size());
         }
     }
     return *this;
@@ -1197,7 +1194,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
                 if (!ref.seq().hi_names.empty())
                     ++with_hi_names;
             }
-            fmt::print(stderr, "Sequences: {}\nDate range: {} - {}\nHiDb matches: {}\n", refs_.size(), min_date, max_date, with_hi_names);
+            fmt::print(stderr, "Selected sequences: {:6d}\n      HiDb matches: {:6d}\n        Date range: {} - {}\n", refs_.size(), with_hi_names, min_date, max_date);
         }
         else {
             fmt::print(stderr, "No sequences selected\n");
@@ -1322,6 +1319,7 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
             }
         }
     }
+    fmt::print("INFO: exported to fasta: {}\n", entries.size());
     return output;
 
 } // acmacs::seqdb::v3::subset::export_fasta
