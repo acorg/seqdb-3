@@ -433,33 +433,6 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
 // ----------------------------------------------------------------------
 
-// acmacs::virus::parse_result_t acmacs::seqdb::v3::scan::fasta::parse_and_fix_name(std::string_view name)
-// {
-//     auto result = acmacs::virus::parse_name(name);
-//     for (const auto& msg : result.messages) {
-//         if (msg == "location-not-found") {
-//             if (msg.value == "HK") { // gisaid has many of that kind
-//                 result = acmacs::virus::parse_name(::string::replace(name, "/HK/", "/HONG KONG/"));
-//                 break;
-//             }
-//             else if (name.find("/CRIE/") != std::string_view::npos) {
-//                 if (std::cmatch match; std::regex_search(std::begin(name), std::end(name), match, std::regex{"/([0-9]+)/CRIE/"})) {
-//                     result = acmacs::virus::parse_name(fmt::format("{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match.position(0))), match.str(1), name.substr(static_cast<size_t>(match.position(0) + match.length(0)))));
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-//     if (!result.messages.empty())
-//         fmt::print(stderr, "WARNING: parse_and_fix_name: {} -> {}\n", name, result);
-//     else
-//         fmt::print(stderr, "DEBUG: parse_and_fix_name: {} -> {}\n", name, result);
-//     return result;
-
-// } // acmacs::seqdb::v3::scan::fasta::parse_and_fix_name
-
-// ----------------------------------------------------------------------
-
 #include "acmacs-base/global-constructors-push.hh"
 
 static const std::regex re_subtype_at_the_end("\\(H[0-9]+(N[0-9]+)?\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
@@ -484,6 +457,11 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
     if (std::smatch match_artefact_at_the_beginning; std::regex_search(source.fasta.name, match_artefact_at_the_beginning, re_artefact_at_the_beginning))
         source.fasta.name.erase(0, static_cast<size_t>(match_artefact_at_the_beginning.position(1)));
 
+    // '-' instead of '/'
+    if ((source.fasta.name[0] == 'A' || source.fasta.name[0] == 'B') && source.fasta.name[1] == '-' && std::count(std::begin(source.fasta.name), std::end(source.fasta.name), '/') < 2 &&
+        std::count(std::begin(source.fasta.name), std::end(source.fasta.name), '-') > 2)
+        std::replace(std::begin(source.fasta.name), std::end(source.fasta.name), '-', '/');
+
     const std::string_view name{source.fasta.name};
     // CSISP has names with the isolation date: A/Valencia/07_0435_20171111 -> A/Valencia/07_0435/2017
     if (std::cmatch match_CSISP_name; std::regex_search(std::begin(name), std::end(name), match_CSISP_name, re_CSISP_name)) {
@@ -491,7 +469,8 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
         source.fasta.name = fmt::format("{}/{}", name.substr(0, static_cast<size_t>(match_CSISP_name.position(1))), match_CSISP_name.str(2));
         // fmt::print("INFO: {}\n", source.fasta.name);
     }
-    else if (std::cmatch match_year_at_end_of_name; name.size() > 4 && name[source.fasta.name.size() - 5] != '/' && std::regex_search(std::begin(name), std::end(name), match_year_at_end_of_name, re_year_at_end_of_name)) {
+    else if (std::cmatch match_year_at_end_of_name;
+             name.size() > 4 && name[source.fasta.name.size() - 5] != '/' && std::regex_search(std::begin(name), std::end(name), match_year_at_end_of_name, re_year_at_end_of_name)) {
         // A/Iasi/2416022019
         source.fasta.name = fmt::format("{}/{}", name.substr(0, static_cast<size_t>(match_year_at_end_of_name.position(1))), match_year_at_end_of_name.str(1));
     }
@@ -504,7 +483,8 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
     }
     else if (std::cmatch match_crie1; name.size() > 6 && std::regex_search(std::begin(name), std::end(name), match_crie1, re_CRIE1_name)) {
         // A/Moscow/14/CRIE/2019
-        source.fasta.name = fmt::format("{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match_crie1.position(0))), match_crie1.str(1), name.substr(static_cast<size_t>(match_crie1.position(0) + match_crie1.length(0))));
+        source.fasta.name = fmt::format("{}/CRIE-{}/{}", name.substr(0, static_cast<size_t>(match_crie1.position(0))), match_crie1.str(1),
+                                        name.substr(static_cast<size_t>(match_crie1.position(0) + match_crie1.length(0))));
     }
     else if (std::cmatch match_crie2; name.size() > 6 && std::regex_search(std::begin(name), std::end(name), match_crie2, re_CRIE2_name)) {
         // A/Moscow/14/CRIE/2019
