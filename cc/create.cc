@@ -22,8 +22,11 @@ struct filter_h1_h3_b_aligned : public filter_all_aligned
 {
     bool good(const acmacs::seqdb::scan::sequence_t& seq) const override
     {
+        // CDC sometimes puts H3N0 into gisaid and there is no HI match
+        // We need to have them because they may be referenced by slave sequence entries
         return filter_all_aligned::good(seq) && (seq.type_subtype() == acmacs::virus::type_subtype_t{"B"} || seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H1N1)"} ||
-                                                 seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"});
+                                                 seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H1)"} || seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"} ||
+                                                 seq.type_subtype() == acmacs::virus::type_subtype_t{"A(H3)"});
     }
 };
 

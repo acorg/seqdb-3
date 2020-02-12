@@ -18,7 +18,7 @@ void acmacs::seqdb::v3::scan::eliminate_identical(std::vector<fasta::scan_result
 
     size_t dups{0};
     for (auto seq = std::next(std::begin(sequences)), master = std::begin(sequences); seq != std::end(sequences); ++seq) {
-        if (seq->fasta.type_subtype == master->fasta.type_subtype && !seq->sequence.nuc().empty() && seq->sequence.nuc_shift() == master->sequence.nuc_shift() && seq->sequence.nuc() == master->sequence.nuc()) {
+        if (master->sequence.aligned() && seq->fasta.type_subtype == master->fasta.type_subtype && !seq->sequence.nuc().empty() && seq->sequence.nuc_shift() == master->sequence.nuc_shift() && seq->sequence.nuc() == master->sequence.nuc()) {
             // fmt::print("DEBUG: identical: \"{} {}\"   \"{} {}\"\n", seq->fasta.name, seq->fasta.passage, master->fasta.name, master->fasta.passage);
             seq->reference = fasta::master_ref_t{master->sequence.name(), std::string{master->sequence.annotations()}, master->sequence.reassortant(), master->sequence.passage()};
             ++dups;
