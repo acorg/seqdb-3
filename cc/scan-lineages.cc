@@ -168,6 +168,11 @@ namespace local::B
         return deletions.deletions.front().pos == pos && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
     }
 
+    inline bool N_deletions_at(const deletions_insertions_t& deletions, size_t num_deletions, acmacs::seqdb::pos1_t pos_min, acmacs::seqdb::pos1_t pos_max)
+    {
+        return deletions.deletions.front().pos >= pos_min && deletions.deletions.front().pos <= pos_max && deletions.deletions.front().num == num_deletions && deletions.insertions.empty();
+    }
+
     // ----------------------------------------------------------------------
 
     inline bool is_yamagata_shifted(acmacs::seqdb::v3::scan::sequence_t& sequence)
@@ -235,7 +240,7 @@ namespace local::B
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("no");
         }
-        else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{162}) || N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{163})) {
+        else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{159}, acmacs::seqdb::pos1_t{164})) {
             // VICTORIA (double) del 2017
             // according to David Burke 2019-07-16 14:27, also see https://jvi.asm.org/content/jvi/73/9/7343.full.pdf
             // B/GUATEMALA/581/2017      VPN--KNKTAT
@@ -246,7 +251,7 @@ namespace local::B
             else if (sequence.lineage() != acmacs::virus::lineage_t{"VICTORIA"})
                 warn("victoria del2017");
         }
-        else if (N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{162}) || N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{163}) || N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{164})) {
+        else if (N_deletions_at(deletions, 3, acmacs::seqdb::pos1_t{162}, acmacs::seqdb::pos1_t{164})) {
             // VICTORIA triple del 2017
             // according to David Burke 2019-07-16 14:27
             // VPK---NKTAT
