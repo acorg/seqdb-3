@@ -216,6 +216,7 @@ namespace acmacs::seqdb::inline v3
         std::string host() const;
         bool date_within(std::string_view start, std::string_view end) const { return !dates.empty() && (start.empty() || dates.front() >= start) && (end.empty() || dates.front() < end); }
         std::string_view date() const { return dates.empty() ? name.substr(name.size() - 4) : dates.front(); }
+        bool has_date(std::string_view date) const { return std::find(std::begin(dates), std::end(dates), date) != std::end(dates); }
         std::string location() const;
     };
 
