@@ -4,6 +4,8 @@
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
 
+// puts dates from seqdb into chart, if absent in chart, report conflicts
+
 // ----------------------------------------------------------------------
 
 using namespace acmacs::argv;
@@ -12,7 +14,7 @@ struct Options : public argv
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
     option<str> db{*this, "db", dflt{""}};
-    option<bool> verbose{*this, 'v', "verbose"};
+    option<bool> verbose{*this, 'v', "verbose", desc{"\n\nProgram puts dates from seqdb into chart, if absent in chart, reports conflicts.\n"}};
 
     argument<str> source_chart{*this, arg_name{"source-chart"}, mandatory};
     argument<str> output_chart{*this, arg_name{"output-chart"}};
