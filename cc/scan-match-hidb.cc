@@ -101,6 +101,7 @@ Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPLi
     size_t seq_no = 0;
     for (; first != last; ++first) {
         const auto& seq = first->sequence;
+        // fmt::print(stderr, "DEBUG: seq passages: {}\n", seq.passages());
         std::vector<score_seq_found_t> matching_for_seq;
         size_t found_no = 0;
         for (auto f : found) {
@@ -132,6 +133,7 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Match
     std::map<size_t, score_seq_found_t> antigen_to_matching; // antigen index in found to (matching index and score)
     for (const auto& mp : matching) {
         for (const auto& sf: mp) {
+            // fmt::print(stderr, "DEBUG: hidb:{} score:{} seqdb:{}\n", found[sf.found_no]->full_name(), sf.score, sf.seq_no);
             const auto ampi = antigen_to_matching.emplace(sf.found_no, sf);
             if (!ampi.second && ampi.first->second.score < sf.score) {        // already present, replace if sf has hi higher score
                 ampi.first->second = sf;
@@ -144,6 +146,7 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Match
         const auto name = found[e.first]->full_name();
         auto& sequence = std::next(first, static_cast<ssize_t>(e.second.seq_no))->sequence;
         sequence.add_hi_name(name);
+        // fmt::print(stderr, "DEBUG: add {} -> {}\n", name, sequence.full_name()); // std::next(first, static_cast<ssize_t>(e.second.seq_no))->fasta.name);
         if (const size_t subtype_size = name.find('/'); subtype_size > 1 && subtype_size <= 8)
             sequence.update_subtype(acmacs::virus::type_subtype_t{name.substr(0, subtype_size)});
         if (const auto& date = found[e.first]->date(); !date.empty())
