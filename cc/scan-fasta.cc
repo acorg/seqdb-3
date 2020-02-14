@@ -445,6 +445,7 @@ static const std::regex re_HK_name{"/HK/"};
 static const std::regex re_CRIE1_name{"/([0-9]+)/CRIE/"};
 static const std::regex re_CRIE2_name{"([^0-9])/CRIE/([0-9]+)/([0-9]+)$"};
 static const std::regex re_INCMNSZ_name("/INCMNSZ/([^/]+)/[A-Z][A-Z][A-Z](20[0-9][0-9])/H[0-9]+N[0-9]+", std::regex_constants::icase | std::regex_constants::ECMAScript);
+static const std::regex re_CDC_LV_name{"/(19\\d\\d|20[0-2]\\d)[_\\-]?CDC[_\\-]?LV[_\\-]?(\\d+[A-Z]*)$", std::regex_constants::icase | std::regex_constants::ECMAScript};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
@@ -468,6 +469,10 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
         // fmt::print("INFO: {}\n", source.fasta.name);
         source.fasta.name = fmt::format("{}/{}", name.substr(0, static_cast<size_t>(match_CSISP_name.position(1))), match_CSISP_name.str(2));
         // fmt::print("INFO: {}\n", source.fasta.name);
+    }
+    else if (std::cmatch match_CDC_LV_name; name.size() > 4 && std::regex_search(std::begin(name), std::end(name), match_CDC_LV_name, re_CDC_LV_name)) {
+        // A/ABU DHABI/240/2018-CDC-LV23A
+        source.fasta.name = fmt::format("{}{} CDC-LV{}", name.substr(0, static_cast<size_t>(match_CDC_LV_name.position(1))), match_CDC_LV_name.str(1), match_CDC_LV_name.str(2));
     }
     else if (std::cmatch match_year_at_end_of_name;
              name.size() > 4 && name[source.fasta.name.size() - 5] != '/' && std::regex_search(std::begin(name), std::end(name), match_year_at_end_of_name, re_year_at_end_of_name)) {
