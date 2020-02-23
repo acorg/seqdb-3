@@ -14,6 +14,7 @@ struct Options : public argv
     option<str> clade{*this, "clade", desc{"report antigens/sera of that clade only"}};
     option<bool> indexes_only{*this, "indexes-only"};
     option<bool> chart_remove_args{*this, "chart-remove-args", desc{"command line arguments for chart-remove-antigens-sera"}};
+    option<bool> inclusive{*this, "inclusive", desc{"report all clades for a name, otherwise report common clades for sequences available for the name"}};
 
     argument<str> chart_name{*this, arg_name{"chart_name"}, mandatory};
 
@@ -45,7 +46,7 @@ int main(int argc, char* const argv[])
         const auto show = [&](const auto& ag_sr, bool is_ag) {
             std::vector<size_t> indexes;
             for (auto [ag_no, antigen] : acmacs::enumerate(ag_sr)) {
-                const auto clades = seqdb.clades_for_name(antigen->name());
+                const auto clades = seqdb.clades_for_name(antigen->name(), opt.inclusive ? acmacs::seqdb::Seqdb::clades_for_name_inclusive::yes : acmacs::seqdb::Seqdb::clades_for_name_inclusive::no);
                 if (opt.clade.has_value()) {
                     if (std::find(std::begin(clades), std::end(clades), *opt.clade) != std::end(clades)) {
                         indexes.push_back(ag_no);
