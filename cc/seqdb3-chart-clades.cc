@@ -13,6 +13,7 @@ struct Options : public argv
     option<str> db{*this, "db", dflt{""}};
     option<str> clade{*this, "clade", desc{"report antigens/sera of that clade only"}};
     option<bool> indexes_only{*this, "indexes-only"};
+    option<bool> chart_remove_args{*this, "chart-remove-args", desc{"command line arguments for chart-remove-antigens-sera"}};
 
     argument<str> chart_name{*this, arg_name{"chart_name"}, mandatory};
 
@@ -31,7 +32,7 @@ int main(int argc, char* const argv[])
         auto layout = chart->number_of_projections() > 0 ? chart->projection(0)->layout() : std::shared_ptr<acmacs::Layout>{};
 
         const auto print = [&](bool is_ag, auto ag_no, auto antigen, const auto& clades) {
-            if (!opt.indexes_only) {
+            if (!opt.indexes_only && !opt.chart_remove_args) {
                 fmt::print("{} {:4d} {}{}  ::", is_ag ? "AG" : "SR", ag_no, antigen->full_name(), (is_ag && layout && !layout->point_has_coordinates(ag_no)) ? " <not-shown-on-map>" : "");
                 for (const auto& clade : clades) {
                     // if (opt.gly || (clade != "GLY" && clade != "NO-GLY"))
@@ -56,10 +57,16 @@ int main(int argc, char* const argv[])
                 }
             }
             if (!indexes.empty()) {
-                fmt::print("{} ({}) {}", is_ag ? "AG" : "SR", indexes.size(), indexes.front());
+                if (opt.chart_remove_args)
+                    fmt::print("{} {}", is_ag ? "-a" : "-s", indexes.front());
+                else
+                    fmt::print("{} ({}) {}", is_ag ? "AG" : "SR", indexes.size(), indexes.front());
                 for (auto ind = std::next(indexes.begin()); ind != indexes.end(); ++ind)
                     fmt::print(",{}", *ind);
-                fmt::print("\n");
+                if (opt.chart_remove_args)
+                    fmt::print(" ");
+                else
+                    fmt::print("\n");
             }
         };
 
