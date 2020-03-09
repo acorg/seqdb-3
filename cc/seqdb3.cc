@@ -16,7 +16,7 @@ struct Options : public argv
     option<str> db{*this, "db"};
 
     // select
-    option<str>       seq_id{*this, "seq-id", desc{"initially filter by seq-id"}};
+    option<str_array> seq_id{*this, "seq-id", desc{"initially filter by seq-id, all matching"}};
     option<str>       seq_id_from{*this, "seq-id-from", desc{"read list of seq ids from a file (one per line) and initially select them all"}};
     option<str>       name{*this, 'n', "name", desc{"initially filter by name (name only, full string equality)"}};
     option<str>       names_from{*this, "names-from", desc{"read names from a file (one per line)\n                                       and initially select them all (name only, full string equality)"}};
@@ -73,7 +73,7 @@ int main(int argc, char* const argv[])
         const auto& seqdb = acmacs::seqdb::get();
 
         const auto init = [&] {
-            if (opt.seq_id)
+            if (!opt.seq_id->empty())
                 return seqdb.select_by_seq_id(*opt.seq_id);
             else if (opt.seq_id_from)
                 return seqdb.select_by_seq_id(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.seq_id_from)), "\n"));

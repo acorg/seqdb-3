@@ -194,6 +194,7 @@ namespace acmacs::seqdb::inline v3
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
         std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
         std::string designation() const { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), passage()}); }
+        std::vector<std::string> designations_xxhash() const;
 
         bool is_master() const { return master.name.empty(); }
         // bool is_slave() const { return !is_master(); }
@@ -218,6 +219,7 @@ namespace acmacs::seqdb::inline v3
         std::string_view date() const { return dates.empty() ? name.substr(name.size() - 4) : dates.front(); }
         bool has_date(std::string_view date) const { return std::find(std::begin(dates), std::end(dates), date) != std::end(dates); }
         std::string location() const;
+        std::vector<seq_id_t> seq_ids(const Seqdb& seqdb) const;
     };
 
     // ----------------------------------------------------------------------

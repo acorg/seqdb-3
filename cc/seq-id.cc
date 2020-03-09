@@ -44,13 +44,14 @@ acmacs::seqdb::seq_id_t acmacs::seqdb::v3::make_seq_id(std::string_view designat
         return false;
     };
 
-    return seq_id_t{ranges::to<std::string>(
+    return seq_id_t{
         designation
         | ranges::views::remove_if(to_remove)
         | ranges::views::replace('?', 'x')
         | ranges::views::replace_if(to_replace_with_slash, '/') // usually in passages
         | ranges::views::replace_if(to_replace_with_underscore, '_')
-                                            )};
+        | ranges::to<std::string>()
+                };
 
 } // acmacs::seqdb::v3::make_seq_id
 

@@ -13,6 +13,7 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/in-json-parser.hh"
 #include "acmacs-base/to-json.hh"
+#include "acmacs-base/xxhash.hpp"
 #include "acmacs-virus/virus-name.hh"
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
@@ -229,6 +230,7 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
     if (seq_id_index_.empty()) {
         seq_id_index_.reserve(entries_.size() * 2);
         for (const auto& entry : entries_) {
+            entry.seq_ids(*this);
             for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
                 ref rf{&entry, seq_no};
                 seq_id_index_.emplace(rf.seq_id(), std::move(rf));
@@ -500,6 +502,23 @@ const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::slaves()
 
 // ----------------------------------------------------------------------
 
+std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations_xxhash() const
+{
+    const auto hash = fmt::format("h{:X}", xxh::xxhash<32>(nucs.empty() ? std::get<std::string_view>(amino_acids) : std::get<std::string_view>(nucs)));
+    if (passages.empty())
+        return {::string::join(" ", {annotations, ::string::join(" ", reassortants), hash})};
+    else {
+        auto dsgs = passages
+                | ranges::views::transform([this,&hash](std::string_view psg) { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), psg, hash}); })
+                | ranges::to_vector;
+        ranges::sort(dsgs);
+        return dsgs;
+    }
+
+} // acmacs::seqdb::v3::SeqdbSeq::designations
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
 {
     auto source = ::string::join(" ", {entry->name, seq().designation()});
@@ -513,6 +532,23 @@ acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
     return make_seq_id(source);
 
 } // acmacs::seqdb::v3::ref::seq_id
+
+// ----------------------------------------------------------------------
+
+std::vector<acmacs::seqdb::seq_id_t> acmacs::seqdb::v3::SeqdbEntry::seq_ids(const Seqdb& seqdb) const
+{
+    std::vector<acmacs::seqdb::seq_id_t> result;
+    for (const auto& seq : seqs)
+        for (const auto& dsg : seq.with_sequence(seqdb).designations_xxhash())
+            result.emplace_back(::string::join(" ", {name, dsg}));
+    ranges::sort(result);
+    for (auto cur = std::next(std::begin(result)); cur != std::end(result); ++cur) {
+        if (*cur == *std::prev(cur))
+            fmt::print(stderr, "WARNING: SeqdbEntry::seq_ids: duplicates: {}\n", *cur);
+    }
+    return result;
+
+} // acmacs::seqdb::v3::SeqdbEntry::seq_ids
 
 // ----------------------------------------------------------------------
 
