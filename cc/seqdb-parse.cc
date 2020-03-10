@@ -37,15 +37,18 @@ namespace local
                 case 'N':
                     target_.name = data;
                     break;
-                case 'p':
-                    target_.passage = data;
+                case 'H':
+                    target_.hash = data;
                     break;
-                case 'r':
-                    target_.reassortant = data;
-                    break;
-                case 'A':
-                    target_.annotations = data;
-                    break;
+                // case 'p':
+                //     target_.passage = data;
+                //     break;
+                // case 'r':
+                //     target_.reassortant = data;
+                //     break;
+                // case 'A':
+                //     target_.annotations = data;
+                //     break;
                 default:
                     throw in_json::parse_error(fmt::format("seq reference (\"R\"): unexpected key: \"{}\"", key_));
             }
@@ -123,6 +126,10 @@ namespace local
                     break;
                 case 'A':
                     target_.annotations = data;
+                    reset_key();
+                    break;
+                case 'H':
+                    target_.hash = data;
                     reset_key();
                     break;
                 default:

@@ -6,14 +6,13 @@
 #include <cstdlib>
 
 #include "acmacs-base/read-file.hh"
-#include "acmacs-base/range-v3.hh"
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/in-json-parser.hh"
 #include "acmacs-base/to-json.hh"
-#include "acmacs-base/xxhash.hpp"
+#include "acmacs-base/hash.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
@@ -102,8 +101,8 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::all() const
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_seq_id(std::string_view seq_id) const
 {
     subset ss;
-    if (const auto found = seq_id_index().find(seq_id); found != seq_id_index().end())
-        ss.refs_.emplace_back(found->second);
+    if (const auto [first, last] = seq_id_index().find(seq_id); first != last)
+        ss.refs_.emplace_back(first->second);
     return ss;
 
 } // acmacs::seqdb::v3::Seqdb::select_by_seq_id
@@ -114,8 +113,8 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_seq_id(const std::
 {
     subset ss;
     for (const auto& seq_id : seq_ids) {
-        if (const auto found = seq_id_index().find(seq_id); found != seq_id_index().end())
-            ss.refs_.emplace_back(found->second);
+        if (const auto [first, last] = seq_id_index().find(seq_id); first != last)
+            ss.refs_.emplace_back(first->second);
     }
     return ss;
 
@@ -138,8 +137,8 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name(const std::ve
     subset ss;
     for (const auto& name : names)
         select_by_name(name, ss);
-
     return ss;
+
 } // acmacs::seqdb::v3::Seqdb::select_by_name
 
 // ----------------------------------------------------------------------
@@ -179,6 +178,29 @@ void acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name, subset& sub
     }
 
 } // acmacs::seqdb::v3::Seqdb::select_by_name
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name_hash(std::string_view name, std::string_view hash) const
+{
+    subset ss;
+    if (auto [found_first, found_last] = hash_index().find(hash); found_first != found_last) {
+        bool ref_found{false};
+        for (; found_first != found_last; ++found_first) {
+            if (found_first->second.entry->name == name) {
+                ss.refs_.push_back(found_first->second);
+                ref_found = true;
+                // fmt::print(stderr, "DEBUG: select_by_name_hash {} {} -> {}\n", name, hash, found_first->second.full_name());
+            }
+        }
+        if (!ref_found)
+            fmt::print(stderr, "WARNING: Seqdb::select_by_name_hash: name difference for hash {}, no \"{}\"\n", hash, name);
+    }
+    // else
+    //     fmt::print(stderr, "DEBUG: select_by_name_hash {} {} -> NOT FOUND\n", name, hash);
+    return ss;
+
+} // acmacs::seqdb::v3::Seqdb::select_by_name_hash
 
 // ----------------------------------------------------------------------
 
@@ -228,15 +250,16 @@ acmacs::seqdb::v3::ref acmacs::seqdb::v3::Seqdb::find_hi_name(std::string_view f
 const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index() const
 {
     if (seq_id_index_.empty()) {
-        seq_id_index_.reserve(entries_.size() * 2);
         for (const auto& entry : entries_) {
-            entry.seq_ids(*this);
-            for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
-                ref rf{&entry, seq_no};
-                seq_id_index_.emplace(rf.seq_id(), std::move(rf));
+            for (auto [seq_no, seq] : acmacs::enumerate(entry.seqs)) {
+                for (const auto& designation : seq.designations())
+                    seq_id_index_.data().emplace_back(make_seq_id(::string::join(" ", {entry.name, designation})), ref{entry, seq_no});
             }
         }
-        seq_id_index_.sort_by_key();
+        seq_id_index_.sort();
+
+        // for (const auto& en : seq_id_index_.data())
+        //     fmt::print(stderr, "DEBUG: {}\n", en.first);
     }
     return seq_id_index_;
 
@@ -259,6 +282,32 @@ const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_inde
     return hi_name_index_;
 
 } // acmacs::seqdb::v3::Seqdb::hi_name_index
+
+// ----------------------------------------------------------------------
+
+const acmacs::seqdb::v3::hash_index_t& acmacs::seqdb::v3::Seqdb::hash_index() const
+{
+    if (hash_index_.empty()) {
+        using namespace ranges::views;
+        hash_index_.collect(
+            entries_
+            | for_each([](const auto& entry) {
+                return ranges::yield_from(
+                    ints(0UL, entry.seqs.size())
+                    | transform([&entry](auto seq_no) { return std::pair{entry.seqs[seq_no].hash, seq_no}; })
+                    | filter([](const auto& hash_seq_no) { return !hash_seq_no.first.empty(); })
+                    | transform([&entry](const auto& hash_seq_no) -> std::pair<std::string_view, ref> { return {hash_seq_no.first, ref{&entry, hash_seq_no.second}}; }));
+            }));
+
+        // if (auto [first, last] = hash_index_.find("A273D1A7"); first != last) {
+        //     ranges::for_each(first, last, [](const auto& en) { fmt::print(stderr, "DEBUG: found {} {}\n", en.first, en.second.full_name()); });
+        // }
+        // else
+        //     fmt::print(stderr, "DEBUG: NOT found {}\n");
+    }
+    return hash_index_;
+
+} // acmacs::seqdb::v3::Seqdb::hash_index
 
 // ----------------------------------------------------------------------
 
@@ -310,11 +359,10 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
 
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const
 {
-    const auto& index = seq_id_index();
     subset result(seq_ids.size());
-    std::transform(std::begin(seq_ids), std::end(seq_ids), result.begin(), [&index](std::string_view seq_id) -> ref {
-        if (const auto found = index.find(seq_id); found != index.end())
-            return found->second;
+    std::transform(std::begin(seq_ids), std::end(seq_ids), result.begin(), [this](std::string_view seq_id) -> ref {
+        if (const auto [first, last] = seq_id_index().find(seq_id); first != last)
+            return first->second;
         else
             return {};
     });
@@ -468,15 +516,21 @@ void acmacs::seqdb::v3::Seqdb::find_slaves() const
 const acmacs::seqdb::v3::SeqdbSeq& acmacs::seqdb::v3::SeqdbSeq::find_master(const Seqdb& seqdb) const
 {
     if (master.name.empty())
-        throw std::runtime_error{fmt::format("internal in SeqdbSeq::find_master: not a slave (name empty): {} {} {} {}", master.name, master.annotations, master.reassortant, master.passage)};
+        throw std::runtime_error{fmt::format("internal in SeqdbSeq::find_master: not a slave (name empty): {} {}", master.name, master.hash)}; // master.annotations, master.reassortant, master.passage)};
 
-    for (const auto& ref : seqdb.select_by_name(master.name)) {
-        for (const auto& seq : ref.entry->seqs) {
-            if (seq.is_master() && seq.matches_without_name(master))
-                return seq;
-        }
+    for (const auto& ref : seqdb.select_by_name_hash(master.name, master.hash)) {
+        if (ref)
+            return ref.seq();
     }
-    throw std::runtime_error{fmt::format("internal in SeqdbSeq::find_master: invalid master ref: {} {} {} {}", master.name, master.annotations, master.reassortant, master.passage)};
+
+    // for (const auto& ref : seqdb.select_by_name(master.name)) {
+    //     for (const auto& seq : ref.entry->seqs) {
+    //         if (seq.is_master() && seq.matches_without_name(master))
+    //             return seq;
+    //     }
+    // }
+
+    throw std::runtime_error{fmt::format("internal in SeqdbSeq::find_master: invalid master ref: {} {}", master.name, master.hash)}; //, master.annotations, master.reassortant, master.passage)};
 
 } // acmacs::seqdb::v3::SeqdbSeq::find_master
 
@@ -502,17 +556,28 @@ const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::slaves()
 
 // ----------------------------------------------------------------------
 
-std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations_xxhash() const
+// returns designations with and without hash
+std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations(bool just_first) const
 {
-    const auto hash = fmt::format("h{:X}", xxh::xxhash<32>(nucs.empty() ? std::get<std::string_view>(amino_acids) : std::get<std::string_view>(nucs)));
-    if (passages.empty())
-        return {::string::join(" ", {annotations, ::string::join(" ", reassortants), hash})};
+    const auto prefix = ::string::join(" ", {annotations, ::string::join(" ", reassortants)});
+    if (passages.empty()) {
+        return {::string::join(" ", {prefix, hash}), prefix}; // not seq-id with hash must be first to support just_first
+    }
+    else if (just_first) {
+        return {::string::join(" ", {prefix, passages.front(), hash})};
+    }
     else {
-        auto dsgs = passages
-                | ranges::views::transform([this,&hash](std::string_view psg) { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), psg, hash}); })
-                | ranges::to_vector;
-        ranges::sort(dsgs);
-        return dsgs;
+        using namespace ranges::views;
+        const std::array hashes{hash, std::string_view{}};
+        return passages
+                | for_each([&prefix,&hashes](std::string_view psg) {
+                    return ranges::yield_from(
+                        hashes
+                        | transform([&prefix,psg](std::string_view myhash) -> std::string { return ::string::join(" ", {prefix, psg, myhash}); }));
+                })
+                | ranges::to<std::vector>
+                | ranges::actions::sort
+                | ranges::actions::unique;
     }
 
 } // acmacs::seqdb::v3::SeqdbSeq::designations
@@ -532,23 +597,6 @@ acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
     return make_seq_id(source);
 
 } // acmacs::seqdb::v3::ref::seq_id
-
-// ----------------------------------------------------------------------
-
-std::vector<acmacs::seqdb::seq_id_t> acmacs::seqdb::v3::SeqdbEntry::seq_ids(const Seqdb& seqdb) const
-{
-    std::vector<acmacs::seqdb::seq_id_t> result;
-    for (const auto& seq : seqs)
-        for (const auto& dsg : seq.with_sequence(seqdb).designations_xxhash())
-            result.emplace_back(::string::join(" ", {name, dsg}));
-    ranges::sort(result);
-    for (auto cur = std::next(std::begin(result)); cur != std::end(result); ++cur) {
-        if (*cur == *std::prev(cur))
-            fmt::print(stderr, "WARNING: SeqdbEntry::seq_ids: duplicates: {}\n", *cur);
-    }
-    return result;
-
-} // acmacs::seqdb::v3::SeqdbEntry::seq_ids
 
 // ----------------------------------------------------------------------
 

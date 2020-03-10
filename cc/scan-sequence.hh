@@ -188,6 +188,7 @@ namespace acmacs::seqdb
 
                 constexpr const acmacs::virus::name_t& name() const { return name_; }
                 std::string_view annotations() const { return annotations_; }
+                std::string_view hash() const { return hash_; }
                 // const acmacs::virus::host_t& host() const { return host_; }
                 constexpr const acmacs::virus::Reassortant& reassortant() const { return reassortant_; }
                 constexpr const auto& passages() const { return passages_; }
@@ -277,6 +278,7 @@ namespace acmacs::seqdb
                 flat_map_t<acmacs::uppercase, flat_set_t<acmacs::uppercase>> lab_ids_;
                 std::string aa_;
                 std::string nuc_;
+                std::string hash_;
                 int nuc_translation_offset_{0};
                 shift_t shift_nuc_{not_aligned};
                 shift_t shift_aa_{not_aligned};

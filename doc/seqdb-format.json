@@ -10,7 +10,7 @@
          "l": "VICTORIA",  //? VICTORIA, YAMAGATA, 2009PDM, SEASONAL
          "s": [
              {
-                 "R": {"N": "<name>", "p": "<passage>", "r": "<reassortant>", "A": "{annotations}"},             //? reference to the seq entry with the same sequence (sequence-database-v3)
+                 "R": {"N": "<name>", "H": "hash"},        //? reference to the seq entry with the same sequence (sequence-database-v3)
                  "a": "sequence-amino-acids",              //? absent if "R" given
                  "s": <shift (int) for aa sequence>,       //? absent if "R" given
                  "n": "sequence-nucleotides",              //? absent if "R" given
@@ -22,6 +22,7 @@
                  "p": ["passage"],
                  "r": ["reassortant"],
                  "A": "annotations",
+                 "H": "hash of nucs or aa (if nucs absent), xxhash<32> hex encoded", //? absent if "R" given
                  "G": {         //? gisaid data, added 2019-08-27
                      "i": ["isolate_id"],
                      "S": ["submitters"],

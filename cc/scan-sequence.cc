@@ -9,6 +9,7 @@
 #include "acmacs-base/string.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/algorithm.hh"
+#include "acmacs-base/hash.hh"
 #include "seqdb-3/scan-sequence.hh"
 #include "seqdb-3/scan-align.hh"
 
@@ -316,12 +317,14 @@ void acmacs::seqdb::v3::scan::sequence_t::import(std::string_view source)
 
     if (freq.size() > 1 && /* freq.size() < 12 && */ ((freq[0].second > (nuc_.size() / 4) && freq[1].second > (nuc_.size() / 5)) || most_freq_are_acgnt(freq))) {
         // looks like nuc
+        hash_ = acmacs::hash(nuc_);
     }
     else {
         // if (freq.size() < 12)
         //    fmt::print(stderr, "nuc freq: {} {}\n", nuc_.size(), acmacs::to_string(freq));
         aa_ = nuc_;
         nuc_.clear();
+        hash_ = acmacs::hash(aa_);
     }
 
 } // acmacs::seqdb::v3::scan::sequence_t::import

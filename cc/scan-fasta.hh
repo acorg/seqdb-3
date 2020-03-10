@@ -32,9 +32,10 @@ namespace acmacs::seqdb
                 struct master_ref_t
                 {
                     acmacs::virus::name_t name;
-                    std::string annotations;
-                    acmacs::virus::Reassortant reassortant;
-                    acmacs::uppercase passage;
+                    std::string hash;
+                    // std::string annotations;
+                    // acmacs::virus::Reassortant reassortant;
+                    // acmacs::uppercase passage;
                 };
 
                 struct scan_result_t

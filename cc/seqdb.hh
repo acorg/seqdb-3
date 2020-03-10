@@ -1,10 +1,5 @@
 #pragma once
 
-#include <string>
-#include <string_view>
-#include <vector>
-
-#include "acmacs-base/fmt.hh"
 #include "acmacs-base/string.hh"
 #include "acmacs-base/uppercase.hh"
 #include "acmacs-base/flat-map.hh"
@@ -22,8 +17,9 @@ namespace acmacs::seqdb::inline v3
     struct ref;
     class subset;
 
-    using seq_id_index_t = flat_map_t<seq_id_t, ref>;
+    using seq_id_index_t = map_with_duplicating_keys_t<seq_id_t, ref>; // duplicating seq_ids without hash present (for backward compatibility)
     using hi_name_index_t = flat_map_t<std::string_view, ref>;
+    using hash_index_t = acmacs::map_with_duplicating_keys_t<std::string_view, ref>;
 
     class Seqdb
     {
@@ -35,12 +31,14 @@ namespace acmacs::seqdb::inline v3
         subset select_by_seq_id(std::string_view seq_id) const;
         subset select_by_seq_id(const std::vector<std::string_view>& seq_ids) const;
         subset select_by_name(std::string_view name) const;
+        subset select_by_name_hash(std::string_view name, std::string_view hash) const;
         subset select_by_name(const std::vector<std::string_view>& names) const;
         subset select_by_regex(std::string_view re) const;
         subset select_slaves() const;
         ref find_hi_name(std::string_view full_name) const;
         const seq_id_index_t& seq_id_index() const;
         const hi_name_index_t& hi_name_index() const;
+        const hash_index_t& hash_index() const;
 
         // returned subset contains elements for each antigen, i.e. it may contain empty ref's
         subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType = {}) const;
@@ -70,6 +68,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<SeqdbEntry> entries_;
         mutable seq_id_index_t seq_id_index_;
         mutable hi_name_index_t hi_name_index_;
+        mutable hash_index_t hash_index_;
         mutable bool slaves_found_{false};
 
         Seqdb(std::string_view filename);
@@ -137,11 +136,14 @@ namespace acmacs::seqdb::inline v3
         struct master_ref_t
         {
             std::string_view name;
-            std::string_view annotations;
-            std::string_view reassortant;
-            std::string_view passage;
-            constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && annotations == rhs.annotations && reassortant == rhs.reassortant && passage == rhs.passage; }
+            std::string_view hash;
+
+            constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && hash == rhs.hash; }
             constexpr bool operator!=(const master_ref_t& rhs) const { return !operator==(rhs); }
+            // std::string_view annotations;
+            // std::string_view reassortant;
+            // std::string_view passage;
+            // constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && annotations == rhs.annotations && reassortant == rhs.reassortant && passage == rhs.passage; }
         };
 
         // sequence either contains nucs, amino_acids, clades or reference master sequence with the same nucs
@@ -153,6 +155,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<std::string_view> passages;
         std::vector<std::string_view> clades; // for master only
         std::vector<std::string_view> hi_names;
+        std::string_view hash;
         labs_t lab_ids;
         mutable std::unique_ptr<std::vector<ref>> slaves_; // for master only, list of slaves pointing to this master
 
@@ -166,11 +169,12 @@ namespace acmacs::seqdb::inline v3
         bool matches(const nucleotide_at_pos1_eq_list_t& nuc_at_pos1_eq) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1_eq); }
         bool matches(const nucleotide_at_pos1_list_t& nuc_at_pos1) const { return acmacs::seqdb::matches(acmacs::seqdb::aligned(nucs), nuc_at_pos1); }
 
-        bool matches_without_name(const master_ref_t& other_reference) const
+        constexpr bool matches_without_name(const master_ref_t& other_reference) const
         {
-            return annotations == other_reference.annotations &&
-                   ((other_reference.reassortant.empty() && reassortants.empty()) || std::find(std::begin(reassortants), std::end(reassortants), other_reference.reassortant) != std::end(reassortants)) &&
-                   ((other_reference.passage.empty() && passages.empty()) || (!passages.empty() && passages.front() == other_reference.passage)); // the first passage must match
+            return hash == other_reference.hash;
+            // return annotations == other_reference.annotations &&
+            //        ((other_reference.reassortant.empty() && reassortants.empty()) || std::find(std::begin(reassortants), std::end(reassortants), other_reference.reassortant) != std::end(reassortants)) &&
+            //        ((other_reference.passage.empty() && passages.empty()) || (!passages.empty() && passages.front() == other_reference.passage)); // the first passage must match
         }
 
         // must not be used for slaves
@@ -193,8 +197,8 @@ namespace acmacs::seqdb::inline v3
         std::string_view lab() const { return lab_ids.empty() ? std::string_view{} : lab_ids.front().first; }
         std::string_view lab_id() const { return (lab_ids.empty() || lab_ids.front().second.empty()) ? std::string_view{} : lab_ids.front().second.front(); }
         std::string_view passage() const { return passages.empty() ? std::string_view{} : passages.front(); }
-        std::string designation() const { return ::string::join(" ", {annotations, ::string::join(" ", reassortants), passage()}); }
-        std::vector<std::string> designations_xxhash() const;
+        std::vector<std::string> designations(bool just_first = false) const;
+        std::string designation() const { return designations(true).front(); }
 
         bool is_master() const { return master.name.empty(); }
         // bool is_slave() const { return !is_master(); }
@@ -219,7 +223,6 @@ namespace acmacs::seqdb::inline v3
         std::string_view date() const { return dates.empty() ? name.substr(name.size() - 4) : dates.front(); }
         bool has_date(std::string_view date) const { return std::find(std::begin(dates), std::end(dates), date) != std::end(dates); }
         std::string location() const;
-        std::vector<seq_id_t> seq_ids(const Seqdb& seqdb) const;
     };
 
     // ----------------------------------------------------------------------
@@ -233,6 +236,7 @@ namespace acmacs::seqdb::inline v3
 
         ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
         ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
+        ref(const SeqdbEntry& a_entry, size_t a_index) : entry{&a_entry}, seq_index{a_index} {}
 
         constexpr bool operator==(const ref& rhs) const { return entry == rhs.entry && seq_index == rhs.seq_index; }
         constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
@@ -262,7 +266,7 @@ namespace acmacs::seqdb::inline v3
         bool has_hi_names() const { return !seq().hi_names.empty(); }
         bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
         bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
-        bool matches(const SeqdbSeq::master_ref_t& master) const { return entry->name == master.name && seq().matches_without_name(master); }
+        constexpr bool matches(const SeqdbSeq::master_ref_t& master) const { return entry->name == master.name && seq().matches_without_name(master); }
 
         sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_master(length); }
         sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_master(length); }
