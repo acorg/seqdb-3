@@ -76,6 +76,10 @@ namespace acmacs::seqdb::inline v3
         // Seqdb(std::string&& source);
 
         void select_by_name(std::string_view name, subset& subs) const;
+
+        // supports seq_ids before 2020-03-12, e.g. with _d1 etc. suffixes and without has suffix
+        using seq_id_iter = typename seq_id_index_t::const_iterator;
+        std::pair<seq_id_iter, seq_id_iter> find_seq_id(std::string_view seq_id) const;
     };
 
     void setup(std::string_view filename);

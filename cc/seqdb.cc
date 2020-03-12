@@ -98,10 +98,21 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::all() const
 
 // ----------------------------------------------------------------------
 
+std::pair<acmacs::seqdb::v3::Seqdb::seq_id_iter, acmacs::seqdb::v3::Seqdb::seq_id_iter> acmacs::seqdb::v3::Seqdb::find_seq_id(std::string_view seq_id) const
+{
+    auto bounds = seq_id_index().find(seq_id);
+    if (bounds.first == bounds.second && seq_id.size() > 3 && seq_id[seq_id.size() - 3] == '_' && seq_id[seq_id.size() - 2] == 'd')
+        bounds = seq_id_index().find(seq_id.substr(0, seq_id.size() - 3));
+    return bounds;
+
+} // acmacs::seqdb::v3::Seqdb::find_seq_id
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_seq_id(std::string_view seq_id) const
 {
     subset ss;
-    if (const auto [first, last] = seq_id_index().find(seq_id); first != last)
+    if (const auto [first, last] = find_seq_id(seq_id); first != last)
         ss.refs_.emplace_back(first->second);
     return ss;
 
@@ -113,12 +124,28 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_seq_id(const std::
 {
     subset ss;
     for (const auto& seq_id : seq_ids) {
-        if (const auto [first, last] = seq_id_index().find(seq_id); first != last)
+        if (const auto [first, last] = find_seq_id(seq_id); first != last)
             ss.refs_.emplace_back(first->second);
     }
     return ss;
 
 } // acmacs::seqdb::v3::Seqdb::select_by_seq_id
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const
+{
+    subset result(seq_ids.size());
+    std::transform(std::begin(seq_ids), std::end(seq_ids), result.begin(), [this](std::string_view seq_id) -> ref {
+        if (const auto [first, last] = find_seq_id(seq_id); first != last)
+            return first->second;
+        else
+            return {};
+    });
+
+    return result;
+
+} // acmacs::seqdb::v3::Seqdb::find_by_seq_ids
 
 // ----------------------------------------------------------------------
 
@@ -160,20 +187,18 @@ void acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name, subset& sub
 
     const auto subs_initial_size = subs.size();
     find_name(name);
-    if (subs.size() == subs_initial_size) {
-        if (name[0] == 'A' || name[0] == 'a' || name[0] == 'B' || name[0] == 'b') {
-            const auto result = acmacs::virus::parse_name(name);
-            find_name(*result.name);
-            if (subs.size() == subs_initial_size && (name[0] == 'A'  || name[0] == 'a') && name[1] == '/') {
-                for (const char* subtype : {"A(H1N1)/", "A(H3N2)/"}) {
-                    find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name.substr(2)}).name);
-                }
+    if (subs.size() == subs_initial_size && (name[0] == 'A' || name[0] == 'a' || name[0] == 'B' || name[0] == 'b')) {
+        const auto result = acmacs::virus::parse_name(name);
+        find_name(*result.name);
+        if (subs.size() == subs_initial_size && (name[0] == 'A' || name[0] == 'a') && name[1] == '/') {
+            for (const char* subtype : {"A(H1N1)/", "A(H3N2)/", "A(H1)/", "A(H3)/"}) {
+                find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name.substr(2)}).name);
             }
         }
-        else {
-            for (const char* subtype : {"A(H1N1)/", "A(H3N2)/", "B/"}) {
-                find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name}).name);
-            }
+    }
+    if (subs.size() == subs_initial_size) {
+        for (const char* subtype : {"A(H1N1)/", "A(H3N2)/", "B/", "A(H1)/", "A(H3)/"}) {
+            find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name}).name);
         }
     }
 
@@ -354,22 +379,6 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
     return result;
 
 } // acmacs::seqdb::v3::Seqdb::match
-
-// ----------------------------------------------------------------------
-
-acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const
-{
-    subset result(seq_ids.size());
-    std::transform(std::begin(seq_ids), std::end(seq_ids), result.begin(), [this](std::string_view seq_id) -> ref {
-        if (const auto [first, last] = seq_id_index().find(seq_id); first != last)
-            return first->second;
-        else
-            return {};
-    });
-
-    return result;
-
-} // acmacs::seqdb::v3::Seqdb::find_by_seq_ids
 
 // ----------------------------------------------------------------------
 
@@ -562,20 +571,22 @@ const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::slaves()
 std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations(bool just_first) const
 {
     const auto prefix = ::string::join(" ", {annotations, ::string::join(" ", reassortants)});
+    const auto prefixed_hash = fmt::format("h{}", hash);
     if (passages.empty()) {
-        return {::string::join(" ", {prefix, hash}), prefix}; // not seq-id with hash must be first to support just_first
+        return {::string::join(" ", {prefix, prefixed_hash}), prefix}; // not seq-id with hash must be first to support just_first
     }
     else if (just_first) {
-        return {::string::join(" ", {prefix, passages.front(), hash})};
+        return {::string::join(" ", {prefix, passages.front(), prefixed_hash})};
     }
     else {
         using namespace ranges::views;
-        const std::array hashes{hash, std::string_view{}};
+        using hash_t = decltype(prefixed_hash);
+        const std::array hashes{prefixed_hash, hash_t{}};
         return passages
                 | for_each([&prefix,&hashes](std::string_view psg) {
                     return ranges::yield_from(
                         hashes
-                        | transform([&prefix,psg](std::string_view myhash) -> std::string { return ::string::join(" ", {prefix, psg, myhash}); }));
+                        | transform([&prefix,psg](std::string_view a_hash) -> std::string { return ::string::join(" ", {prefix, psg, a_hash}); }));
                 })
                 | ranges::to<std::vector>
                 | ranges::actions::sort

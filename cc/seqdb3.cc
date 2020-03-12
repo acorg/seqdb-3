@@ -130,7 +130,7 @@ int main(int argc, char* const argv[])
 
         if (opt.name_format->empty()) {
             if (opt.fasta->empty())
-                opt.name_format.add("{full_name} {lineage} {dates} {country} {clades} {lab}");
+                opt.name_format.add("\"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {seq_id}");
             else
                 opt.name_format.add("{seq_id}");
         }
