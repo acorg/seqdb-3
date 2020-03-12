@@ -409,7 +409,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) const
+void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart, verbose verb) const
 {
     auto antigens = chart.antigens_modify();
     acmacs::enumerate(match(*antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
@@ -423,6 +423,8 @@ void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart) con
             else {
                 antigen.add_clade("SEQUENCED");
             }
+            if (verb == verbose::yes)
+                fmt::print(stderr, "DEBUG: Seqdb::add_clades AG {:4d} {} -- {}\n", ag_no, antigen.full_name(), antigen.clades());
         }
     });
 
