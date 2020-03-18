@@ -25,11 +25,11 @@ class CladeDefinitions : public acmacs::settings::Settings
         using pp = std::pair<std::string, std::string_view>;
         for (const auto& [virus_type, tag] : {pp{"H1"s, "clades-A(H1N1)PDM09"sv}, pp{"H3"s, "clades-A(H3N2)"sv}, pp{"BVICTORIA"s, "clades-BVICTORIA"sv}, pp{"BYAMAGATA"s, "clades-BYAMAGATA"sv}}) {
             current_virus_type_ = virus_type;
-            apply(tag, acmacs::verbose::yes);
+            apply(tag);
         }
     }
 
-    bool apply_built_in(std::string_view name, acmacs::verbose verb) override // returns true if built-in command with that name found and applied
+    bool apply_built_in(std::string_view name) override // returns true if built-in command with that name found and applied
     {
         if (name == "clade") {
             const auto& aa_field = getenv("aa");
@@ -39,7 +39,7 @@ class CladeDefinitions : public acmacs::settings::Settings
             add(current_virus_type_, getenv("name", ""), std::move(aa), std::move(nuc));
         }
         else
-            return acmacs::settings::Settings::apply_built_in(name, verb);
+            return acmacs::settings::Settings::apply_built_in(name);
         return true;
     }
 
