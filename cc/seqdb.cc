@@ -262,9 +262,8 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_slaves() const
 
 acmacs::seqdb::v3::ref acmacs::seqdb::v3::Seqdb::find_hi_name(std::string_view full_name) const
 {
-    const auto& hi_name_index = acmacs::seqdb::get().hi_name_index();
-    if (const auto indp = hi_name_index.find(full_name); indp != hi_name_index.end())
-        return indp->second;
+    if (const auto* ref = acmacs::seqdb::get().hi_name_index().find(full_name); ref)
+        return *ref;
     else
         return {};
 
@@ -278,13 +277,9 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
         for (const auto& entry : entries_) {
             for (auto [seq_no, seq] : acmacs::enumerate(entry.seqs)) {
                 for (const auto& designation : seq.designations())
-                    seq_id_index_.data().emplace_back(make_seq_id(::string::join(" ", {entry.name, designation})), ref{entry, seq_no});
+                    seq_id_index_.emplace(make_seq_id(::string::join(" ", {entry.name, designation})), ref{entry, seq_no});
             }
         }
-        seq_id_index_.sort();
-
-        // for (const auto& en : seq_id_index_.data())
-        //     fmt::print(stderr, "DEBUG: {}\n", en.first);
     }
     return seq_id_index_;
 
@@ -295,14 +290,12 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
 const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_index() const
 {
     if (hi_name_index_.empty()) {
-        hi_name_index_.reserve(entries_.size() * 2);
         for (const auto& entry : entries_) {
             for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
                 for (const auto& hi_name : entry.seqs[seq_no].hi_names)
                     hi_name_index_.emplace(hi_name, ref{&entry, seq_no});
             }
         }
-        hi_name_index_.sort_by_key();
     }
     return hi_name_index_;
 
@@ -345,10 +338,10 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
 
     auto find_by_hi_name = [this](const auto& antigen) -> std::optional<ref> {
         const auto& hi_name_ind = hi_name_index();
-        if (auto found_ref1 = hi_name_ind.find(antigen.full_name()); found_ref1 != hi_name_ind.end())
-            return found_ref1->second;
-        else if (auto found_ref2 = hi_name_ind.find(antigen.full_name_for_seqdb_matching()); found_ref2 != hi_name_ind.end())
-            return found_ref2->second;
+        if (const auto* found_ref1 = hi_name_ind.find(antigen.full_name()); found_ref1)
+            return *found_ref1;
+        else if (const auto* found_ref2 = hi_name_ind.find(antigen.full_name_for_seqdb_matching()); found_ref2)
+            return *found_ref2;
         else
             return std::nullopt;
     };

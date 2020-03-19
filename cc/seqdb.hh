@@ -19,8 +19,8 @@ namespace acmacs::seqdb::inline v3
     class subset;
 
     using seq_id_index_t = map_with_duplicating_keys_t<seq_id_t, ref>; // duplicating seq_ids without hash present (for backward compatibility)
-    using hi_name_index_t = flat_map_t<std::string_view, ref>;
-    using hash_index_t = acmacs::map_with_duplicating_keys_t<std::string_view, ref>;
+    using hi_name_index_t = map_with_unique_keys_t<std::string_view, ref>;
+    using hash_index_t = map_with_duplicating_keys_t<std::string_view, ref>;
 
     class Seqdb
     {
