@@ -161,10 +161,11 @@ int main(int argc, char* const argv[])
 
 // ----------------------------------------------------------------------
 
-template <typename Key> static inline acmacs::flat_map_t<Key, size_t> sorted_by_count(const std::map<Key, size_t>& source)
+template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted_by_count(const std::map<Key, size_t>& source)
 {
-    acmacs::flat_map_t<Key, size_t> result(std::begin(source), std::end(source));
-    result.sort_by_value_reverse();
+    const auto order_by_value_reverse = [](const auto& e1, const auto& e2) { return e1.second > e2.second; };
+    std::vector<std::pair<Key, size_t>> result(std::begin(source), std::end(source));
+    std::sort(std::begin(result), std::end(result), order_by_value_reverse);
     return result;
 }
 

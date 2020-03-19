@@ -10,6 +10,7 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/algorithm.hh"
 #include "acmacs-base/hash.hh"
+#include "acmacs-base/counter.hh"
 #include "seqdb-3/scan-sequence.hh"
 #include "seqdb-3/scan-align.hh"
 
@@ -17,7 +18,6 @@
 
 namespace local
 {
-    static acmacs::flat_map_t<char, size_t> symbol_frequences(std::string_view seq);
     static std::string translate_nucleotides_to_amino_acids(std::string_view nucleotides, size_t offset);
 }
 
@@ -303,8 +303,7 @@ void acmacs::seqdb::v3::scan::sequence_t::import(std::string_view source)
     nuc_.resize(source.size(), '-');
     std::transform(std::begin(source), std::end(source), std::begin(nuc_), [](char c) { return std::toupper(c); });
 
-    auto freq = local::symbol_frequences(nuc_);
-    freq.sort_by_value_reverse(); // most frequent first
+    const auto freq = acmacs::CounterChar(nuc_).sorted_pairs();
 
     const auto most_freq_are_acgnt = [](const auto& frq) {
         const auto most_frequent_symbols_size = std::min(5UL, frq.size());
@@ -340,21 +339,6 @@ acmacs::seqdb::v3::scan::sequence_t acmacs::seqdb::v3::scan::sequence_t::from_al
     return result;
 
 } // acmacs::seqdb::v3::scan::sequence_t::from_aligned_aa
-
-// ----------------------------------------------------------------------
-
-acmacs::flat_map_t<char, size_t> local::symbol_frequences(std::string_view seq)
-{
-    acmacs::flat_map_t<char, size_t> result;
-    for (auto cc : seq) {
-        if (auto found = result.find(cc); found != std::end(result))
-            ++found->second;
-        else
-            result.emplace(cc, 1);
-    }
-    return result;
-
-} // local::symbol_frequences
 
 // ----------------------------------------------------------------------
 
