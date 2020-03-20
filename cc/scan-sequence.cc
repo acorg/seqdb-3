@@ -220,9 +220,9 @@ std::string acmacs::seqdb::v3::scan::sequence_t::full_name() const
 void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& lab, const acmacs::uppercase& lab_id)
 {
     if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
-        lab_ids_.emplace(lab, flat_set_t<acmacs::uppercase>{lab_id});
+        lab_ids_.emplace(lab, std::set<acmacs::uppercase>{lab_id});
     else
-        found->second.add(lab_id);
+        found->second.insert(lab_id);
 
 } // acmacs::seqdb::v3::scan::sequence_t::add_lab_id
 
@@ -231,7 +231,7 @@ void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& la
 void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& lab)
 {
     if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
-        lab_ids_.emplace(lab, flat_set_t<acmacs::uppercase>{});
+        lab_ids_.emplace(lab, std::set<acmacs::uppercase>{});
 
 } // acmacs::seqdb::v3::scan::sequence_t::add_lab_id
 
@@ -393,8 +393,10 @@ void acmacs::seqdb::v3::scan::sequence_t::merge_from(const sequence_t& source)
     gisaid_dna_insdc_.merge_from(source.gisaid_dna_insdc_);
 
     for (const auto& [lab, ids] : source.lab_ids()) {
-        if (const auto found = lab_ids_.find(lab); found != lab_ids_.end())
-            found->second.merge_from(ids);
+        if (const auto found = lab_ids_.find(lab); found != lab_ids_.end()) {
+            for (const auto& id : ids)
+                found->second.insert(id);
+        }
         else
             lab_ids_.emplace(lab, ids);
     }

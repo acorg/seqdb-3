@@ -275,7 +275,7 @@ namespace acmacs::seqdb
                 flat_set_t<acmacs::virus::Passage> passages_;
                 flat_set_t<std::string> hi_names_;
                 std::string annotations_;
-                flat_map_t<acmacs::uppercase, flat_set_t<acmacs::uppercase>> lab_ids_;
+                std::map<acmacs::uppercase, std::set<acmacs::uppercase>> lab_ids_;
                 std::string aa_;
                 std::string nuc_;
                 std::string hash_;
