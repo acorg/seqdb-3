@@ -273,6 +273,7 @@ acmacs::seqdb::v3::ref acmacs::seqdb::v3::Seqdb::find_hi_name(std::string_view f
 
 const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index() const
 {
+    std::lock_guard index_guard(index_access_);
     if (seq_id_index_.empty()) {
         for (const auto& entry : entries_) {
             for (auto [seq_no, seq] : acmacs::enumerate(entry.seqs)) {
@@ -280,6 +281,7 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
                     seq_id_index_.emplace(make_seq_id(::string::join(" ", {entry.name, designation})), ref{entry, seq_no});
             }
         }
+        seq_id_index_.sort();     // force sorting to avoid future raise condition during access from different threads
     }
     return seq_id_index_;
 
@@ -289,6 +291,7 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
 
 const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_index() const
 {
+    std::lock_guard index_guard(index_access_);
     if (hi_name_index_.empty()) {
         for (const auto& entry : entries_) {
             for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
@@ -296,6 +299,7 @@ const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_inde
                     hi_name_index_.emplace(hi_name, ref{&entry, seq_no});
             }
         }
+        hi_name_index_.sort();     // force sorting to avoid future raise condition during access from different threads
     }
     return hi_name_index_;
 
@@ -305,6 +309,7 @@ const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_inde
 
 const acmacs::seqdb::v3::hash_index_t& acmacs::seqdb::v3::Seqdb::hash_index() const
 {
+    std::lock_guard index_guard(index_access_);
     if (hash_index_.empty()) {
         using namespace ranges::views;
         hash_index_.collect(
@@ -316,12 +321,7 @@ const acmacs::seqdb::v3::hash_index_t& acmacs::seqdb::v3::Seqdb::hash_index() co
                     | filter([](const auto& hash_seq_no) { return !hash_seq_no.first.empty(); })
                     | transform([&entry](const auto& hash_seq_no) -> std::pair<std::string_view, ref> { return {hash_seq_no.first, ref{&entry, hash_seq_no.second}}; }));
             }));
-
-        // if (auto [first, last] = hash_index_.find("A273D1A7"); first != last) {
-        //     ranges::for_each(first, last, [](const auto& en) { fmt::print(stderr, "DEBUG: found {} {}\n", en.first, en.second.full_name()); });
-        // }
-        // else
-        //     fmt::print(stderr, "DEBUG: NOT found {}\n");
+        hash_index_.sort();     // force sorting to avoid future raise condition during access from different threads
     }
     return hash_index_;
 

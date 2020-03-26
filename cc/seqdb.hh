@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "acmacs-base/debug.hh"
 #include "acmacs-base/string.hh"
 #include "acmacs-base/uppercase.hh"
@@ -70,6 +72,7 @@ namespace acmacs::seqdb::inline v3
         mutable seq_id_index_t seq_id_index_;
         mutable hi_name_index_t hi_name_index_;
         mutable hash_index_t hash_index_;
+        mutable std::mutex index_access_; // acmacs-api is multi-threaded app
         mutable bool slaves_found_{false};
 
         Seqdb(std::string_view filename);
