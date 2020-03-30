@@ -273,7 +273,7 @@ acmacs::seqdb::v3::ref acmacs::seqdb::v3::Seqdb::find_hi_name(std::string_view f
 
 const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index() const
 {
-    std::lock_guard index_guard(index_access_);
+    std::lock_guard<std::mutex> index_guard(index_access_);
     if (seq_id_index_.empty()) {
         for (const auto& entry : entries_) {
             for (auto [seq_no, seq] : acmacs::enumerate(entry.seqs)) {
@@ -291,7 +291,7 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
 
 const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_index() const
 {
-    std::lock_guard index_guard(index_access_);
+    std::lock_guard<std::mutex> index_guard(index_access_);
     if (hi_name_index_.empty()) {
         for (const auto& entry : entries_) {
             for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
@@ -309,7 +309,7 @@ const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_inde
 
 const acmacs::seqdb::v3::hash_index_t& acmacs::seqdb::v3::Seqdb::hash_index() const
 {
-    std::lock_guard index_guard(index_access_);
+    std::lock_guard<std::mutex> index_guard(index_access_);
     if (hash_index_.empty()) {
         using namespace ranges::views;
         hash_index_.collect(
