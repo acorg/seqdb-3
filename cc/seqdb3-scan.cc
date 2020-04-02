@@ -44,6 +44,7 @@ struct Options : public argv
     option<str>  output_seqdb{*this, 'o', "output-dir", dflt{""}};
     option<bool> whocc_only{*this, "whocc-only", desc{"create whocc only db (seqdb.json.xz)"}};
     option<bool> gisaid{*this, "gisaid", desc{"perform gisaid related name fixes and adjustments"}};
+    option<str>  ncbi{*this, "ncbi", dflt{""}, desc{"directory with files downloaded from ncbi, see acmacs-whocc/doc/gisaid.org"}};
     option<bool> dont_eliminate_identical{*this, "dont-eliminate-identical", desc{"do not find identical sequences"}};
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
@@ -55,7 +56,7 @@ struct Options : public argv
 
     option<bool> verbose{*this, 'v', "verbose"};
 
-    argument<str_array> filenames{*this, arg_name{"filename"}, mandatory};
+    argument<str_array> filenames{*this, arg_name{"filename"}};
 };
 
 static int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const Options& opt);
@@ -68,9 +69,15 @@ int main(int argc, char* const argv[])
 
         const acmacs::seqdb::scan::fasta::scan_options_t scan_options(opt.verbose ? acmacs::debug::yes : acmacs::debug::no,
                                                                       opt.gisaid ? acmacs::seqdb::scan::fasta::scan_name_adjustments::gisaid : acmacs::seqdb::scan::fasta::scan_name_adjustments::none);
-        auto [all_sequences, messages] = acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options);
-        fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
+        acmacs::seqdb::scan::fasta::scan_results_t scan_results;
+        if (!opt.filenames->empty())
+            scan_results.merge(acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options));
+        if (opt.ncbi)
+            scan_results.merge(acmacs::seqdb::scan::fasta::scan_ncbi(opt.ncbi));
+        // auto [all_sequences, messages] = acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options);
 
+        auto& all_sequences = scan_results.results;
+        fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::translate_align(all_sequences);

@@ -1153,7 +1153,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_at_pos(const Seqdb& se
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_aa_length(const Seqdb& seqdb, size_t length)
 {
     if (length) {
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) { return en.seq().aa_aligned_length_master() < length; }), std::end(refs_));
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) { return en.aa_aligned_length(seqdb) < length; }), std::end(refs_));
     }
     return *this;
 
@@ -1165,7 +1165,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_aa_length(const Seqdb&
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_nuc_length(const Seqdb& seqdb, size_t length)
 {
     if (length) {
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) { return en.seq().nuc_aligned_length_master() < length; }), std::end(refs_));
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) { return en.nuc_aligned_length(seqdb) < length; }), std::end(refs_));
     }
     return *this;
 

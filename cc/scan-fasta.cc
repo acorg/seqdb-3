@@ -42,6 +42,22 @@ namespace acmacs::seqdb
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::scan::fasta::scan_results_t::merge(scan_results_t&& source)
+{
+    using diff_t = decltype(results.begin() - results.begin());
+
+    const auto pos = static_cast<diff_t>(results.size());
+    results.resize(results.size() + source.results.size());
+    std::move(std::begin(source.results), std::end(source.results), std::next(std::begin(results), pos));
+
+    const auto pos_messages = static_cast<diff_t>(messages.size());
+    messages.resize(messages.size() + source.messages.size());
+    std::move(std::begin(source.messages), std::end(source.messages), std::next(std::begin(messages), pos_messages));
+
+} // acmacs::seqdb::v3::scan::fasta::scan_results_t::merge
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan(const std::vector<std::string_view>& filenames, const scan_options_t& options)
 {
     using namespace std::string_view_literals;
