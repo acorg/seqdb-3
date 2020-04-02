@@ -322,6 +322,8 @@ namespace acmacs::seqdb::inline v3
         subset& with_hi_name(bool with_hi_name);
         subset& aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos);
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
+        subset& min_aa_length(const Seqdb& seqdb, size_t length);
+        subset& min_nuc_length(const Seqdb& seqdb, size_t length);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
         subset& keep_master_only();

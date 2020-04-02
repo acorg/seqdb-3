@@ -50,6 +50,8 @@ struct Options : public argv
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
     option<bool>      keep_all_hi_matched{*this, "keep-all-hi", desc{"do NOT remove HI matched when removing duplicates (--remove-nuc-duplicates)"}};
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
+    option<size_t>    minimum_aa_length{*this, "minimum-aa-length", dflt{0ul}, desc{"Select only sequences having min number of AAs in alignment."}};
+    option<size_t>    minimum_nuc_length{*this, "minimum-nuc-length", dflt{0ul}, desc{"Select only sequences having min number of nucs in alignment."}};
 
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
@@ -147,6 +149,8 @@ int main(int argc, char* const argv[])
             .clade(seqdb, acmacs::uppercase{*opt.clade})
             .aa_at_pos(seqdb, aa_at_pos)
             .nuc_at_pos(seqdb, nuc_at_pos)
+            .min_aa_length(seqdb, opt.minimum_aa_length)
+            .min_nuc_length(seqdb, opt.minimum_nuc_length)
             .multiple_dates(opt.multiple_dates)
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)

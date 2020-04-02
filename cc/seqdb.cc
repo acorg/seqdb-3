@@ -1150,6 +1150,29 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_at_pos(const Seqdb& se
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_aa_length(const Seqdb& seqdb, size_t length)
+{
+    if (length) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) { return en.seq().aa_aligned_length_master() < length; }), std::end(refs_));
+    }
+    return *this;
+
+
+} // acmacs::seqdb::v3::subset::min_aa_length
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_nuc_length(const Seqdb& seqdb, size_t length)
+{
+    if (length) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) { return en.seq().nuc_aligned_length_master() < length; }), std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::min_nuc_length
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::names_matching_regex(const std::vector<std::string_view>& regex_list)
 {
     if (!regex_list.empty()) {
@@ -1275,6 +1298,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
         if (!refs_.empty()) {
             size_t with_hi_names = 0;
             std::string_view min_date = refs_.front().entry->date(), max_date = min_date;
+            Counter<size_t> aa_length, nuc_length;
             for (const auto& ref : refs_) {
                 const auto date = ref.entry->date();
                 if (date < min_date)
@@ -1283,8 +1307,11 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
                     max_date = date;
                 if (!ref.seq().hi_names.empty())
                     ++with_hi_names;
+                aa_length.count(ref.seq().aa_aligned_length_master());
+                nuc_length.count(ref.seq().nuc_aligned_length_master());
             }
             fmt::print(stderr, "Selected sequences: {:6d}\n      HiDb matches: {:6d}\n        Date range: {} - {}\n", refs_.size(), with_hi_names, min_date, max_date);
+            fmt::print(stderr, "         AA length:{}\nNucleotide lengths:{}\n", aa_length.report_sorted_max_first(" {first}:{second}"), nuc_length.report_sorted_max_first(" {first}:{second}"));
         }
         else {
             fmt::print(stderr, "No sequences selected\n");
