@@ -295,8 +295,8 @@ acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletio
 
     // verify
     const auto get_num_non_x = [](std::string_view seq) { return seq.size() - static_cast<size_t>(std::count(std::begin(seq), std::end(seq), 'X')); };
-    const auto num_common_threshold = (master.size() < to_align.size() ? get_num_non_x(master) : get_num_non_x(to_align)) * local::verify_threshold;
-    if (common < num_common_threshold) {
+    const auto num_common_threshold = static_cast<double>(master.size() < to_align.size() ? get_num_non_x(master) : get_num_non_x(to_align)) * local::verify_threshold;
+    if (static_cast<double>(common) < num_common_threshold) {
         throw local::not_verified(fmt::format("common:{} vs size:{} num_common_threshold:{:.2f}\n{}\n{}\n{}\n{}\n",
                                               common, to_align.size(), num_common_threshold, master, to_align,
                                               acmacs::seqdb::v3::scan::format_aa(deletions.insertions, master, '.'), acmacs::seqdb::v3::scan::format_aa(deletions.deletions, to_align, '.')));

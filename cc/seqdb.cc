@@ -455,7 +455,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_for_ace_view_1(const ac
     for (auto& per_pos : stat_per_pos) {
         const auto sum = std::accumulate(per_pos.aa_count.begin(), per_pos.aa_count.end(), 0UL, [](auto accum, const auto& entry) { return accum + entry.second; });
         const auto shannon_index = -std::accumulate(per_pos.aa_count.begin(), per_pos.aa_count.end(), 0.0, [sum = double(sum)](auto accum, const auto& entry) {
-            const double p = entry.second / sum;
+            const double p = static_cast<double>(entry.second) / sum;
             return accum + p * std::log(p);
         });
         per_pos.shannon_index = std::lround(shannon_index * 100);
