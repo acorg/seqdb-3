@@ -104,7 +104,7 @@ inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory)
+acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory, const scan_options_t& options)
 {
     const auto filename = fmt::format("{}/influenza_na.dat.xz", directory);
     const std::string influenza_na_dat = acmacs::file::read(filename);
@@ -114,24 +114,16 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
     auto cur = std::begin(influenza_na_dat);
     const auto end = std::end(influenza_na_dat);
     for (size_t line_no = 1; cur != end; ++line_no) {
-        if (const auto res = influenza_na_read_entry(cur, end, filename, line_no); res.has_value()) {
+        if (auto scan_result = influenza_na_read_entry(cur, end, filename, line_no); scan_result.has_value()) {
+            auto messages = normalize_name(*scan_result, options.dbg, scan_name_adjustments::ncbi);
             // fmt::print("{:4d} {:8s} \"{}\" {} {}\n", line_no, *res->fasta.type_subtype, res->fasta.name, res->fasta.country, res->sequence.sample_id_by_sample_provider());
+            results.results.push_back(std::move(*scan_result));
+            std::move(std::begin(messages), std::end(messages), std::back_inserter(results.messages));
         }
     }
 
-    // na_field field{na_field::genbank_accession};
-    // for (auto tok_beg = std::begin(influenza_na_dat), tok_end = token(tok_beg, end); tok_end != end; tok_beg = std::next(tok_end), tok_end = token(tok_beg, end)) {
-    //     if (tok_beg != tok_end) {
-    //         fmt::print("{} {}\n", field, std::string_view(&*tok_beg, tok_end - tok_beg));
-    //     }
-
-    //     if (tok_end == end || *tok_end == '\n') {
-    //         add_message(results.messages, normalize_name();
-    //         field = na_field::genbank_accession;
-    //     }
-    //     else
-    //         ++field;
-    // }
+    // parse name
+    // find sequence
 
     return results;
 

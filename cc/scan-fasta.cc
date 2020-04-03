@@ -392,6 +392,8 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
       case scan_name_adjustments::gisaid:
           fix_gisaid_name(source, dbg);
           break;
+      case scan_name_adjustments::ncbi:
+          break;
       case scan_name_adjustments::none:
           // if (dbg == debug::yes)
           //     fmt::print(stderr, "DEBUG: source.fasta.name: {}\n", source.fasta.name);

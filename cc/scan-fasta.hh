@@ -86,7 +86,7 @@ namespace acmacs::seqdb
                     manually_excluded(std::string_view msg) : std::runtime_error{std::string{msg}} {}
                 };
 
-                enum class scan_name_adjustments { none, gisaid };
+                enum class scan_name_adjustments { none, gisaid, ncbi };
 
                 struct scan_options_t
                 {
@@ -123,7 +123,7 @@ namespace acmacs::seqdb
                 // ----------------------------------------------------------------------
 
                 scan_results_t scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
-                scan_results_t scan_ncbi(std::string_view directory);
+                scan_results_t scan_ncbi(std::string_view directory, const scan_options_t& options);
 
                 inline void sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept
                 {
