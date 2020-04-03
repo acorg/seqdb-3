@@ -627,7 +627,7 @@ std::string_view acmacs::seqdb::v3::scan::fasta::parse_lab(const acmacs::upperca
 acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
 {
     if (source.empty())
-        fmt::print(stderr, "WARNING: {}:{}: no subtype\n", filename, line_no, source);
+        AD_WARNING("@@ {}:{}: no subtype", filename, line_no);
     if (source.size() >= 8 && source->front() == 'A') {
         if (source[5] != '0' && source[7] == '0') // H3N0
             return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(4, 2))};

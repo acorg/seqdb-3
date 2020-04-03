@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <tuple>
 
 #include "acmacs-base/date.hh"
@@ -291,7 +290,7 @@ namespace acmacs::seqdb
                 flat_set_t<std::string> gisaid_last_modified_;
                 flat_set_t<std::string> originating_lab_;
                 flat_set_t<std::string> gisaid_segment_;
-                flat_set_t<std::string> gisaid_segment_number_;
+                flat_set_t<std::string> gisaid_segment_number_; // also ncbi segment number
                 flat_set_t<std::string> gisaid_identifier_;
                 flat_set_t<std::string> gisaid_dna_accession_no_;
                 flat_set_t<std::string> gisaid_dna_insdc_;
