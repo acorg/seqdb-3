@@ -51,6 +51,9 @@ inline acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& sour
 inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na_read_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
 {
     acmacs::seqdb::v3::scan::fasta::scan_result_t result;
+    result.fasta.filename = filename;
+    result.fasta.line_no = line_no;
+
     na_field field{na_field::genbank_accession};
     cursor_t segment_number;
     for (auto tok_beg = cur, tok_end = token(tok_beg, end); tok_end != end; tok_beg = std::next(tok_end), tok_end = token(tok_beg, end), ++field) {

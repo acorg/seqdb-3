@@ -194,15 +194,15 @@ void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
             std::transform(std::begin(value), std::end(value), std::begin(locations), [](const auto& en) { return en.message.value; });
             std::sort(std::begin(locations), std::end(locations));
             const auto end = std::unique(std::begin(locations), std::end(locations));
-            fmt::print(stderr, "WARNING: {} ({}):\n", key, end - std::begin(locations));
+            AD_WARNING("{} ({}):", key, end - std::begin(locations));
             fmt::print(stderr, "  \"{}\"\n", ::string::join("\"\n  \"", std::begin(locations), end));
             if (std::string_view{key} == "location-not-found")
                 fmt::print(stderr, "locdb \"{}\"\n", ::string::join("\" \"", std::begin(locations), end));
         }
         else {
-            fmt::print(stderr, "WARNING: {} ({}):\n", key, value.size());
+            AD_WARNING("{} ({}):", key, value.size());
             for (const auto& val : value)
-                fmt::print(stderr, "{}:{}: warning: {} ({})\n", val.filename, val.line_no, val.message.value, key);
+                fmt::print(stderr, "    {} ({}) {} @@ {}:{}\n", val.message.value, key, val.message.suppliment, val.filename, val.line_no);
         }
         fmt::print(stderr, "\n");
     }

@@ -393,6 +393,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
           fix_gisaid_name(source, dbg);
           break;
       case scan_name_adjustments::ncbi:
+          fix_ncbi_name(source, dbg);
           break;
       case scan_name_adjustments::none:
           // if (dbg == debug::yes)
@@ -518,9 +519,29 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
         source.fasta.name = fmt::format("{}/{}/{}", name.substr(0, static_cast<size_t>(match_incmnsz.position(0))), match_incmnsz.str(1), match_incmnsz.str(2));
     }
     if (dbg == debug::yes && name_orig != source.fasta.name)
-        fmt::print(stderr, "DEBUG: \"{}\" -> \"{}\"\n", name_orig, source.fasta.name);
+        AD_DEBUG("\"{}\" -> \"{}\"", name_orig, source.fasta.name);
 
 } // acmacs::seqdb::v3::scan::fasta::fix_gisaid_name
+
+// ----------------------------------------------------------------------
+
+#include "acmacs-base/global-constructors-push.hh"
+
+static const std::regex re_ncbi_influenza_a_virus("Influenza A virus \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
+
+#include "acmacs-base/diagnostics-pop.hh"
+
+void acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(scan_result_t& source, debug dbg)
+{
+    const std::string name_orig{dbg == debug::yes ? source.fasta.name : std::string{}};
+
+    if (std::smatch match_ncbi_influenza_a_virus; std::regex_search(source.fasta.name, match_ncbi_influenza_a_virus, re_ncbi_influenza_a_virus))
+        source.fasta.name = match_ncbi_influenza_a_virus.str(1);
+
+    if (dbg == debug::yes && name_orig != source.fasta.name)
+        AD_DEBUG("\"{}\" -> \"{}\"", name_orig, source.fasta.name);
+
+} // acmacs::seqdb::v3::scan::fasta::fix_ncbi_name
 
 // ----------------------------------------------------------------------
 
