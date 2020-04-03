@@ -123,7 +123,7 @@ namespace acmacs::seqdb
                 // ----------------------------------------------------------------------
 
                 scan_results_t scan(const std::vector<std::string_view>& filenames, const scan_options_t& options);
-                inline scan_results_t scan_ncbi(std::string_view /*directory*/) { return {}; }
+                scan_results_t scan_ncbi(std::string_view directory);
 
                 inline void sort_by_date(std::vector<fasta::scan_result_t>& sequences) noexcept
                 {

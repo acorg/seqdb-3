@@ -77,6 +77,8 @@ int main(int argc, char* const argv[])
         // auto [all_sequences, messages] = acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options);
 
         auto& all_sequences = scan_results.results;
+        if (all_sequences.empty())
+            throw std::runtime_error("no sequences read (no files nor --ncbi in the command line?)");
         fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
