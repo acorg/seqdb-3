@@ -547,7 +547,7 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
     static const std::array fix_data{
         look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)$", std::regex::icase), "A/$2", " $1"},
         look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)$", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)$", std::regex::icase), "$1", ""},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)", std::regex::icase), "$1", ""}, // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
     };
 
 #include "acmacs-base/diagnostics-pop.hh"

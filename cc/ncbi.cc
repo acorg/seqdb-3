@@ -187,9 +187,11 @@ inline void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& r
             if (const auto found = ncbi_id_to_entry.find(fields[3]); found != ncbi_id_to_entry.end()) {
                 if (import_sequence(sequence_ref.sequence, found->second->sequence, options)) {
                     // merge names from dat and fna
-
-                    // fmt::print("{} -- {} -- {}\n{}\n{}\n", fields[3], fields[4], found->second->sequence.name(), sequence_ref.name, sequence_ref.sequence);
-                    // break;
+                    scan_result_t result_for_name_in_fna{*found->second};
+                    result_for_name_in_fna.fasta.name = fields[4];
+                    auto messages = normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi);
+                    if (!result_for_name_in_fna.sequence.name().empty() && result_for_name_in_fna.sequence.name() != found->second->sequence.name())
+                        fmt::print("{} -- {} -- {}\n", fields[4], result_for_name_in_fna.sequence.name(), found->second->sequence.name());
                 }
             }
         }
