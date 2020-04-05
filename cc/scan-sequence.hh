@@ -216,10 +216,9 @@ namespace acmacs::seqdb
                 void remove_annotations() { annotations_.clear(); }
                 void lineage(const acmacs::virus::lineage_t& lin) { lineage_ = lin; }
                 void add_clade(const clade_t& clade) { clades_.add(clade); }
-                // void (const & a_) { _ = a_; }
-                // void country(const std::string& country) { country_ = country; }
+                void country(std::string_view country) { country_.assign(country); }
                 void country(std::string&& country) { country_ = std::move(country); }
-                // void continent(const std::string& continent) { continent_ = continent; }
+                void continent(std::string_view continent) { continent_.assign(continent); }
                 void continent(std::string&& continent) { continent_ = std::move(continent); }
                 void add_hi_name(const std::string& hi_name) { hi_names_.add(hi_name); }
                 void update_subtype(const acmacs::virus::type_subtype_t& subtype);

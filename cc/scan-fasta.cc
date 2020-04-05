@@ -411,7 +411,20 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     //     fmt::print(stderr, "DEBUG: source.sequence.name: {}\n", source.sequence.name());
 
     // source.sequence.host(std::move(name_parse_result.host));
-    source.sequence.country(std::move(name_parse_result.country));
+
+    if (!name_parse_result.country.empty()) {
+        if (source.fasta.country.empty()) {
+            source.sequence.country(std::move(name_parse_result.country));
+        }
+        else {
+            if (source.fasta.country != name_parse_result.country && !(source.fasta.country == "UNITED STATES OF AMERICA" && name_parse_result.country == "GEORGIA"))
+                AD_WARNING("country name mismatch: extracted from fasta: \"{}\" vs. inferred from location name: \"{}\"  source name: \"{}\"  parsed name: \"{}\"", source.fasta.country, name_parse_result.country, source.fasta.name, source.sequence.name());
+            source.sequence.country(source.fasta.country); // prefer country from fasta
+        }
+    }
+    else if (!source.fasta.country.empty())
+        source.sequence.country(source.fasta.country);
+
     source.sequence.continent(std::move(name_parse_result.continent));
     source.sequence.reassortant(name_parse_result.reassortant);
     source.sequence.annotations(std::move(name_parse_result.extra));

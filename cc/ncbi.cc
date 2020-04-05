@@ -48,6 +48,29 @@ inline acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& sour
 
 // ----------------------------------------------------------------------
 
+inline std::string fix_country(std::string_view source)
+{
+    using pp = std::pair<std::string_view, std::string_view>;
+    using namespace std::string_view_literals;
+    static std::array country_mapping{
+        pp{"USA"sv,                              "UNITED STATES OF AMERICA"sv},
+        pp{"DEMOCRATIC REPUBLIC OF THE CONGO"sv, "CONGO DEMOCRATIC REPUBLIC"sv},
+        pp{"VIET NAM"sv,                         "VIETNAM"sv},
+        pp{"COTE D'IVOIRE"sv,                    "IVORY COAST"sv},
+        pp{"LAB"sv,                              ""sv}, // error in ncbi database?
+        // pp{sv,                                sv},
+    };
+
+    for (const auto& [from, to] : country_mapping) {
+        if (source == from)
+            return std::string(to);
+    }
+
+    return std::string(source);
+}
+
+// ----------------------------------------------------------------------
+
 inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na_read_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
 {
     acmacs::seqdb::v3::scan::fasta::scan_result_t result;
@@ -75,7 +98,7 @@ inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na
                 case na_field::date:
                     break;
                 case na_field::country:
-                    result.fasta.country = string_view(tok_beg, tok_end);
+                    result.fasta.country = fix_country(string::upper(tok_beg, tok_end));
                     break;
                 case na_field::sequence_length:
                 case na_field::age:

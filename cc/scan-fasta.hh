@@ -23,7 +23,7 @@ namespace acmacs::seqdb
                     acmacs::virus::type_subtype_t type_subtype;
                     acmacs::virus::lineage_t lineage;
                     acmacs::uppercase passage;
-                    acmacs::uppercase country; // ncbi
+                    std::string country; // ncbi
                     std::string filename;
                     size_t line_no; // of the sequence name in filename
                     std::vector<acmacs::virus::parse_result_t::message_t> messages;
