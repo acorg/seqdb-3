@@ -162,7 +162,7 @@ namespace acmacs::seqdb
                 // returns error and warning messages
                 messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements);
                 void fix_gisaid_name(scan_result_t& source, debug dbg);
-                void fix_ncbi_name(scan_result_t& source, debug dbg);
+                std::string fix_ncbi_name(std::string_view source, debug dbg);
 
                 bool import_sequence(std::string_view raw_sequence, sequence_t& sequence_data, const scan_options_t& options);
 

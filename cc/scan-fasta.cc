@@ -1,7 +1,7 @@
 #include <map>
-#include <regex>
 
 #include "acmacs-base/fmt.hh"
+#include "acmacs-base/regex.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/algorithm.hh"
 #include "acmacs-base/string-split.hh"
@@ -393,7 +393,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
           fix_gisaid_name(source, dbg);
           break;
       case scan_name_adjustments::ncbi:
-          fix_ncbi_name(source, dbg);
+          source.fasta.name = fix_ncbi_name(source.fasta.name, dbg);
           break;
       case scan_name_adjustments::none:
           // if (dbg == debug::yes)
@@ -527,19 +527,41 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
 
 #include "acmacs-base/global-constructors-push.hh"
 
-static const std::regex re_ncbi_influenza_a_virus("Influenza A virus \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
+static const std::regex re_ncbi_influenza_a_virus("INFLUENZA A VIRUS \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
+static const std::regex re_ncbi_influenza_a_virus_reassortant_pr8("INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
+static const std::regex re_ncbi_influenza_a_virus_reassortant("INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-void acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(scan_result_t& source, debug dbg)
+std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, debug dbg)
 {
-    const std::string name_orig{dbg == debug::yes ? source.fasta.name : std::string{}};
+    std::string result;
 
-    if (std::smatch match_ncbi_influenza_a_virus; std::regex_search(source.fasta.name, match_ncbi_influenza_a_virus, re_ncbi_influenza_a_virus))
-        source.fasta.name = match_ncbi_influenza_a_virus.str(1);
+    const auto remove_like_at_end = [](std::string_view text) {
+        if (text.size() > 5 && ::string::upper(text.substr(text.size() - 5)) == "-LIKE")
+            text.remove_suffix(5);
+        return text;
+    };
 
-    if (dbg == debug::yes && name_orig != source.fasta.name)
-        AD_DEBUG("\"{}\" -> \"{}\"", name_orig, source.fasta.name);
+    if (std::cmatch match_ncbi_influenza_a_virus_reassortant_pr8; std::regex_search(std::begin(source), std::end(source), match_ncbi_influenza_a_virus_reassortant_pr8, re_ncbi_influenza_a_virus_reassortant_pr8)) {
+        AD_DEBUG_IF(dbg, "match_ncbi_influenza_a_virus_reassortant_pr8 {} -> {}", source, match_ncbi_influenza_a_virus_reassortant_pr8);
+        result = fmt::format("A/{} {}", remove_like_at_end(match_ncbi_influenza_a_virus_reassortant_pr8.str(2)), match_ncbi_influenza_a_virus_reassortant_pr8.str(1));
+        // AD_DEBUG("fix_ncbi_name -> {}", result);
+    }
+    else if (std::cmatch match_ncbi_influenza_a_virus_reassortant; std::regex_search(std::begin(source), std::end(source), match_ncbi_influenza_a_virus_reassortant, re_ncbi_influenza_a_virus_reassortant)) {
+        AD_DEBUG_IF(dbg, "match_ncbi_influenza_a_virus_reassortant {} -> {}", source, match_ncbi_influenza_a_virus_reassortant);
+        result = fmt::format("A/{} {}", remove_like_at_end(match_ncbi_influenza_a_virus_reassortant_pr8.str(2)), match_ncbi_influenza_a_virus_reassortant_pr8.str(1));
+        // AD_DEBUG("fix_ncbi_name -> {}", result);
+    }
+    else if (std::cmatch match_ncbi_influenza_a_virus; std::regex_search(std::begin(source), std::end(source), match_ncbi_influenza_a_virus, re_ncbi_influenza_a_virus))
+        result = match_ncbi_influenza_a_virus.str(1);
+    else if (::string::upper(source) != "INFLUENZA A VIRUS")
+        AD_WARNING("fix_ncbi_name: unable to fix:{}", source);
+
+    if (dbg == debug::yes && result != source)
+        AD_DEBUG("\"{}\" -> \"{}\"", source, result);
+
+    return result;
 
 } // acmacs::seqdb::v3::scan::fasta::fix_ncbi_name
 
