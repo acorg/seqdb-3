@@ -401,7 +401,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
           break;
     }
 
-    auto name_parse_result = acmacs::virus::parse_name(source.fasta.name);
+    auto name_parse_result = !source.fasta.name.empty() ? acmacs::virus::parse_name(source.fasta.name) : acmacs::virus::parse_result_t{};
     source.sequence.name(std::move(name_parse_result.name));
     if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
         fmt::print(stderr, "{}:{}: warning: no year at the end of name: {}\n", source.fasta.filename, source.fasta.line_no, source.sequence.name());
@@ -525,17 +525,19 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
 
 // ----------------------------------------------------------------------
 
-#include "acmacs-base/global-constructors-push.hh"
-
-static const std::regex re_ncbi_influenza_a_virus("INFLUENZA A VIRUS \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
-static const std::regex re_ncbi_influenza_a_virus_reassortant_pr8("INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
-static const std::regex re_ncbi_influenza_a_virus_reassortant("INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)$", std::regex_constants::icase | std::regex_constants::ECMAScript);
-
-#include "acmacs-base/diagnostics-pop.hh"
-
 std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, debug dbg)
 {
-    std::string result;
+    using namespace acmacs::regex;
+
+#include "acmacs-base/global-constructors-push.hh"
+
+    static const std::array fix_data{
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)$", std::regex::icase), "A/$2", " $1"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)$", std::regex::icase), "A/$2", " $1"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)$", std::regex::icase), "$1", ""},
+    };
+
+#include "acmacs-base/diagnostics-pop.hh"
 
     const auto remove_like_at_end = [](std::string_view text) {
         if (text.size() > 5 && ::string::upper(text.substr(text.size() - 5)) == "-LIKE")
@@ -543,25 +545,15 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
         return text;
     };
 
-    if (std::cmatch match_ncbi_influenza_a_virus_reassortant_pr8; std::regex_search(std::begin(source), std::end(source), match_ncbi_influenza_a_virus_reassortant_pr8, re_ncbi_influenza_a_virus_reassortant_pr8)) {
-        AD_DEBUG_IF(dbg, "match_ncbi_influenza_a_virus_reassortant_pr8 {} -> {}", source, match_ncbi_influenza_a_virus_reassortant_pr8);
-        result = fmt::format("A/{} {}", remove_like_at_end(match_ncbi_influenza_a_virus_reassortant_pr8.str(2)), match_ncbi_influenza_a_virus_reassortant_pr8.str(1));
-        // AD_DEBUG("fix_ncbi_name -> {}", result);
+    if (const auto [r1, r2] = scan_replace2(source, fix_data); !r1.empty()) {
+        AD_DEBUG_IF(dbg, "\"{}\" -> \"{}{}\"", source, r1, r2);
+        return fmt::format("{}{}", remove_like_at_end(r1), r2);
     }
-    else if (std::cmatch match_ncbi_influenza_a_virus_reassortant; std::regex_search(std::begin(source), std::end(source), match_ncbi_influenza_a_virus_reassortant, re_ncbi_influenza_a_virus_reassortant)) {
-        AD_DEBUG_IF(dbg, "match_ncbi_influenza_a_virus_reassortant {} -> {}", source, match_ncbi_influenza_a_virus_reassortant);
-        result = fmt::format("A/{} {}", remove_like_at_end(match_ncbi_influenza_a_virus_reassortant_pr8.str(2)), match_ncbi_influenza_a_virus_reassortant_pr8.str(1));
-        // AD_DEBUG("fix_ncbi_name -> {}", result);
-    }
-    else if (std::cmatch match_ncbi_influenza_a_virus; std::regex_search(std::begin(source), std::end(source), match_ncbi_influenza_a_virus, re_ncbi_influenza_a_virus))
-        result = match_ncbi_influenza_a_virus.str(1);
-    else if (::string::upper(source) != "INFLUENZA A VIRUS")
-        AD_WARNING("fix_ncbi_name: unable to fix:{}", source);
+    if (::string::upper(source) == "INFLUENZA A VIRUS")
+        return {};
 
-    if (dbg == debug::yes && result != source)
-        AD_DEBUG("\"{}\" -> \"{}\"", source, result);
-
-    return result;
+    AD_WARNING("fix_ncbi_name: unable to fix:{}", source);
+    return std::string(source);
 
 } // acmacs::seqdb::v3::scan::fasta::fix_ncbi_name
 
