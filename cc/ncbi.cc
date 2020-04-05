@@ -1,11 +1,13 @@
+#include <map>
 #include "acmacs-base/read-file.hh"
+#include "acmacs-base/string-split.hh"
 #include "seqdb-3/scan-fasta.hh"
 
 // ----------------------------------------------------------------------
 
 using cursor_t = decltype(std::string{}.cbegin());
 
-inline cursor_t token(cursor_t cursor, cursor_t end)
+inline cursor_t dat_token(cursor_t cursor, cursor_t end)
 {
     for (; cursor != end; ++cursor) {
         switch (*cursor) {
@@ -71,7 +73,7 @@ inline std::string fix_country(std::string_view source)
 
 // ----------------------------------------------------------------------
 
-inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na_read_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
+inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
 {
     acmacs::seqdb::v3::scan::fasta::scan_result_t result;
     result.fasta.filename = filename;
@@ -79,7 +81,7 @@ inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na
 
     na_field field{na_field::genbank_accession};
     cursor_t segment_number;
-    for (auto tok_beg = cur, tok_end = token(tok_beg, end); tok_end != end; tok_beg = std::next(tok_end), tok_end = token(tok_beg, end), ++field) {
+    for (auto tok_beg = cur, tok_end = dat_token(tok_beg, end); tok_end != end; tok_beg = std::next(tok_end), tok_end = dat_token(tok_beg, end), ++field) {
         if (tok_beg != tok_end) {
             switch (field) {
                 case na_field::genbank_accession:
@@ -130,26 +132,84 @@ inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> influenza_na
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory, const scan_options_t& options)
+inline acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
 {
-    const auto filename = fmt::format("{}/influenza_na.dat.xz", directory);
-    const std::string influenza_na_dat = acmacs::file::read(filename);
-    AD_DEBUG("influenza_na_dat: {}", influenza_na_dat.size());
+    using namespace acmacs::seqdb::v3::scan::fasta;
 
     scan_results_t results;
+
+    const auto filename_dat = fmt::format("{}/influenza_na.dat.xz", directory);
+    const std::string influenza_na_dat = acmacs::file::read(filename_dat);
+    // AD_DEBUG("influenza_na_dat: {}", influenza_na_dat.size());
+
     auto cur = std::begin(influenza_na_dat);
     const auto end = std::end(influenza_na_dat);
     for (size_t line_no = 1; cur != end; ++line_no) {
-        if (auto scan_result = influenza_na_read_entry(cur, end, filename, line_no); scan_result.has_value()) {
+        if (auto scan_result = read_influenza_na_dat_entry(cur, end, filename_dat, line_no); scan_result.has_value()) {
             auto messages = normalize_name(*scan_result, options.dbg, scan_name_adjustments::ncbi);
             // fmt::print("{:4d} {:8s} \"{}\" {} {}\n", line_no, *res->fasta.type_subtype, res->fasta.name, res->fasta.country, res->sequence.sample_id_by_sample_provider());
             results.results.push_back(std::move(*scan_result));
             std::move(std::begin(messages), std::end(messages), std::back_inserter(results.messages));
         }
     }
+    AD_INFO("{} HA entries found in \"{}\"", results.results.size(), filename_dat);
 
-    // parse name
-    // find sequence
+    return results;
+}
+
+// ----------------------------------------------------------------------
+
+// inline std::pair<std::string, std::string> read_influenza_fna_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
+// {
+//     return {};
+// }
+
+// ----------------------------------------------------------------------
+
+inline void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
+{
+    using namespace acmacs::seqdb::v3::scan::fasta;
+
+    std::map<std::string, scan_result_t*, std::less<>> ncbi_id_to_entry;
+    for (auto& en : results.results)
+        ncbi_id_to_entry[en.sequence.sample_id_by_sample_provider().front()] = &en;
+
+    const auto filename_fna = fmt::format("{}/influenza.fna.xz", directory);
+    const std::string influenza_fna_s = acmacs::file::read(filename_fna);
+    const std::string_view influenza_fna(influenza_fna_s);
+    // AD_DEBUG("influenza_fna: {}", influenza_fna.size());
+
+    scan_input_t file_input{influenza_fna.begin(), influenza_fna.end()};
+    while (!file_input.done()) {
+        scan_output_t sequence_ref;
+        std::tie(file_input, sequence_ref) = scan(file_input);
+        if (const auto fields = acmacs::string::split(sequence_ref.name, "|"); fields.size() == 5) {
+            if (const auto found = ncbi_id_to_entry.find(fields[3]); found != ncbi_id_to_entry.end()) {
+                if (import_sequence(sequence_ref.sequence, found->second->sequence, options)) {
+                    // merge names from dat and fna
+
+                    // fmt::print("{} -- {} -- {}\n{}\n{}\n", fields[3], fields[4], found->second->sequence.name(), sequence_ref.name, sequence_ref.sequence);
+                    // break;
+                }
+            }
+        }
+        else
+            AD_WARNING("unrecognized ncbi fna name: \"{}\"", sequence_ref.name);
+    }
+
+}
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory, const scan_options_t& options)
+{
+    scan_results_t results = read_influenza_na_dat(directory, options);
+    read_influenza_fna(results, directory, options);
+
+    // remove entries with empty sequences
+    results.results.erase(std::remove_if(std::begin(results.results), std::end(results.results), [](const auto& en) { return en.sequence.nuc().empty(); }), std::end(results.results));
+
+    AD_INFO("{} ncbi sequences found in {}", results.results.size(), directory);
 
     return results;
 
