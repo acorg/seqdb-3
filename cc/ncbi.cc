@@ -100,22 +100,33 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
 
 acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
 {
-    if (source.empty())
-        AD_WARNING("no subtype @@ {}:{}", filename, line_no);
-    if (source.size() >= 5 && source->substr(0, 5) == "MIXED") {
-        if (source.size() == 5)
+    using namespace acmacs::regex;
+
+#include "acmacs-base/global-constructors-push.hh"
+
+    static const std::array fix_data{
+         // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
+        look_replace_t{std::regex("^H\\d{1,2}(?:N\\d)?$", std::regex::icase), "A($0)"},
+        look_replace_t{std::regex("^(H\\d{1,2})NX$", std::regex::icase), "A($1)"},
+        look_replace_t{std::regex("^(H\\d{1,2})N\\d,\\d", std::regex::icase), "A($1)"},
+        look_replace_t{std::regex("^HXNX$", std::regex::icase), "A"},
+        look_replace_t{std::regex("^N\\d$", std::regex::icase), "A"},
+        look_replace_t{std::regex("^MIXED[\\.,](H\\d{1,2})$", std::regex::icase), "A($1)"},
+        look_replace_t{std::regex("^MIXED[\\.,]N\\d$", std::regex::icase), "A"},
+        look_replace_t{std::regex("^MIXED$", std::regex::icase), "A"},
+    };
+
+#include "acmacs-base/diagnostics-pop.hh"
+
+    if (const auto res = scan_replace(source, fix_data); !res.empty()) {
+        if (res == "A")
             return acmacs::virus::type_subtype_t{};
-        if (source.size() == 6 || source[6] == '.' || source[6] == ',') {
-            AD_WARNING("unrecognized subtype: \"{}\" @@ {}:{}", source, filename, line_no);
-            return acmacs::virus::type_subtype_t{};
-        }
-        return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(6))};
+        else
+            return acmacs::virus::type_subtype_t{res};
     }
-    if (source.size() > 7 && source->substr(0, 5) == "MIXED,")
-        return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(6))};
-    if (source.size() < 2 || source.size() > 6) // H3 N3 H13 H3N2 H9N1,9
-        AD_WARNING("unrecognized subtype: \"{}\" @@ {}:{}", source, filename, line_no);
-    return acmacs::virus::type_subtype_t{fmt::format("A({})", source)};
+
+    AD_WARNING("unrecognized subtype: \"{}\" @@ {}:{}", source, filename, line_no);
+    return acmacs::virus::type_subtype_t{};
 }
 
 // ----------------------------------------------------------------------
@@ -220,6 +231,8 @@ date::year_month_day parse_date(std::string_view source, std::string_view filena
               result = date::year_from_string(source.substr(0, 4)) / date::month_from_string(source.substr(5)) / 0;
               ok = date::year_ok(result) && date::month_ok(result);
           }
+          else
+              ok = source == "UNKNOWN";
           break;
       case 9:
           ok = source.substr(0, 4) == "NON/";
@@ -259,6 +272,9 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::
         if (auto scan_result = read_influenza_na_dat_entry(cur, end, filename_dat, line_no); scan_result.has_value()) {
             auto messages = normalize_name(*scan_result, options.dbg, scan_name_adjustments::ncbi);
             // fmt::print("{:4d} {:8s} \"{}\" {} {}\n", line_no, *res->fasta.type_subtype, res->fasta.name, res->fasta.country, res->sequence.sample_id_by_sample_provider());
+            if (scan_result->fasta.type_subtype.empty() && !scan_result->sequence.name().empty())
+                scan_result->fasta.type_subtype = acmacs::virus::v2::type_subtype_t{std::string(1, scan_result->sequence.name()->front())};
+
             results.results.push_back(std::move(*scan_result));
             std::move(std::begin(messages), std::end(messages), std::back_inserter(results.messages));
         }
