@@ -29,6 +29,7 @@ namespace acmacs::seqdb
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
                 static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
+                static void set_country(const acmacs::virus::parse_result_t& name_parse_result, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages);
 
                 inline void add_message(messages_t& target, messages_t&& to_add)
                 {
@@ -418,18 +419,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     for (const auto& msg : name_parse_result.messages)
         messages.push_back({msg, source.fasta.filename, source.fasta.line_no});
 
-    if (!name_parse_result.country.empty()) {
-        if (source.fasta.country.empty()) {
-            source.sequence.country(std::move(name_parse_result.country));
-        }
-        else {
-            if (source.fasta.country != name_parse_result.country && !(source.fasta.country == "UNITED STATES OF AMERICA" && name_parse_result.country == "GEORGIA"))
-                messages.push_back({{"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", name_parse_result.country, source.sequence.name(), source.fasta.country)}, source.fasta.filename, source.fasta.line_no});
-            source.sequence.country(source.fasta.country); // prefer country from fasta
-        }
-    }
-    else if (!source.fasta.country.empty())
-        source.sequence.country(source.fasta.country);
+    set_country(name_parse_result, source, messages);
 
     source.sequence.continent(std::move(name_parse_result.continent));
     source.sequence.reassortant(name_parse_result.reassortant);
@@ -464,6 +454,54 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     return messages;
 
 } // acmacs::seqdb::v3::scan::fasta::normalize_name
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::fasta::set_country(const acmacs::virus::parse_result_t& name_parse_result, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages)
+{
+    using namespace std::string_view_literals;
+
+#include "acmacs-base/global-constructors-push.hh"
+    using pp = std::pair<std::string_view, std::string_view>; // fasta, name_parse
+    static std::array valid_mismatches{
+        pp{"UNITED STATES OF AMERICA"sv, "GEORGIA"sv},
+        pp{"NEW ZEALAND"sv, "UNITED KINGDOM"sv},
+        pp{"PERU"sv, "URUGUAY"sv},
+        // pp{"HONG KONG"sv, "CHINA"sv},
+        // pp{"COOK ISLANDS"sv, "NEW ZEALAND"sv},
+        pp{"ARGENTINA"sv, "SPAIN"sv},
+        pp{"UNITED STATES OF AMERICA"sv, "CUBA"sv}, // SANTA CLARA
+        pp{"BOLIVIA"sv, "ARGENTINA"sv}, // SANTA CRUZ
+        pp{"GERMANY"sv, "BELGIUM"sv}, // DAMME
+        pp{"CHINA"sv, "SOUTH KOREA"sv},
+        // pp{"GREENLAND"sv, "DENMARK"sv},
+    };
+#include "acmacs-base/diagnostics-pop.hh"
+
+    const auto is_valid = [](pp&& countries) {
+        if (countries.first == countries.second)
+            return true;
+        for (const auto& en : valid_mismatches) {
+            if (en == countries)
+                return true;
+        }
+        return false;
+    };
+
+    if (!name_parse_result.country.empty()) {
+        if (source.fasta.country.empty()) {
+            source.sequence.country(std::move(name_parse_result.country));
+        }
+        else {
+            if (!is_valid({source.fasta.country, name_parse_result.country}))
+                messages.push_back({{"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", name_parse_result.country, source.sequence.name(), source.fasta.country)}, source.fasta.filename, source.fasta.line_no});
+            source.sequence.country(source.fasta.country); // prefer country from fasta
+        }
+    }
+    else if (!source.fasta.country.empty())
+        source.sequence.country(source.fasta.country);
+
+} // acmacs::seqdb::v3::scan::fasta::warn_country_mismatch
 
 // ----------------------------------------------------------------------
 
@@ -695,7 +733,8 @@ acmacs::seqdb::v3::scan::fasta::hint_t acmacs::seqdb::v3::scan::fasta::find_hint
 std::string acmacs::seqdb::v3::scan::fasta::report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::views::filter(is_aligned) | ranges::views::filter(is_different_type_subtype_ignore_h0_ignore_empty_fasta))
+    const auto ignore_empty_or_a = [](const scan_result_t& sc) { return sc.sequence.type_subtype().empty() || sc.sequence.type_subtype().h_or_b() == "A"; };
+    for (const auto& sc : sequences | ranges::views::filter(is_aligned) | ranges::views::filter(is_different_type_subtype_ignore_h0) | ranges::views::filter(ignore_empty_or_a))
         fmt::format_to(out, "detected:{} | fasta:{} | {} -- {}:{}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 

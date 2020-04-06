@@ -110,8 +110,10 @@ int main(int argc, char* const argv[])
             }
         }
 
-        if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty())
-            AD_ERROR("FALSE POSITIVES {}\n{}", ranges::count(false_positive, '\n') / 2, false_positive);
+        if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty()) {
+            AD_ERROR("FALSE POSITIVES ({})", ranges::count(false_positive, '\n') / 2);
+            fmt::print("{}\n", false_positive);
+        }
 
         const auto dates_to_report = acmacs::seqdb::scan::fasta::min_max_dates(all_sequences);
         fmt::print(stderr, "Isolation date range:  {} .. {}\nSubmission date range: {} .. {}\n",

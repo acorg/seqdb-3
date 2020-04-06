@@ -116,8 +116,8 @@ void acmacs::seqdb::v3::scan::detect_lineages_clades(std::vector<fasta::scan_res
                 local::B::lineage(entry.sequence, fasta_ref);
                 if (!entry.sequence.lineage().empty()) // no clade definitions without lineage
                     clade_definitions.add_clades(entry.sequence, fmt::format("{}{}", subtype, entry.sequence.lineage()));
-                if (entry.sequence.lineage() != entry.fasta.lineage && entry.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"})
-                    fmt::print(stderr, "WARNING: scan::detect_lineages_clades: B lineage mistmatch upon detection: {} vs. from fasta {}\n", entry.sequence.lineage(), entry.fasta.lineage);
+                if (entry.sequence.lineage() != entry.fasta.lineage && entry.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"} && !entry.fasta.lineage.empty())
+                    AD_WARNING("scan::detect_lineages_clades: B lineage mistmatch upon detection: {} vs. from fasta {}", entry.sequence.lineage(), entry.fasta.lineage);
                 // fmt::print(stderr, "DEBUG: B lineage detection {} {}: detected: {}\n", entry.fasta.name, entry.fasta.lineage, entry.sequence.lineage());
             }
             else if (subtype == "H1") {
