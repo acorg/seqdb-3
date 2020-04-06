@@ -63,6 +63,7 @@ namespace acmacs::seqdb
                     messages_t messages;
 
                     void merge(scan_results_t&& source);
+                    void merge(messages_t&& new_messages);
                 };
 
                 constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };

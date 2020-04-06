@@ -57,15 +57,21 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
 
 #include "acmacs-base/global-constructors-push.hh"
 
-    // "(H1N1)", "(MIXED,H1N1)", "(MIXED.H1N1)", "(MIXED)", "(H1N1)(H1N1)"
-#define RE_MIXED_AND_SUBTYPE "(?:\\((?:MIXED|(?:MIXED[\\.,])?(?:[HN0-9]+))\\))*"
+#define RE_VIRUS_NAME "([^\\(\\)]+)"
+    // "(H1N1)", "(MIXED,H1N1)", "(MIXED.H1N1)", "(MIXED)", "(H1N1)(H1N1)" "(HxNx)"
+#define RE_MIXED_AND_SUBTYPE "(?:\\((?:MIXED|(?:MIXED[\\.,])?(?:[HNX\\d]+))\\))*"
+#define RE_CLONE "(?:\\((CLONE)=([A-Z\\d]+)\\))?"
 
     static const std::array fix_data{
          // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(([^()]+)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "$1", ""},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS STRAIN ([^()]+)" RE_MIXED_AND_SUBTYPE " segment ", std::regex::icase), "$1", ""},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?" RE_VIRUS_NAME "\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "A/$2", " $1"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?" RE_VIRUS_NAME "\\(([^\\(\\)]+)\\)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "A/$2", " $1"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(" RE_VIRUS_NAME RE_CLONE RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "$1", " $2 $3"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS STRAIN " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " SEGMENT ", std::regex::icase), "$1", ""},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " [A-Z]+ GENE ", std::regex::icase), "$1", ""},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(" RE_MIXED_AND_SUBTYPE "\\) SEGMENT \\d ISOLATE " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " CRNA SEQUENCE", std::regex::icase), "$1", ""},
+        // name absent
+        look_replace2_t{std::regex("^(?:CDNA ENCODING HA OF INFLUENZA TYPE A|SEQUENCE \\d+ FROM PATENT [^ ]+)$", std::regex::icase), " ", ""},
     };
 
 #include "acmacs-base/diagnostics-pop.hh"
@@ -77,8 +83,9 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
     };
 
     if (const auto [r1, r2] = scan_replace2(source, fix_data); !r1.empty()) {
-        AD_DEBUG_IF(dbg, "\"{}\" -> \"{}{}\"", source, r1, r2);
-        return fmt::format("{}{}", remove_like_at_end(r1), r2);
+        const std::string fixed = ::string::strip(::string::replace(fmt::format("{}{}", remove_like_at_end(r1), r2), '_', ' '));
+        AD_DEBUG_IF(dbg, "\"{}\" -> \"{}\"", source, fixed);
+        return fixed;
     }
     if (::string::upper(source) == "INFLUENZA A VIRUS")
         return {};
@@ -244,9 +251,11 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
                     // merge names from dat and fna
                     scan_result_t result_for_name_in_fna{*found->second};
                     result_for_name_in_fna.fasta.name = fields[4];
-                    auto messages = normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi);
-                    if (!result_for_name_in_fna.sequence.name().empty() && result_for_name_in_fna.sequence.name() != found->second->sequence.name())
-                        fmt::print("{} -- {} -- {}\n", fields[4], result_for_name_in_fna.sequence.name(), found->second->sequence.name());
+                    results.merge(normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi));
+                    if (!result_for_name_in_fna.sequence.name().empty() && result_for_name_in_fna.sequence.name() != found->second->sequence.name()) {
+                        results.messages.push_back({{"ncbi-dat-fna-name-difference", fmt::format("dat:\"{}\" fna:\"{}\"", found->second->sequence.name(), result_for_name_in_fna.sequence.name())}, result_for_name_in_fna.fasta.filename, result_for_name_in_fna.fasta.line_no});
+                        // fmt::print("{} -- {} -- {}\n", fields[4], result_for_name_in_fna.sequence.name(), found->second->sequence.name());
+                    }
                 }
             }
         }

@@ -50,9 +50,19 @@ void acmacs::seqdb::v3::scan::fasta::scan_results_t::merge(scan_results_t&& sour
     results.resize(results.size() + source.results.size());
     std::move(std::begin(source.results), std::end(source.results), std::next(std::begin(results), pos));
 
+    merge(std::move(source.messages));
+
+} // acmacs::seqdb::v3::scan::fasta::scan_results_t::merge
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::fasta::scan_results_t::merge(messages_t&& new_messages)
+{
+    using diff_t = decltype(results.begin() - results.begin());
+
     const auto pos_messages = static_cast<diff_t>(messages.size());
-    messages.resize(messages.size() + source.messages.size());
-    std::move(std::begin(source.messages), std::end(source.messages), std::next(std::begin(messages), pos_messages));
+    messages.resize(messages.size() + new_messages.size());
+    std::move(std::begin(new_messages), std::end(new_messages), std::next(std::begin(messages), pos_messages));
 
 } // acmacs::seqdb::v3::scan::fasta::scan_results_t::merge
 
@@ -387,7 +397,6 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements)
 {
-
     switch (name_adjustements) {
       case scan_name_adjustments::gisaid:
           fix_gisaid_name(source, dbg);
