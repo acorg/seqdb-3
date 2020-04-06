@@ -1,4 +1,5 @@
 #include <map>
+#include "acmacs-base/regex.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/string-split.hh"
 #include "seqdb-3/scan-fasta.hh"
@@ -26,9 +27,70 @@ inline std::string_view string_view(cursor_t begin, cursor_t end) { return std::
 enum class na_field : int { genbank_accession = 0, host, segment_no, subtype, country, date, sequence_length, virus_name, age, gender, completeness };
 constexpr inline na_field& operator++(na_field& fld) { return fld = static_cast<na_field>(static_cast<int>(fld) + 1); }
 
+static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+static std::string fix_country(std::string_view source);
+static std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no);
+static acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
+static void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
+
 // ----------------------------------------------------------------------
 
-inline acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
+acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory, const scan_options_t& options)
+{
+    scan_results_t results = read_influenza_na_dat(directory, options);
+    read_influenza_fna(results, directory, options);
+
+    // remove entries with empty sequences
+    results.results.erase(std::remove_if(std::begin(results.results), std::end(results.results), [](const auto& en) { return en.sequence.nuc().empty(); }), std::end(results.results));
+
+    AD_INFO("{} ncbi sequences found in {}", results.results.size(), directory);
+
+    return results;
+
+} // acmacs::seqdb::v3::scan::fasta::scan_ncbi
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, debug dbg)
+{
+    using namespace acmacs::regex;
+
+#include "acmacs-base/global-constructors-push.hh"
+
+    // "(H1N1)", "(MIXED,H1N1)", "(MIXED.H1N1)", "(MIXED)", "(H1N1)(H1N1)"
+#define RE_MIXED_AND_SUBTYPE "(?:\\((?:MIXED|(?:MIXED[\\.,])?(?:[HN0-9]+))\\))*"
+
+    static const std::array fix_data{
+         // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)", std::regex::icase), "A/$2", " $1"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)", std::regex::icase), "A/$2", " $1"},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(([^()]+)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "$1", ""},
+        look_replace2_t{std::regex("^INFLUENZA A VIRUS STRAIN ([^()]+)" RE_MIXED_AND_SUBTYPE " segment ", std::regex::icase), "$1", ""},
+    };
+
+#include "acmacs-base/diagnostics-pop.hh"
+
+    const auto remove_like_at_end = [](std::string_view text) {
+        if (text.size() > 5 && ::string::upper(text.substr(text.size() - 5)) == "-LIKE")
+            text.remove_suffix(5);
+        return text;
+    };
+
+    if (const auto [r1, r2] = scan_replace2(source, fix_data); !r1.empty()) {
+        AD_DEBUG_IF(dbg, "\"{}\" -> \"{}{}\"", source, r1, r2);
+        return fmt::format("{}{}", remove_like_at_end(r1), r2);
+    }
+    if (::string::upper(source) == "INFLUENZA A VIRUS")
+        return {};
+
+    AD_WARNING("fix_ncbi_name: unable to fix: \"{}\"", source);
+    return std::string(source);
+
+} // acmacs::seqdb::v3::scan::fasta::fix_ncbi_name
+
+// ----------------------------------------------------------------------
+
+acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
 {
     if (source.empty())
         AD_WARNING("no subtype @@ {}:{}", filename, line_no);
@@ -50,7 +112,7 @@ inline acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& sour
 
 // ----------------------------------------------------------------------
 
-inline std::string fix_country(std::string_view source)
+std::string fix_country(std::string_view source)
 {
     using pp = std::pair<std::string_view, std::string_view>;
     using namespace std::string_view_literals;
@@ -73,7 +135,7 @@ inline std::string fix_country(std::string_view source)
 
 // ----------------------------------------------------------------------
 
-inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
 {
     acmacs::seqdb::v3::scan::fasta::scan_result_t result;
     result.fasta.filename = filename;
@@ -132,7 +194,7 @@ inline std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influen
 
 // ----------------------------------------------------------------------
 
-inline acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
+acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
 {
     using namespace acmacs::seqdb::v3::scan::fasta;
 
@@ -159,14 +221,7 @@ inline acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(cons
 
 // ----------------------------------------------------------------------
 
-// inline std::pair<std::string, std::string> read_influenza_fna_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
-// {
-//     return {};
-// }
-
-// ----------------------------------------------------------------------
-
-inline void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
+void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
 {
     using namespace acmacs::seqdb::v3::scan::fasta;
 
@@ -200,25 +255,6 @@ inline void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& r
     }
 
 }
-
-// ----------------------------------------------------------------------
-
-acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory, const scan_options_t& options)
-{
-    scan_results_t results = read_influenza_na_dat(directory, options);
-    read_influenza_fna(results, directory, options);
-
-    // remove entries with empty sequences
-    results.results.erase(std::remove_if(std::begin(results.results), std::end(results.results), [](const auto& en) { return en.sequence.nuc().empty(); }), std::end(results.results));
-
-    AD_INFO("{} ncbi sequences found in {}", results.results.size(), directory);
-
-    return results;
-
-} // acmacs::seqdb::v3::scan::fasta::scan_ncbi
-
-// ----------------------------------------------------------------------
-
 
 // ----------------------------------------------------------------------
 /// Local Variables:

@@ -538,40 +538,6 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debu
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, debug dbg)
-{
-    using namespace acmacs::regex;
-
-#include "acmacs-base/global-constructors-push.hh"
-
-    static const std::array fix_data{
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)\\)$", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(A/REASSORTANT/(?:A/)?([^\\(\\)]+)\\(([^\\(\\)]+)\\)\\)$", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS \\(([^()]+)(?:\\((?:MIXED[\\.,])?[HN0-9]+\\))?\\)", std::regex::icase), "$1", ""}, // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
-    };
-
-#include "acmacs-base/diagnostics-pop.hh"
-
-    const auto remove_like_at_end = [](std::string_view text) {
-        if (text.size() > 5 && ::string::upper(text.substr(text.size() - 5)) == "-LIKE")
-            text.remove_suffix(5);
-        return text;
-    };
-
-    if (const auto [r1, r2] = scan_replace2(source, fix_data); !r1.empty()) {
-        AD_DEBUG_IF(dbg, "\"{}\" -> \"{}{}\"", source, r1, r2);
-        return fmt::format("{}{}", remove_like_at_end(r1), r2);
-    }
-    if (::string::upper(source) == "INFLUENZA A VIRUS")
-        return {};
-
-    AD_WARNING("fix_ncbi_name: unable to fix:{}", source);
-    return std::string(source);
-
-} // acmacs::seqdb::v3::scan::fasta::fix_ncbi_name
-
-// ----------------------------------------------------------------------
-
 acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppercase& passage)
 {
     const std::array to_remove{
