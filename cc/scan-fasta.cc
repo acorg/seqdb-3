@@ -405,21 +405,18 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
           source.fasta.name = fix_ncbi_name(source.fasta.name, dbg);
           break;
       case scan_name_adjustments::none:
-          // if (dbg == debug::yes)
-          //     fmt::print(stderr, "DEBUG: source.fasta.name: {}\n", source.fasta.name);
+          // AD_DEBUG_IF(dbg, "source.fasta.name: \"{}\"", source.fasta.name);
           break;
     }
 
     auto name_parse_result = !source.fasta.name.empty() ? acmacs::virus::parse_name(source.fasta.name) : acmacs::virus::parse_result_t{};
     source.sequence.name(std::move(name_parse_result.name));
     if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
-        fmt::print(stderr, "{}:{}: warning: no year at the end of name: {}\n", source.fasta.filename, source.fasta.line_no, source.sequence.name());
-    // if (auto name_year = acmacs::virus::year(source.sequence.name()); !name_year || (!source.sequence.dates().empty() && *name_year != ::string::from_chars<size_t>(source.sequence.dates().front().substr(0, 4))))
-    //     fmt::print(stderr, "WARNING: no year in the name or year in the name does not correspond to the date: {} and {}, fasta name: {}\n", source.sequence.name(), source.sequence.dates(), source.fasta.name);
-    // if (dbg == debug::yes)
-    //     fmt::print(stderr, "DEBUG: source.sequence.name: {}\n", source.sequence.name());
+        AD_WARNING("no year at the end of name: \"{}\" @@ {}:{}", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
 
-    // source.sequence.host(std::move(name_parse_result.host));
+    messages_t messages;
+    for (const auto& msg : name_parse_result.messages)
+        messages.push_back({msg, source.fasta.filename, source.fasta.line_no});
 
     if (!name_parse_result.country.empty()) {
         if (source.fasta.country.empty()) {
@@ -427,7 +424,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
         }
         else {
             if (source.fasta.country != name_parse_result.country && !(source.fasta.country == "UNITED STATES OF AMERICA" && name_parse_result.country == "GEORGIA"))
-                AD_WARNING("country name mismatch: extracted from fasta: \"{}\" vs. inferred from location name: \"{}\"  source name: \"{}\"  parsed name: \"{}\"", source.fasta.country, name_parse_result.country, source.fasta.name, source.sequence.name());
+                messages.push_back({{"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", name_parse_result.country, source.sequence.name(), source.fasta.country)}, source.fasta.filename, source.fasta.line_no});
             source.sequence.country(source.fasta.country); // prefer country from fasta
         }
     }
@@ -437,10 +434,6 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     source.sequence.continent(std::move(name_parse_result.continent));
     source.sequence.reassortant(name_parse_result.reassortant);
     source.sequence.annotations(std::move(name_parse_result.extra));
-
-    messages_t messages;
-    for (const auto& msg : name_parse_result.messages)
-        messages.push_back({msg, source.fasta.filename, source.fasta.line_no});
 
     const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
@@ -703,7 +696,7 @@ acmacs::seqdb::v3::scan::fasta::hint_t acmacs::seqdb::v3::scan::fasta::find_hint
 std::string acmacs::seqdb::v3::scan::fasta::report_false_positive(const std::vector<scan_result_t>& sequences, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::views::filter(is_aligned) | ranges::views::filter(is_different_type_subtype_ignore_h0))
+    for (const auto& sc : sequences | ranges::views::filter(is_aligned) | ranges::views::filter(is_different_type_subtype_ignore_h0_ignore_empty_fasta))
         fmt::format_to(out, "detected:{} | fasta:{} | {} -- {}:{}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 

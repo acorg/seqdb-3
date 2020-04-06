@@ -210,6 +210,7 @@ namespace acmacs::seqdb
                 void remove_dates() { dates_.clear(); }
                 void add_passage(acmacs::virus::Passage&& a_passage) { passages_.add(std::move(a_passage)); }
                 void reassortant(const acmacs::virus::Reassortant& a_reassortant) { reassortant_ = a_reassortant; }
+                void name(const acmacs::virus::name_t& a_name) { name_ = a_name; }
                 void name(acmacs::virus::name_t&& a_name) { name_ = std::move(a_name); }
                 // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
                 void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
