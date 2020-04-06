@@ -32,6 +32,7 @@ static std::string fix_country(std::string_view source);
 static std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no);
 static acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
+static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
 
 // ----------------------------------------------------------------------
 
@@ -152,21 +153,24 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_d
     cursor_t segment_number;
     for (auto tok_beg = cur, tok_end = dat_token(tok_beg, end); tok_end != end; tok_beg = std::next(tok_end), tok_end = dat_token(tok_beg, end), ++field) {
         if (tok_beg != tok_end) {
+            const auto token = string_view(tok_beg, tok_end);
             switch (field) {
                 case na_field::genbank_accession:
-                    result.sequence.add_sample_id_by_sample_provider(string_view(tok_beg, tok_end));
+                    result.sequence.add_sample_id_by_sample_provider(token);
                     break;
                 case na_field::segment_no:
                     segment_number = tok_beg;
-                    result.sequence.add_gisaid_segment_number(string_view(tok_beg, tok_end));
+                    result.sequence.add_gisaid_segment_number(token);
                     break;
                 case na_field::virus_name:
-                    result.fasta.name = string_view(tok_beg, tok_end);
+                    result.fasta.name = token;
                     break;
                 case na_field::subtype:
-                    result.fasta.type_subtype = parse_subtype(string_view(tok_beg, tok_end), filename, line_no);
+                    result.fasta.type_subtype = parse_subtype(token, filename, line_no);
                     break;
                 case na_field::date:
+                    if (const auto dt = parse_date(token, filename, line_no); date::year_ok(dt))
+                        result.sequence.add_date(acmacs::seqdb::scan::format_date(dt));
                     break;
                 case na_field::country:
                     result.fasta.country = fix_country(string::upper(tok_beg, tok_end));
@@ -198,6 +202,44 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_d
     }
     return std::nullopt;
 }
+
+// ----------------------------------------------------------------------
+
+date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no)
+{
+    date::year_month_day result = date::invalid_date();
+    auto ok{false};
+
+    switch (source.size()) {
+      case 4:                   // year
+          result = date::year_from_string(source)/0/0;
+          ok = date::year_ok(result);
+          break;
+      case 7:                   // year/month
+          if (source[4] == '/') {
+              result = date::year_from_string(source.substr(0, 4)) / date::month_from_string(source.substr(5)) / 0;
+              ok = date::year_ok(result) && date::month_ok(result);
+          }
+          break;
+      case 9:
+          ok = source.substr(0, 4) == "NON/";
+          break;
+      case 10:                  // year/month/day
+          result = date::from_string(source, "%Y/%m/%d");
+          ok = result.ok();
+          break;
+      case 3:
+          ok = source == "NON";
+          break;
+      case 0:
+          ok = true;
+          break;
+    }
+    if (!ok)
+        AD_ERROR("cannot parse date: [{}] @@ {}:{}", source, filename, line_no);
+    return result;
+
+} // parse_date
 
 // ----------------------------------------------------------------------
 

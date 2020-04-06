@@ -23,7 +23,7 @@ namespace acmacs::seqdb
         {
             namespace fasta
             {
-                static date::year_month_day parse_date(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+                static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
                 static std::string_view parse_lab(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
@@ -583,10 +583,9 @@ bool acmacs::seqdb::v3::scan::fasta::import_sequence(std::string_view raw_sequen
 
 // ----------------------------------------------------------------------
 
-date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(const acmacs::uppercase& src, std::string_view filename, size_t line_no)
+date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view source, std::string_view filename, size_t line_no)
 {
     date::year_month_day result;
-    const std::string_view source = src;
 
     const auto month_and_day_unknown = [source,&result]() -> bool {
         if (source.size() > 25 && source.substr(4) == " (MONTH AND DAY UNKNOWN)") {
@@ -612,7 +611,7 @@ date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(const acmacs::up
     };
 
     if (!source.empty() && !month_and_day_unknown() && !day_unknown() && !extract_date())
-        fmt::print(stderr, "ERROR: {}:{}: cannot parse date: [{}]\n", filename, line_no, source);
+        AD_ERROR("cannot parse date: [{}] @@ {}:{}", source, filename, line_no);
     return result;
 
 } // acmacs::seqdb::v3::scan::fasta::parse_date

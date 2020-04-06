@@ -59,7 +59,7 @@ namespace acmacs::seqdb
 
             inline std::string format_date(const date::year_month_day& a_date)
             {
-                if (a_date.year().ok())
+                if (a_date.year().ok() && date::get_year(a_date) > 0)
                     return date::display(a_date, date::allow_incomplete::yes);
                 else
                     return std::string{"0000-00-00"};
