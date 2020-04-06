@@ -621,8 +621,11 @@ bool acmacs::seqdb::v3::scan::fasta::import_sequence(std::string_view raw_sequen
 
 // ----------------------------------------------------------------------
 
-date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view source, std::string_view filename, size_t line_no)
+date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view src, std::string_view filename, size_t line_no)
 {
+    const std::string source_s = ::string::upper(src);
+    const std::string_view source = source_s;
+
     date::year_month_day result;
 
     const auto month_and_day_unknown = [source,&result]() -> bool {
