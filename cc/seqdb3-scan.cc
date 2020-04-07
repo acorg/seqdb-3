@@ -53,6 +53,7 @@ struct Options : public argv
     option<str>  print_aligned_for{*this, "print-aligned-for", dflt{""}};
     option<bool> print_aa_sizes{*this, "print-aa-sizes"};
     option<bool> print_stat{*this, "stat"};
+    option<bool> print_names{*this, "print-names"};
 
     option<bool> verbose{*this, 'v', "verbose"};
 
@@ -67,8 +68,10 @@ int main(int argc, char* const argv[])
     try {
         Options opt(argc, argv);
 
-        const acmacs::seqdb::scan::fasta::scan_options_t scan_options(opt.verbose ? acmacs::debug::yes : acmacs::debug::no,
-                                                                      opt.gisaid ? acmacs::seqdb::scan::fasta::scan_name_adjustments::gisaid : acmacs::seqdb::scan::fasta::scan_name_adjustments::none);
+        const acmacs::seqdb::scan::fasta::scan_options_t scan_options(
+            opt.verbose ? acmacs::debug::yes : acmacs::debug::no,
+            opt.gisaid ? acmacs::seqdb::scan::fasta::scan_name_adjustments::gisaid : acmacs::seqdb::scan::fasta::scan_name_adjustments::none,
+            opt.print_names ? acmacs::seqdb::scan::fasta::print_names::yes : acmacs::seqdb::scan::fasta::print_names::no);
         acmacs::seqdb::scan::fasta::scan_results_t scan_results;
         if (!opt.filenames->empty())
             scan_results.merge(acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options));
@@ -241,12 +244,12 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
 
         if ((opt.all_lab_messages || whocc_lab(entry.sequence)) && (opt.all_subtypes_messages || our_subtype(entry.sequence.type_subtype()))) {
             for (const auto& msg : entry.fasta.messages) {
-                if (msg == acmacs::virus::parse_result_t::message_t::location_not_found) {
+                if (msg == acmacs::virus::name::parsing_message_t::location_not_found) {
                     if (msg.value == "CRIE")
                         fmt::print(stderr, "{}:{}: [CRIE] {}\n", entry.fasta.filename, entry.fasta.line_no, msg);
                     location_not_found.count(msg.value);
                 }
-                else if (msg == acmacs::virus::parse_result_t::message_t::unrecognized_passage)
+                else if (msg == acmacs::virus::name::parsing_message_t::unrecognized_passage)
                     unrecognized_passage.count(msg.value);
                 else {
                     fmt::print(stderr, "{}:{}: {} --> {}\n", entry.fasta.filename, entry.fasta.line_no, msg, *entry.sequence.name());

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "acmacs-base/debug.hh"
+#include "acmacs-virus/parsing-message.hh"
 #include "seqdb-3/scan-sequence.hh"
 
 // ----------------------------------------------------------------------
@@ -26,7 +27,7 @@ namespace acmacs::seqdb
                     std::string country; // ncbi
                     std::string filename;
                     size_t line_no; // of the sequence name in filename
-                    std::vector<acmacs::virus::parse_result_t::message_t> messages;
+                    acmacs::virus::name::parsing_messages_t messages;
                 };
 
                 struct master_ref_t
@@ -46,7 +47,7 @@ namespace acmacs::seqdb
                     bool remove{false};
                 };
 
-                using message_t = acmacs::virus::v2::parse_result_t::message_t;
+                using message_t = acmacs::virus::v2::name::parsing_message_t;
 
                 struct message_line_t
                 {
@@ -88,15 +89,17 @@ namespace acmacs::seqdb
                 };
 
                 enum class scan_name_adjustments { none, gisaid, ncbi };
+                enum class print_names { no, yes };
 
                 struct scan_options_t
                 {
-                    scan_options_t(debug a_dbg, scan_name_adjustments na = scan_name_adjustments::none) : dbg{a_dbg}, name_adjustements{na} {}
+                    scan_options_t(debug a_dbg, scan_name_adjustments na = scan_name_adjustments::none, print_names pn = print_names::no) : dbg{a_dbg}, name_adjustements{na}, prnt_names{pn} {}
                     scan_options_t(size_t a_remove_too_short_nucs, debug a_dbg = debug::no, scan_name_adjustments na = scan_name_adjustments::none)
                         : remove_too_short_nucs{a_remove_too_short_nucs}, dbg{a_dbg}, name_adjustements{na} {}
                     size_t remove_too_short_nucs{100}; // remove nuc sequences shorter than this (if value 1000, sequence of length 1000 is kept)
                     debug dbg;
                     scan_name_adjustments name_adjustements{scan_name_adjustments::none};
+                    print_names prnt_names{print_names::no};
                 };
 
                 struct scan_input_t
@@ -161,7 +164,7 @@ namespace acmacs::seqdb
                 std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
                 // returns error and warning messages
-                messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements);
+                messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names);
                 void fix_gisaid_name(scan_result_t& source, debug dbg);
                 std::string fix_ncbi_name(std::string_view source, debug dbg);
                 // date::year_month_day parse_date(const acmacs::uppercase& source, std::string_view filename, size_t line_no);

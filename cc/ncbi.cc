@@ -283,7 +283,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::
     const auto end = std::end(influenza_na_dat);
     for (size_t line_no = 1; cur != end; ++line_no) {
         if (auto scan_result = read_influenza_na_dat_entry(cur, end, filename_dat, line_no); scan_result.has_value()) {
-            auto messages = normalize_name(*scan_result, options.dbg, scan_name_adjustments::ncbi);
+            auto messages = normalize_name(*scan_result, options.dbg, scan_name_adjustments::ncbi, options.prnt_names);
             // fmt::print("{:4d} {:8s} \"{}\" {} {}\n", line_no, *res->fasta.type_subtype, res->fasta.name, res->fasta.country, res->sequence.sample_id_by_sample_provider());
             if (scan_result->fasta.type_subtype.empty() && !scan_result->sequence.name().empty())
                 scan_result->fasta.type_subtype = acmacs::virus::v2::type_subtype_t{std::string(1, scan_result->sequence.name()->front())};
@@ -322,7 +322,7 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
                     // merge names from dat and fna
                     scan_result_t result_for_name_in_fna{*found->second};
                     result_for_name_in_fna.fasta.name = fields[4];
-                    results.merge(normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi));
+                    results.merge(normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi, options.prnt_names));
                     if (!result_for_name_in_fna.sequence.name().empty()) {
                         if (found->second->sequence.name().empty())
                             found->second->sequence.name(result_for_name_in_fna.sequence.name());

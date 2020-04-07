@@ -13,7 +13,7 @@
 #include "acmacs-base/in-json-parser.hh"
 #include "acmacs-base/to-json.hh"
 #include "acmacs-base/hash.hh"
-#include "acmacs-virus/virus-name.hh"
+#include "acmacs-virus/virus-name-parse.hh"
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"

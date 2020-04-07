@@ -102,7 +102,8 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
         to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
     }
     catch (local::not_verified& err) {
-        const bool h1_h3_b = master.type_subtype()->substr(2, 3) == "H1N" || master.type_subtype()->substr(2, 2) == "H3" || *master.type_subtype() == "B";
+        const auto h_or_b = master.type_subtype().h_or_b();
+        const bool h1_h3_b = h_or_b == "H1" || h_or_b == "H3" || h_or_b == "B";
         if (h1_h3_b)
             fmt::print(stderr, "WARNING: deletions_insertions NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
         try {

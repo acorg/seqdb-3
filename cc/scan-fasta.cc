@@ -8,7 +8,7 @@
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/read-file.hh"
 #include "locationdb/locdb.hh"
-#include "acmacs-virus/virus-name.hh"
+#include "acmacs-virus/virus-name-parse.hh"
 #include "seqdb-3/scan-fasta.hh"
 #include "seqdb-3/scan-align.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -98,7 +98,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                         break;
                 }
                 if (scan_result.has_value()) {
-                    auto messages = normalize_name(*scan_result, options.dbg, options.name_adjustements);
+                    auto messages = normalize_name(*scan_result, options.dbg, options.name_adjustements, options.prnt_names);
                     if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
                         if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
                             || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
@@ -396,7 +396,7 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements)
+acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names)
 {
     switch (name_adjustements) {
       case scan_name_adjustments::gisaid:
@@ -409,6 +409,8 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
           // AD_DEBUG_IF(dbg, "source.fasta.name: \"{}\"", source.fasta.name);
           break;
     }
+    if (prnt_names == print_names::yes)
+        fmt::print("print_names: {}\n", source.fasta.name);
 
     auto name_parse_result = !source.fasta.name.empty() ? acmacs::virus::parse_name(source.fasta.name) : acmacs::virus::parse_result_t{};
     source.sequence.name(std::move(name_parse_result.name));
@@ -428,7 +430,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
         if (passage.empty()) {
-            messages.push_back({message_t{acmacs::virus::parse_result_t::message_t::unrecognized_passage, passage_extra}, source.fasta.filename, source.fasta.line_no});
+            messages.push_back({message_t{acmacs::virus::name::parsing_message_t::unrecognized_passage, passage_extra}, source.fasta.filename, source.fasta.line_no});
             source.sequence.add_passage(acmacs::virus::Passage{passage_extra});
         }
         else {
@@ -749,7 +751,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector
 {
     const auto filter_subtype = [type_subtype=string::split(type_subtype_infix, ",")](const auto& sc) {
         for (const auto& ts : type_subtype) {
-            if (ts == "ALL" || sc.fasta.type_subtype->find(ts) != std::string::npos)
+            if (ts == "ALL" || sc.fasta.type_subtype.contains(ts))
                 return true;
         }
         return false;
@@ -769,7 +771,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector
 std::string acmacs::seqdb::v3::scan::fasta::report_aa(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(is_translated))
+    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.contains(type_subtype_infix); }) | ranges::views::filter(is_translated))
         fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
@@ -780,7 +782,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_aa(const std::vector<scan_res
 std::string acmacs::seqdb::v3::scan::fasta::report_aa_aligned(const std::vector<scan_result_t>& sequences, std::string_view type_subtype_infix, size_t sequence_cutoff)
 {
     fmt::memory_buffer out;
-    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype->find(type_subtype_infix) != std::string::npos; }) | ranges::views::filter(is_aligned)) {
+    for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.contains(type_subtype_infix); }) | ranges::views::filter(is_aligned)) {
         const auto seq = sc.sequence.aa_aligned();
         fmt::format_to(out, "{} [{}]\n{}\n", sc.sequence.full_name(), seq.size(), seq.substr(0, sequence_cutoff));
     }
