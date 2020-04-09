@@ -189,7 +189,7 @@ template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted
 
 void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
 {
-    std::map<std::string, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
+    std::map<std::string_view, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
     for (const auto& msg : messages)
         messages_per_key.try_emplace(msg.message.key).first->second.push_back(msg);
     for (auto& [key, value] : messages_per_key) {
@@ -207,7 +207,7 @@ void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
         else {
             AD_WARNING("{} ({}):", key, value.size());
             for (const auto& val : value)
-                fmt::print(stderr, "    {} ({}) {} @@ {}:{}\n", val.message.value, key, val.message.suppliment, val.filename, val.line_no);
+                fmt::print(stderr, "    {} ({}) @@ {}:{}\n", val.message.value, key, val.filename, val.line_no);
         }
         fmt::print(stderr, "\n");
     }
