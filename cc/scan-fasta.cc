@@ -435,7 +435,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
         }
         else {
             source.sequence.add_passage(acmacs::virus::Passage{passage});
-            source.sequence.annotations(::string::join(" ", {source.sequence.annotations(), passage_extra}));
+            source.sequence.annotations(string::join(" ", {source.sequence.annotations(), passage_extra}));
         }
     }
     else if (!passage.empty())

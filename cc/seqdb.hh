@@ -3,7 +3,7 @@
 #include <mutex>
 
 #include "acmacs-base/debug.hh"
-#include "acmacs-base/string.hh"
+#include "acmacs-base/string-join.hh"
 #include "acmacs-base/uppercase.hh"
 #include "acmacs-base/flat-map.hh"
 #include "seqdb-3/aa-at-pos.hh"
@@ -256,10 +256,10 @@ namespace acmacs::seqdb::inline v3
         bool is_master() const { return seq().is_master(); }
         bool is_hi_matched() const { return !seq().hi_names.empty(); }
         seq_id_t seq_id() const;
-        std::string full_name() const { return ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}); }
+        std::string full_name() const { return acmacs::string::join(" ", entry->name, acmacs::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()); }
         std::string full_name_with_date() const
         {
-            return fmt::format("{} [{}]", ::string::join(" ", {entry->name, ::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()}),
+            return fmt::format("{} [{}]", acmacs::string::join(" ", entry->name, acmacs::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()),
                                entry->date());
         }
         std::string hi_name_or_full_name() const

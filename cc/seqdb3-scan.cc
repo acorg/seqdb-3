@@ -200,9 +200,9 @@ void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
             std::sort(std::begin(locations), std::end(locations));
             const auto end = std::unique(std::begin(locations), std::end(locations));
             AD_WARNING("{} ({}):", key, end - std::begin(locations));
-            fmt::print(stderr, "  \"{}\"\n", ::string::join("\"\n  \"", std::begin(locations), end));
+            fmt::print(stderr, "  \"{}\"\n", acmacs::string::join("\"\n  \"", std::begin(locations), end));
             if (std::string_view{key} == "location-not-found")
-                fmt::print(stderr, "locdb \"{}\"\n", ::string::join("\" \"", std::begin(locations), end));
+                fmt::print(stderr, "locdb \"{}\"\n", acmacs::string::join("\" \"", std::begin(locations), end));
         }
         else {
             AD_WARNING("{} ({}):", key, value.size());
