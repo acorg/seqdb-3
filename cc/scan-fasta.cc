@@ -74,7 +74,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
     using namespace std::string_view_literals;
     using namespace fmt::literals;
 
-    get_locdb(); // load locbd outside of threading code, it is not thread safe
+    acmacs::locationdb::get(); // load locbd outside of threading code, it is not thread safe
 
     std::vector<std::vector<scan_result_t>> sequences_per_file(filenames.size());
     std::vector<messages_t> messages_per_file(filenames.size());
