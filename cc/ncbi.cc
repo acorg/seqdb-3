@@ -2,6 +2,7 @@
 #include "acmacs-base/regex.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/string-split.hh"
+#include "acmacs-base/string-strip.hh"
 #include "seqdb-3/scan-fasta.hh"
 
 // ----------------------------------------------------------------------
@@ -91,7 +92,7 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
     };
 
     if (const auto [r1, r2] = scan_replace2(source, fix_data); !r1.empty()) {
-        const std::string fixed = ::string::strip(::string::replace(fmt::format("{}{}", remove_like_at_end(r1), r2), '_', ' '));
+        const std::string fixed{acmacs::string::strip(::string::replace(fmt::format("{}{}", remove_like_at_end(r1), r2), '_', ' '))};
         AD_DEBUG_IF(dbg, "\"{}\" -> \"{}\"", source, fixed);
         return fixed;
     }
@@ -130,7 +131,7 @@ acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std
 #include "acmacs-base/diagnostics-pop.hh"
 
     if (const auto res = scan_replace(source, fix_data); !res.empty()) {
-        return acmacs::virus::type_subtype_t{::string::strip(res)};
+        return acmacs::virus::type_subtype_t{acmacs::string::strip(res)};
     }
 
     AD_WARNING("unrecognized subtype: \"{}\" @@ {}:{}", source, filename, line_no);

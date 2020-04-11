@@ -7,6 +7,7 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/read-file.hh"
+#include "acmacs-base/string-strip.hh"
 #include "locationdb/locdb.hh"
 #include "acmacs-virus/virus-name-parse.hh"
 #include "seqdb-3/scan-fasta.hh"
@@ -264,10 +265,10 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                     result.sequence.add_date(seqdb::scan::format_date(parse_date(it->substr(2), filename, line_no)));
                     break;
                 case 'f':
-                    result.sequence.add_submitter(::string::strip(it->substr(2)));
+                    result.sequence.add_submitter(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'g':
-                    result.sequence.add_sample_id_by_sample_provider(::string::strip(it->substr(2)));
+                    result.sequence.add_sample_id_by_sample_provider(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'h':
                     lab_id = it->substr(2);
@@ -276,25 +277,25 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                     result.sequence.add_gisaid_last_modified(seqdb::scan::format_date(parse_date(it->substr(2), filename, line_no)));
                     break;
                 case 'j':
-                    result.sequence.add_originating_lab(::string::strip(it->substr(2)));
+                    result.sequence.add_originating_lab(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'k':
                     lab = it->substr(2);
                     break;
                 case 'l':
-                    result.sequence.add_gisaid_segment(::string::strip(it->substr(2)));
+                    result.sequence.add_gisaid_segment(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'm':
-                    result.sequence.add_gisaid_segment_number(::string::strip(it->substr(2)));
+                    result.sequence.add_gisaid_segment_number(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'n':
-                    result.sequence.add_gisaid_identifier(::string::strip(it->substr(2)));
+                    result.sequence.add_gisaid_identifier(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'o':
-                    result.sequence.add_gisaid_dna_accession_no(::string::strip(it->substr(2)));
+                    result.sequence.add_gisaid_dna_accession_no(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'p':
-                    result.sequence.add_gisaid_dna_insdc(::string::strip(it->substr(2)));
+                    result.sequence.add_gisaid_dna_insdc(acmacs::string::strip(it->substr(2)));
                     break;
                 case 'x': // manually excluded
                     throw manually_excluded{it->substr(2)};
@@ -330,15 +331,15 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     result.fasta.name = fields[0];
     result.fasta.filename = filename;
     result.fasta.line_no = line_no;
-    result.sequence.add_date(seqdb::scan::format_date(parse_date(::string::strip(fields[1]), filename, line_no)));
+    result.sequence.add_date(seqdb::scan::format_date(parse_date(acmacs::string::strip(fields[1]), filename, line_no)));
     if (fields.size() > 2)
-        result.fasta.passage = ::string::strip(fields[2]);
+        result.fasta.passage = acmacs::string::strip(fields[2]);
     if (fields.size() > 4)
-        result.sequence.add_lab_id(parse_lab(::string::strip(fields[4]), filename, line_no), ::string::strip(fields[3]));
+        result.sequence.add_lab_id(parse_lab(acmacs::string::strip(fields[4]), filename, line_no), acmacs::string::strip(fields[3]));
     if (fields.size() > 5)
-        result.fasta.type_subtype = parse_subtype(::string::strip(fields[5]), filename, line_no);
+        result.fasta.type_subtype = parse_subtype(acmacs::string::strip(fields[5]), filename, line_no);
     if (fields.size() > 6)
-        result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(::string::strip(fields[6]), filename, line_no)};
+        result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(acmacs::string::strip(fields[6]), filename, line_no)};
 
     if (!result.fasta.lineage.empty() && result.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"})
         result.sequence.lineage(result.fasta.lineage);

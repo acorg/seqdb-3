@@ -3,6 +3,7 @@
 #include "acmacs-base/rjson.hh"
 #include "acmacs-base/string.hh"
 #include "acmacs-base/string-split.hh"
+#include "acmacs-base/string-from-chars.hh"
 #include "seqdb-3/aa-at-pos.hh"
 
 // ----------------------------------------------------------------------
@@ -26,9 +27,9 @@ template <> struct list_pos_conv<acmacs::seqdb::nucleotide_at_pos1_eq_list_t>
 template <typename R, size_t MIN_SIZE, size_t MAX_SIZE> inline R extract_aa_nuc_at_pos1_eq(std::string_view source)
 {
     if (source.size() >= MIN_SIZE && source.size() <= MAX_SIZE && std::isdigit(source.front()) && (std::isalpha(source.back()) || source.back() == '-'))
-        return {acmacs::seqdb::pos1_t{::string::from_chars<size_t>(source.substr(0, source.size() - 1))}, source.back(), true};
+        return {acmacs::seqdb::pos1_t{acmacs::string::from_chars<size_t>(source.substr(0, source.size() - 1))}, source.back(), true};
     else if (source.size() >= (MIN_SIZE + 1) && source.size() <= (MAX_SIZE + 1) && source.front() == '!' && std::isdigit(source[1]) && (std::isalpha(source.back()) || source.back() == '-'))
-        return {acmacs::seqdb::pos1_t{::string::from_chars<size_t>(source.substr(1, source.size() - 2))}, source.back(), false};
+        return {acmacs::seqdb::pos1_t{acmacs::string::from_chars<size_t>(source.substr(1, source.size() - 2))}, source.back(), false};
     else
         throw acmacs::seqdb::extract_at_pos_error{fmt::format("invalid aa/nuc-pos: \"{}\" (expected 183P or !183P)", source)};
 

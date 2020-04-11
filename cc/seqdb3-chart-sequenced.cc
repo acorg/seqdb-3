@@ -34,9 +34,9 @@ int main(int argc, char* const argv[])
             // const auto fields = acmacs::string::split(*opt.aa_at_pos, ",");
             // aa_at_pos = ranges::to<decltype(aa_at_pos)>(fields | ranges::views::transform([](const auto& source) -> acmacs::seqdb::amino_acid_at_pos0_eq_t {
             //                 if (source.size() >= 2 && source.size() <= 4 && std::isdigit(source.front()) && std::isalpha(source.back()))
-            //                     return {string::from_chars<size_t>(source.substr(0, source.size() - 1)) - 1, source.back(), true};
+            //                     return {acmacs::string::from_chars<size_t>(source.substr(0, source.size() - 1)) - 1, source.back(), true};
             //                 else if (source.size() >= 3 && source.size() <= 5 && source.front() == '!' && std::isdigit(source[1]) && std::isalpha(source.back()))
-            //                     return {string::from_chars<size_t>(source.substr(1, source.size() - 2)) - 1, source.back(), false};
+            //                     return {acmacs::string::from_chars<size_t>(source.substr(1, source.size() - 2)) - 1, source.back(), false};
             //                 else
             //                     throw std::runtime_error{fmt::format("--aa-at: cannot parse entry: {}", source)};
             // }));

@@ -4,6 +4,8 @@
 
 #include "acmacs-base/date.hh"
 #include "acmacs-base/string.hh"
+#include "acmacs-base/string-strip.hh"
+#include "acmacs-base/string-from-chars.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/types.hh"
 #include "seqdb-3/sequence.hh"
@@ -108,7 +110,7 @@ namespace acmacs::seqdb
                     }
                     else {
                         try {
-                            return ::string::from_chars<size_t>(dates_.front().substr(0, 4));
+                            return acmacs::string::from_chars<size_t>(dates_.front().substr(0, 4));
                         }
                         catch (std::exception&) {
                             fmt::print(stderr, "WARNING: cannot read year from {}\n", dates_.front());
@@ -240,16 +242,16 @@ namespace acmacs::seqdb
                 //         return fmt::format("{} {}", name_, annotations_);
                 // }
 
-                void add_isolate_id(std::string_view src) { isolate_id_.add(std::string{::string::strip(src)}); }
-                void add_submitter(std::string_view src) { submitters_.add(std::string{::string::strip(src)}); }
-                void add_sample_id_by_sample_provider(std::string_view src) { sample_id_by_sample_provider_.add(std::string{::string::strip(src)}); }
-                void add_gisaid_last_modified(std::string_view src) { gisaid_last_modified_.add(std::string{::string::strip(src)}); }
-                void add_originating_lab(std::string_view src) { originating_lab_.add(std::string{::string::strip(src)}); }
-                void add_gisaid_segment(std::string_view src) { gisaid_segment_.add(std::string{::string::strip(src)}); }
-                void add_gisaid_segment_number(std::string_view src) { gisaid_segment_number_.add(std::string{::string::strip(src)}); }
-                void add_gisaid_identifier(std::string_view src) { gisaid_identifier_.add(std::string{::string::strip(src)}); }
-                void add_gisaid_dna_accession_no(std::string_view src) { gisaid_dna_accession_no_.add(std::string{::string::strip(src)}); }
-                void add_gisaid_dna_insdc(std::string_view src) { gisaid_dna_insdc_.add(std::string{::string::strip(src)}); }
+                void add_isolate_id(std::string_view src) { isolate_id_.add(std::string{acmacs::string::strip(src)}); }
+                void add_submitter(std::string_view src) { submitters_.add(std::string{acmacs::string::strip(src)}); }
+                void add_sample_id_by_sample_provider(std::string_view src) { sample_id_by_sample_provider_.add(std::string{acmacs::string::strip(src)}); }
+                void add_gisaid_last_modified(std::string_view src) { gisaid_last_modified_.add(std::string{acmacs::string::strip(src)}); }
+                void add_originating_lab(std::string_view src) { originating_lab_.add(std::string{acmacs::string::strip(src)}); }
+                void add_gisaid_segment(std::string_view src) { gisaid_segment_.add(std::string{acmacs::string::strip(src)}); }
+                void add_gisaid_segment_number(std::string_view src) { gisaid_segment_number_.add(std::string{acmacs::string::strip(src)}); }
+                void add_gisaid_identifier(std::string_view src) { gisaid_identifier_.add(std::string{acmacs::string::strip(src)}); }
+                void add_gisaid_dna_accession_no(std::string_view src) { gisaid_dna_accession_no_.add(std::string{acmacs::string::strip(src)}); }
+                void add_gisaid_dna_insdc(std::string_view src) { gisaid_dna_insdc_.add(std::string{acmacs::string::strip(src)}); }
 
                 const auto& isolate_id() const { return isolate_id_; }
                 const auto& submitters() const { return submitters_; }
