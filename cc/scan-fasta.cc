@@ -9,7 +9,7 @@
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/string-strip.hh"
 #include "locationdb/locdb.hh"
-#include "acmacs-virus/virus-name-parse.hh"
+#include "acmacs-virus/virus-name-normalize.hh"
 #include "seqdb-3/scan-fasta.hh"
 #include "seqdb-3/scan-align.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -30,7 +30,7 @@ namespace acmacs::seqdb
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
                 static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
-                static void set_country(const acmacs::virus::parse_result_t& name_parse_result, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages);
+                static void set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages);
 
                 inline void add_message(messages_t& target, messages_t&& to_add)
                 {
@@ -413,16 +413,16 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     if (prnt_names == print_names::yes)
         fmt::print("print_names: {}\n", source.fasta.name);
 
-    auto name_parse_result = !source.fasta.name.empty() ? acmacs::virus::parse_name(source.fasta.name) : acmacs::virus::parse_result_t{};
-    source.sequence.name(std::move(name_parse_result.name));
-    if (source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
+    auto name_parse_result = acmacs::virus::name::parse(source.fasta.name, acmacs::virus::name::warn_on_empty::no);
+    source.sequence.name(name_parse_result.name());
+    if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
         AD_WARNING("no year at the end of name: \"{}\" @@ {}:{}", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
 
     messages_t messages;
     for (const auto& msg : name_parse_result.messages)
         messages.push_back({msg, source.fasta.filename, source.fasta.line_no});
 
-    set_country(name_parse_result, source, messages);
+    set_country(name_parse_result.country, source, messages);
 
     source.sequence.continent(std::move(name_parse_result.continent));
     source.sequence.reassortant(name_parse_result.reassortant);
@@ -460,7 +460,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::fasta::set_country(const acmacs::virus::parse_result_t& name_parse_result, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages)
+void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages)
 {
     using namespace std::string_view_literals;
 
@@ -491,13 +491,13 @@ void acmacs::seqdb::v3::scan::fasta::set_country(const acmacs::virus::parse_resu
         return false;
     };
 
-    if (!name_parse_result.country.empty()) {
+    if (!country.empty()) {
         if (source.fasta.country.empty()) {
-            source.sequence.country(std::move(name_parse_result.country));
+            source.sequence.country(std::move(country));
         }
         else {
-            if (!is_valid({source.fasta.country, name_parse_result.country}))
-                messages.push_back({{"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", name_parse_result.country, source.sequence.name(), source.fasta.country)}, source.fasta.filename, source.fasta.line_no});
+            if (!is_valid({source.fasta.country, country}))
+                messages.push_back({{"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country)}, source.fasta.filename, source.fasta.line_no});
             source.sequence.country(source.fasta.country); // prefer country from fasta
         }
     }

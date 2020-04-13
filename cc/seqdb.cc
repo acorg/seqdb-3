@@ -13,7 +13,7 @@
 #include "acmacs-base/in-json-parser.hh"
 #include "acmacs-base/to-json.hh"
 #include "acmacs-base/hash.hh"
-#include "acmacs-virus/virus-name-parse.hh"
+#include "acmacs-virus/virus-name-normalize.hh"
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
@@ -172,6 +172,8 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name(const std::ve
 
 void acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name, subset& subs) const
 {
+    using namespace std::string_view_literals;
+
     const auto find_name = [&subs, this](std::string_view look_for) {
         // fmt::print(stderr, "DEBUG: select_by_name \"{}\"\n", look_for);
         if (const auto found = std::lower_bound(std::begin(entries_), std::end(entries_), look_for, [](const auto& entry, std::string_view nam) { return entry.name < nam; });
@@ -188,17 +190,17 @@ void acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name, subset& sub
     const auto subs_initial_size = subs.size();
     find_name(name);
     if (subs.size() == subs_initial_size && (name[0] == 'A' || name[0] == 'a' || name[0] == 'B' || name[0] == 'b')) {
-        const auto result = acmacs::virus::parse_name(name);
-        find_name(*result.name);
+        const auto result = acmacs::virus::name::parse(name);
+        find_name(result.name());
         if (subs.size() == subs_initial_size && (name[0] == 'A' || name[0] == 'a') && name[1] == '/') {
-            for (const char* subtype : {"A(H1N1)/", "A(H3N2)/", "A(H1)/", "A(H3)/"}) {
-                find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name.substr(2)}).name);
+            for (const auto subtype : {"A(H1N1)/"sv, "A(H3N2)/"sv, "A(H1)/"sv, "A(H3)/"sv}) {
+                find_name(acmacs::virus::name::parse(fmt::format("{}{}", subtype, name.substr(2))).name());
             }
         }
     }
     if (subs.size() == subs_initial_size) {
-        for (const char* subtype : {"A(H1N1)/", "A(H3N2)/", "B/", "A(H1)/", "A(H3)/"}) {
-            find_name(*acmacs::virus::parse_name(std::string{subtype} + std::string{name}).name);
+        for (const auto subtype : {"A(H1N1)/"sv, "A(H3N2)/"sv, "B/"sv, "A(H1)/"sv, "A(H3)/"sv}) {
+            find_name(acmacs::virus::name::parse(fmt::format("{}{}", subtype, name)).name());
         }
     }
 
