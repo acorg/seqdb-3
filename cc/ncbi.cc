@@ -63,7 +63,7 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
     "("                                                                                                                                                                                                \
     "[^\\(\\)]+"                                                                                                                                                                                       \
     "|"                                                                                                                                                                                                \
-    "[AB]/(?:[^/]+/){2,3}\\d{4}"                                                                                                                                                                          \
+    "[AB]/(?:[^/]+/){2,3}\\d{4}"                                                                                                                                                                       \
     ")"
 
     // "(H1N1)", "(MIXED,H1N1)", "(MIXED.H1N1)", "(MIXED)", "(H1N1)(H1N1)" "(HxNx)"
@@ -72,15 +72,16 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
 
     static const std::array fix_data{
         // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS *\\(A/REASSORTANT/(?:A/)?" RE_VIRUS_NAME "\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS *\\(A/REASSORTANT/(?:A/)?" RE_VIRUS_NAME "\\(([^\\(\\)]+)\\)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "A/$2", " $1"},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS *\\(" RE_VIRUS_NAME RE_CLONE RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), "$1", " $2 $3"},
-        look_replace2_t{std::regex("^INFLUENZA B VIRUS *\\(" RE_VIRUS_NAME "\\)", std::regex::icase), "$1", ""},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS STRAIN " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " SEGMENT ", std::regex::icase), "$1", ""},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " [A-Z]+ GENE ", std::regex::icase), "$1", ""},
-        look_replace2_t{std::regex("^INFLUENZA A VIRUS *\\(" RE_MIXED_AND_SUBTYPE "\\) SEGMENT \\d ISOLATE " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " CRNA SEQUENCE", std::regex::icase), "$1", ""},
+        look_replace_t{std::regex("^INFLUENZA A VIRUS *\\(A/REASSORTANT/(?:A/)?" RE_VIRUS_NAME "\\(([^\\(\\)]+) X PUERTO RICO/8/1934\\)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase),
+                       {"A/$2", " $1"}},
+        look_replace_t{std::regex("^INFLUENZA A VIRUS *\\(A/REASSORTANT/(?:A/)?" RE_VIRUS_NAME "\\(([^\\(\\)]+)\\)" RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), {"A/$2", " $1"}},
+        look_replace_t{std::regex("^INFLUENZA A VIRUS *\\(" RE_VIRUS_NAME RE_CLONE RE_MIXED_AND_SUBTYPE "\\)", std::regex::icase), {"$1", " $2 $3"}},
+        look_replace_t{std::regex("^INFLUENZA B VIRUS *\\(" RE_VIRUS_NAME "\\)", std::regex::icase), {"$1"}},
+        look_replace_t{std::regex("^INFLUENZA A VIRUS STRAIN " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " SEGMENT ", std::regex::icase), {"$1"}},
+        look_replace_t{std::regex("^INFLUENZA A VIRUS " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " [A-Z]+ GENE ", std::regex::icase), {"$1"}},
+        look_replace_t{std::regex("^INFLUENZA A VIRUS *\\(" RE_MIXED_AND_SUBTYPE "\\) SEGMENT \\d ISOLATE " RE_VIRUS_NAME RE_MIXED_AND_SUBTYPE " CRNA SEQUENCE", std::regex::icase), {"$1"}},
         // name absent
-        look_replace2_t{std::regex("^(?:CDNA ENCODING HA OF INFLUENZA TYPE A|SEQUENCE \\d+ FROM PATENT [^ ]+|INFLUENZA A VIRUS(?:H\\d{1,2}N\\d{1,2})?)$", std::regex::icase), " ", ""},
+        look_replace_t{std::regex("^(?:CDNA ENCODING HA OF INFLUENZA TYPE A|SEQUENCE \\d+ FROM PATENT [^ ]+|INFLUENZA A VIRUS(?:H\\d{1,2}N\\d{1,2})?)$", std::regex::icase), {""}},
     };
 
 #include "acmacs-base/diagnostics-pop.hh"
@@ -91,8 +92,8 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
         return text;
     };
 
-    if (const auto [r1, r2] = scan_replace2(source, fix_data); !r1.empty()) {
-        const std::string fixed{acmacs::string::strip(::string::replace(fmt::format("{}{}", remove_like_at_end(r1), r2), '_', ' '))};
+    if (const auto res = scan_replace(source, fix_data); res.has_value()) {
+        const std::string fixed{acmacs::string::strip(::string::replace(fmt::format("{}{}", remove_like_at_end(res->front()), res->size() > 1 ? (*res)[1] : std::string{}), '_', ' '))};
         AD_DEBUG_IF(dbg, "\"{}\" -> \"{}\"", source, fixed);
         return fixed;
     }
@@ -114,24 +115,24 @@ acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std
 
     static const std::array fix_data{
          // allow text at the end, e.g. "segment 4 hemagglutinin (HA) gene, complete cds" found in influenza.fna
-        look_replace_t{std::regex("^H\\d{1,2}(?:N\\d{1,2}V?)?(?:NSB)?$", std::regex::icase), "A($0)"},
-        look_replace_t{std::regex("^(H\\d{1,2})N[X\\-\\?]$", std::regex::icase), "A($1)"},
-        look_replace_t{std::regex("^(H\\d{1,2})N\\d{1,2}[/,]N?\\d{1,2}$", std::regex::icase), "A($1)"},
-        look_replace_t{std::regex("^(H\\d{1,2})N\\d{1,2},H\\d{1,2}$", std::regex::icase), "A"},
-        look_replace_t{std::regex("^(H\\d{1,2})N$", std::regex::icase), "A($1)"},
-        look_replace_t{std::regex("^H[X\\?I]N[X\\d]$", std::regex::icase), "A"},
-        look_replace_t{std::regex("^N\\d{1,2}$", std::regex::icase), "A"},
-        look_replace_t{std::regex("^MIXED[\\.,] *(H\\d{1,2})$", std::regex::icase), "A($1)"},
-        look_replace_t{std::regex("^MIXED[\\.,] *N\\d{1,2}$", std::regex::icase), " "},
-        look_replace_t{std::regex("^MIXED$", std::regex::icase), " "},
-        look_replace_t{std::regex("^(H\\d{1,2}),MIXED$", std::regex::icase), "A($1)"},
-        look_replace_t{std::regex("^UNKNOWN$", std::regex::icase), " "},
+        look_replace_t{std::regex("^H\\d{1,2}(?:N\\d{1,2}V?)?(?:NSB)?$", std::regex::icase), {"A($0)"}},
+        look_replace_t{std::regex("^(H\\d{1,2})N[X\\-\\?]$", std::regex::icase), {"A($1)"}},
+        look_replace_t{std::regex("^(H\\d{1,2})N\\d{1,2}[/,]N?\\d{1,2}$", std::regex::icase), {"A($1)"}},
+        look_replace_t{std::regex("^(H\\d{1,2})N\\d{1,2},H\\d{1,2}$", std::regex::icase), {"A"}},
+        look_replace_t{std::regex("^(H\\d{1,2})N$", std::regex::icase), {"A($1)"}},
+        look_replace_t{std::regex("^H[X\\?I]N[X\\d]$", std::regex::icase), {"A"}},
+        look_replace_t{std::regex("^N\\d{1,2}$", std::regex::icase), {"A"}},
+        look_replace_t{std::regex("^MIXED[\\.,] *(H\\d{1,2})$", std::regex::icase), {"A($1)"}},
+        look_replace_t{std::regex("^MIXED[\\.,] *N\\d{1,2}$", std::regex::icase), {""}},
+        look_replace_t{std::regex("^MIXED$", std::regex::icase), {""}},
+        look_replace_t{std::regex("^(H\\d{1,2}),MIXED$", std::regex::icase), {"A($1)"}},
+        look_replace_t{std::regex("^UNKNOWN$", std::regex::icase), {""}},
     };
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-    if (const auto res = scan_replace(source, fix_data); !res.empty()) {
-        return acmacs::virus::type_subtype_t{acmacs::string::strip(res)};
+    if (const auto res = scan_replace(source, fix_data); res.has_value()) {
+        return acmacs::virus::type_subtype_t{res->front()};
     }
 
     AD_WARNING("unrecognized subtype: \"{}\" @@ {}:{}", source, filename, line_no);
