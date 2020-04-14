@@ -45,6 +45,7 @@ static bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, cons
 
 void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequences)
 {
+    AD_INFO("INFO: matching against hidb");
         // sequences msut be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
     for (const std::string_view subtype : {"B", "H1", "H3"}) {
@@ -61,7 +62,7 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
         }
         en_first = en_last;
     }
-    fmt::print("INFO: matched against hidb: {}\n", matched);
+    AD_INFO("INFO: matched against hidb: {}", matched);
 
 } // acmacs::seqdb::v3::scan::match_hidb
 
@@ -80,7 +81,7 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
         const auto& seq = first->sequence;
         if (subtype == "B") {
             if (const auto hidb_lineage = found_hidb_antigens.front()->lineage(); hidb_lineage != acmacs::chart::BLineage::Unknown && hidb_lineage != acmacs::chart::BLineage{seq.lineage()})
-                fmt::print(stderr, "WARNING: lineage mismatch seq: {} vs. hidb: {} {}\n", seq.full_name(), found_hidb_antigens.front()->name(), found_hidb_antigens.front()->lineage());
+                AD_WARNING("lineage mismatch seq: {} vs. hidb: {} {}", seq.full_name(), found_hidb_antigens.front()->name(), found_hidb_antigens.front()->lineage());
         }
         for (const auto& en: found_hidb_antigens)
             first->sequence.add_date(*en->date());
@@ -214,14 +215,12 @@ void find_by_name(hidb::AntigenPList& found, const hidb_ref_t& hidb_ref, seq_ite
 {
     for (; first != last; ++first) {
         const auto& sequence = first->sequence;
+        // AD_DEBUG("find antigen in hidb: \"{}\"", *sequence.name());
         const auto antigen_index_list = hidb_ref.antigens->find(*sequence.name(), hidb::fix_location::no, hidb::find_fuzzy::no);
         std::transform(antigen_index_list.begin(), antigen_index_list.end(), std::back_inserter(found), [](const hidb::AntigenPIndex& antigen_index) -> hidb::AntigenP { return antigen_index.first; });
     }
 
 } // find_by_name
-
-// ----------------------------------------------------------------------
-
 
 // ----------------------------------------------------------------------
 /// Local Variables:

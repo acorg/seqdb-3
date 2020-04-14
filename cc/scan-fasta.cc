@@ -106,7 +106,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                             scan_result->sequence.remove_dates();
                         }
                         if (scan_result->fasta.type_subtype.h_or_b() == "B" && scan_result->fasta.lineage.empty())
-                            messages.push_back({message_t{"invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name)}, scan_result->fasta.filename, scan_result->fasta.line_no});
+                            messages.push_back({"invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name), scan_result->fasta.filename, scan_result->fasta.line_no});
                         sequences_per_file[f_no].push_back(std::move(*scan_result));
                         add_message(messages_per_file[f_no], std::move(messages));
                     }
@@ -420,7 +420,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
     messages_t messages;
     for (const auto& msg : name_parse_result.messages)
-        messages.push_back({msg, source.fasta.filename, source.fasta.line_no});
+        messages.push_back({msg.key, fmt::format("{} \"{}\"", msg.value, name_parse_result.raw), source.fasta.filename, source.fasta.line_no});
 
     set_country(name_parse_result.country, source, messages);
 
@@ -431,12 +431,12 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
         if (passage.empty()) {
-            messages.push_back({message_t{acmacs::virus::name::parsing_message_t::unrecognized_passage, passage_extra}, source.fasta.filename, source.fasta.line_no});
+            messages.push_back({acmacs::virus::name::parsing_message_t::unrecognized_passage, passage_extra, source.fasta.filename, source.fasta.line_no});
             source.sequence.add_passage(acmacs::virus::Passage{passage_extra});
         }
         else {
             source.sequence.add_passage(acmacs::virus::Passage{passage});
-            source.sequence.annotations(string::join(" ", {source.sequence.annotations(), passage_extra}));
+            source.sequence.annotations(acmacs::string::join(" ", source.sequence.annotations(), passage_extra));
         }
     }
     else if (!passage.empty())
@@ -446,13 +446,13 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     // parse lineage
 
     // if (!result.passage.empty())
-    //     messages.push_back({message_t{"name field contains passage", result.passage}, source.fasta.filename, source.fasta.line_no});
+    //     messages.push_back({"name field contains passage", result.passage, source.fasta.filename, source.fasta.line_no});
 
     if (const auto annotations = source.sequence.annotations(); !annotations.empty()) {
         if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
             source.sequence.remove_annotations();
         else if (!std::regex_match(std::begin(annotations), std::end(annotations), re_valid_annotations))
-            messages.push_back({message_t{"fasta name contains annotations", annotations}, source.fasta.filename, source.fasta.line_no});
+            messages.push_back({"fasta name contains annotations", fmt::format("{}", annotations), source.fasta.filename, source.fasta.line_no});
     }
     return messages;
 
@@ -497,7 +497,7 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
         }
         else {
             if (!is_valid({source.fasta.country, country}))
-                messages.push_back({{"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country)}, source.fasta.filename, source.fasta.line_no});
+                messages.push_back({"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country), source.fasta.filename, source.fasta.line_no});
             source.sequence.country(source.fasta.country); // prefer country from fasta
         }
     }

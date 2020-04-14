@@ -47,11 +47,12 @@ namespace acmacs::seqdb
                     bool remove{false};
                 };
 
-                using message_t = acmacs::virus::v2::name::parsing_message_t;
+                // using message_t = acmacs::virus::v2::name::parsing_message_t;
 
                 struct message_line_t
                 {
-                    message_t message;
+                    std::string_view key;
+                    std::string value;
                     std::string filename;
                     size_t line_no;
                 };

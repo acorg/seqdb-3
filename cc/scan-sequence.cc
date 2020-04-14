@@ -211,7 +211,7 @@ void acmacs::seqdb::v3::scan::sequence_t::aa_trim_absent()
 
 std::string acmacs::seqdb::v3::scan::sequence_t::full_name() const
 {
-    return string::join(" ", {*name(), *reassortant(), annotations(), passages_.empty() ? std::string{} : *passages_.front(), *lineage()});
+    return acmacs::string::join(" ", *name(), *reassortant(), annotations(), passages_.empty() ? std::string{} : *passages_.front(), *lineage());
 
 } // acmacs::seqdb::v3::scan::sequence_t::full_name
 

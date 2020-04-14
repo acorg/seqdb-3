@@ -329,7 +329,7 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
                         if (found->second->sequence.name().empty())
                             found->second->sequence.name(result_for_name_in_fna.sequence.name());
                         else if (result_for_name_in_fna.sequence.name() != found->second->sequence.name())
-                            results.messages.push_back({{"ncbi-dat-fna-name-difference", fmt::format("dat:\"{}\" fna:\"{}\"", found->second->sequence.name(), result_for_name_in_fna.sequence.name())}, result_for_name_in_fna.fasta.filename, result_for_name_in_fna.fasta.line_no});
+                            results.messages.push_back({"ncbi-dat-fna-name-difference", fmt::format("dat:\"{}\" fna:\"{}\"", found->second->sequence.name(), result_for_name_in_fna.sequence.name()), result_for_name_in_fna.fasta.filename, result_for_name_in_fna.fasta.line_no});
                     }
                 }
             }
