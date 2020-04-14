@@ -209,12 +209,14 @@ void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
         }
         else if (key == acmacs::virus::name::parsing_message_t::location_field_not_found) {
             AD_WARNING("{} ({}):", key, value.size());
+            for (const auto& val : value)
+                fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
             acmacs::Counter<std::string> possible_locations;
             for (const auto& val : value) {
                 for (const auto& part : acmacs::virus::name::possible_locations_in_name(val.value))
                     possible_locations.count(part);
             }
-            AD_WARNING("  possible locations ({}):\n{}", possible_locations.size(), possible_locations.report_sorted_max_first("   {first:30s} {second:4d}\n"));
+            AD_WARNING("possible locations ({}):\n{}", possible_locations.size(), possible_locations.report_sorted_max_first(" {first:30s} {second:4d}\n"));
         }
         else {
             AD_WARNING("{} ({}):", key, value.size());
