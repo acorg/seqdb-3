@@ -400,7 +400,7 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
     auto name_parse_result = acmacs::virus::name::parse(source.fasta.name, acmacs::virus::name::warn_on_empty::no);
     source.sequence.name(name_parse_result.name());
     if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
-        AD_WARNING("no year at the end of name: \"{}\" @@ {}:{}", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
+        messages.emplace_back(acmacs::messages::key::fasta_no_year_at_the_end_of_name, source.sequence.name(), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
 
     for (const auto& msg : name_parse_result.messages) {
         const auto val = msg.value == name_parse_result.raw ? msg.value : fmt::format("{} \"{}\"", msg.value, name_parse_result.raw);

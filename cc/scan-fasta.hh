@@ -16,6 +16,8 @@ namespace acmacs::messages::inline v1
         constexpr static inline std::string_view ncbi_not_fixed{"ncbi-not-fixed"};
         constexpr static inline std::string_view ncbi_influenza_a_not_fixed{"ncbi-influenza-a-not-fixed"};
         constexpr static inline std::string_view ncbi_influenza_b_not_fixed{"ncbi-influenza-b-not-fixed"};
+
+        constexpr static inline std::string_view fasta_no_year_at_the_end_of_name{"fasta-no-year-at-the-end-of-name"};
     }
 }
 
