@@ -173,7 +173,8 @@ std::string fix_ncbi_name_rest(std::string_view source, acmacs::debug dbg)
 
 #include "acmacs-base/global-constructors-push.hh"
     static const std::array fix_data{
-        look_replace_t{std::regex("^(?:SEQUENCE \\d+ FROM PATENT [^ ]+)$", std::regex::icase), {""}},
+        look_replace_t{std::regex("^(?:SEQUENCE \\d+ FROM PATENT [^ ]+|unidentified influenza virus.*|(?:Low temperature-adaptable )?Equine influenza virus(?: H3N8)?)$", std::regex::icase), {""}},
+        look_replace_t{std::regex("^Influenza\\s+" NCBI_VIRUS_NAME "[A-Z,\\s\\-]*" NCBI_MIXED_AND_SUBTYPE, std::regex::icase), {"$1$2"}},
     };
 #include "acmacs-base/diagnostics-pop.hh"
 
