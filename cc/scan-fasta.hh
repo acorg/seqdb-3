@@ -9,6 +9,18 @@
 
 // ----------------------------------------------------------------------
 
+namespace acmacs::messages::inline v1
+{
+    namespace key
+    {
+        constexpr static inline std::string_view ncbi_not_fixed{"ncbi-not-fixed"};
+        constexpr static inline std::string_view ncbi_influenza_a_not_fixed{"ncbi-influenza-a-not-fixed"};
+        constexpr static inline std::string_view ncbi_influenza_b_not_fixed{"ncbi-influenza-b-not-fixed"};
+    }
+}
+
+// ----------------------------------------------------------------------
+
 namespace acmacs::seqdb
 {
     inline namespace v3
@@ -153,8 +165,8 @@ namespace acmacs::seqdb
 
                 // returns error and warning messages
                 acmacs::messages::messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names);
-                void fix_gisaid_name(scan_result_t& source, debug dbg);
-                std::string fix_ncbi_name(std::string_view source, debug dbg);
+                void fix_gisaid_name(scan_result_t& source, acmacs::messages::messages_t& messages, debug dbg);
+                std::string fix_ncbi_name(std::string_view source, acmacs::messages::messages_t& messages, debug dbg);
                 // date::year_month_day parse_date(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 bool import_sequence(std::string_view raw_sequence, sequence_t& sequence_data, const scan_options_t& options);
 

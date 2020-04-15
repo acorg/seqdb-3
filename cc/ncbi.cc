@@ -36,9 +36,9 @@ static std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influen
 static acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
-static std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::debug dbg);
-static std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::debug dbg);
-static std::string fix_ncbi_name_rest(std::string_view source, acmacs::debug dbg);
+static std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
+static std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
+static std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
 
 // ----------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, debug dbg)
+std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, acmacs::messages::messages_t& messages, debug dbg)
 {
 
     static const std::string_view prefix_a{"INFLUENZA A VIRUS"};
@@ -73,13 +73,13 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
 
     std::string fixed;
     if (acmacs::string::startswith_ignore_case(source, prefix_a))
-        fixed = fix_ncbi_name_influenza_a(source.substr(prefix_a.size()), dbg);
+        fixed = fix_ncbi_name_influenza_a(source.substr(prefix_a.size()), messages, dbg);
     else if (acmacs::string::startswith_ignore_case(source, prefix_b))
-        fixed = fix_ncbi_name_influenza_b(source.substr(prefix_b.size()), dbg);
+        fixed = fix_ncbi_name_influenza_b(source.substr(prefix_b.size()), messages, dbg);
     else if (acmacs::string::startswith_ignore_case(source, prefix_cdna_a))
         fixed.assign(source.substr(prefix_cdna_a.size()));
     else
-        fixed = fix_ncbi_name_rest(source, dbg);
+        fixed = fix_ncbi_name_rest(source, messages, dbg);
     ::string::replace_in_place(fixed, '_', ' ');
     acmacs::string::strip_in_place(fixed);
     return fixed;
@@ -103,7 +103,7 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
 
 // ----------------------------------------------------------------------
 
-std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::debug dbg)
+std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg)
 {
     using namespace acmacs::regex;
 #include "acmacs-base/global-constructors-push.hh"
@@ -130,7 +130,8 @@ std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::debug dbg
         return res->front();
     }
     else {
-        AD_WARNING("INFLUENZA A VIRUS not fixed: \"{}\"", source);
+        messages.emplace_back(acmacs::messages::key::ncbi_influenza_a_not_fixed, source, MESSAGE_CODE_POSITION);
+        // AD_WARNING("INFLUENZA A VIRUS not fixed: \"{}\"", source);
         return std::string{source};
     }
 
@@ -138,7 +139,7 @@ std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::debug dbg
 
 // ----------------------------------------------------------------------
 
-std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::debug dbg)
+std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg)
 {
     using namespace acmacs::regex;
 #include "acmacs-base/global-constructors-push.hh"
@@ -159,7 +160,8 @@ std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::debug dbg
         return res->front();
     }
     else {
-        AD_WARNING("INFLUENZA B VIRUS not fixed: \"{}\"", source);
+        messages.emplace_back(acmacs::messages::key::ncbi_influenza_b_not_fixed, source, MESSAGE_CODE_POSITION);
+        // AD_WARNING("INFLUENZA B VIRUS not fixed: \"{}\"", source);
         return std::string{source};
     }
 
@@ -167,7 +169,7 @@ std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::debug dbg
 
 // ----------------------------------------------------------------------
 
-std::string fix_ncbi_name_rest(std::string_view source, acmacs::debug dbg)
+std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg)
 {
     using namespace acmacs::regex;
 
@@ -183,7 +185,8 @@ std::string fix_ncbi_name_rest(std::string_view source, acmacs::debug dbg)
         return res->front();
     }
     else {
-        AD_WARNING("ncbi rest not fixed: \"{}\"", source);
+        messages.emplace_back(acmacs::messages::key::ncbi_not_fixed, source, MESSAGE_CODE_POSITION);
+        // AD_WARNING("ncbi rest not fixed: \"{}\"", source);
         return std::string{source};
     }
 
@@ -375,7 +378,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::
                 scan_result->fasta.type_subtype = acmacs::virus::v2::type_subtype_t{std::string(1, scan_result->sequence.name()->front())};
 
             results.results.push_back(std::move(*scan_result));
-            std::move(std::begin(messages), std::end(messages), std::back_inserter(results.messages));
+            acmacs::messages::move_and_add_source(results.messages, std::move(messages), acmacs::messages::position_t{filename_dat, line_no});
         }
     }
     AD_INFO("{} HA entries found in \"{}\"", results.results.size(), filename_dat);
@@ -408,7 +411,7 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
                     // merge names from dat and fna
                     scan_result_t result_for_name_in_fna{*found->second};
                     result_for_name_in_fna.fasta.name = fields[4];
-                    acmacs::messages::move(results.messages, normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi, options.prnt_names));
+                    acmacs::messages::move_and_add_source(results.messages, normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi, options.prnt_names), acmacs::messages::position_t{filename_fna, file_input.name_line_no});
                     if (!result_for_name_in_fna.sequence.name().empty()) {
                         if (found->second->sequence.name().empty())
                             found->second->sequence.name(result_for_name_in_fna.sequence.name());

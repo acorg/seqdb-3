@@ -91,7 +91,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                         if (scan_result->fasta.type_subtype.h_or_b() == "B" && scan_result->fasta.lineage.empty())
                             messages.emplace_back("invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name), acmacs::messages::position_t{scan_result->fasta.filename, scan_result->fasta.line_no}, MESSAGE_CODE_POSITION);
                         sequences_per_file[f_no].push_back(std::move(*scan_result));
-                        acmacs::messages::move(messages_per_file[f_no], std::move(messages));
+                        acmacs::messages::move_and_add_source(messages_per_file[f_no], std::move(messages), acmacs::messages::position_t{filename, file_input.name_line_no});
                     }
                 }
                 else
@@ -382,12 +382,13 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names)
 {
+    acmacs::messages::messages_t messages;
     switch (name_adjustements) {
       case scan_name_adjustments::gisaid:
-          fix_gisaid_name(source, dbg);
+          fix_gisaid_name(source, messages, dbg);
           break;
       case scan_name_adjustments::ncbi:
-          source.fasta.name = fix_ncbi_name(source.fasta.name, dbg);
+          source.fasta.name = fix_ncbi_name(source.fasta.name, messages, dbg);
           break;
       case scan_name_adjustments::none:
           // AD_DEBUG_IF(dbg, "source.fasta.name: \"{}\"", source.fasta.name);
@@ -401,9 +402,10 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
     if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
         AD_WARNING("no year at the end of name: \"{}\" @@ {}:{}", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
 
-    acmacs::messages::messages_t messages;
-    for (const auto& msg : name_parse_result.messages)
-        messages.emplace_back(msg.key, fmt::format("{} \"{}\"", msg.value, name_parse_result.raw), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+    for (const auto& msg : name_parse_result.messages) {
+        const auto val = msg.value == name_parse_result.raw ? msg.value : fmt::format("{} \"{}\"", msg.value, name_parse_result.raw);
+        messages.emplace_back(msg.key, val, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+    }
 
     set_country(name_parse_result.country, source, messages);
 
@@ -507,7 +509,7 @@ static const std::regex re_CDC_LV_name{"/(19\\d\\d|20[0-2]\\d)[_\\-]?CDC[_\\-]?L
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, debug dbg)
+void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, acmacs::messages::messages_t& messages, debug dbg)
 {
     const std::string name_orig{dbg == debug::yes ? source.fasta.name : std::string{}};
 
