@@ -63,7 +63,7 @@ struct Options : public argv
 };
 
 static int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const Options& opt);
-static void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages);
+static void report_messages(acmacs::messages::messages_t& messages);
 
 int main(int argc, char* const argv[])
 {
@@ -190,41 +190,43 @@ template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted
 
 // ----------------------------------------------------------------------
 
-void report_messages(const acmacs::seqdb::scan::fasta::messages_t& messages)
+void report_messages(acmacs::messages::messages_t& messages)
 {
-    std::map<std::string_view, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
-    for (const auto& msg : messages)
-        messages_per_key.try_emplace(msg.key).first->second.push_back(msg);
-    for (auto& [key, value] : messages_per_key) {
-        // std::sort(std::begin(value), std::end(value));
-        if (key == acmacs::virus::name::parsing_message_t::location_not_found || key == acmacs::virus::name::parsing_message_t::unrecognized_passage) {
-            std::vector<std::string> locations(value.size());
-            std::transform(std::begin(value), std::end(value), std::begin(locations), [](const auto& en) { return en.value; });
-            std::sort(std::begin(locations), std::end(locations));
-            const auto end = std::unique(std::begin(locations), std::end(locations));
-            AD_WARNING("{} ({}):", key, end - std::begin(locations));
-            fmt::print(stderr, "  \"{}\"\n", acmacs::string::join("\"\n  \"", std::begin(locations), end));
-            if (key == acmacs::virus::name::parsing_message_t::location_not_found)
-                fmt::print(stderr, "locdb \"{}\"\n", acmacs::string::join("\" \"", std::begin(locations), end));
-        }
-        else if (key == acmacs::virus::name::parsing_message_t::location_field_not_found) {
-            AD_WARNING("{} ({}):", key, value.size());
-            for (const auto& val : value)
-                fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
-            acmacs::Counter<std::string> possible_locations;
-            for (const auto& val : value) {
-                for (const auto& part : acmacs::virus::name::possible_locations_in_name(val.value))
-                    possible_locations.count(part);
-            }
-            AD_WARNING("possible locations ({}):\n{}", possible_locations.size(), possible_locations.report_sorted_max_first(" {first:30s} {second:4d}\n"));
-        }
-        else {
-            AD_WARNING("{} ({}):", key, value.size());
-            for (const auto& val : value)
-                fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
-        }
-        fmt::print(stderr, "\n");
-    }
+    acmacs::virus::name::report_by_type(messages);
+
+    // std::map<std::string_view, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
+    // for (const auto& msg : messages)
+    //     messages_per_key.try_emplace(msg.key).first->second.push_back(msg);
+    // for (auto& [key, value] : messages_per_key) {
+    //     // std::sort(std::begin(value), std::end(value));
+    //     if (key == acmacs::messages::key::location_not_found || key == acmacs::messages::key::unrecognized_passage) {
+    //         std::vector<std::string> locations(value.size());
+    //         std::transform(std::begin(value), std::end(value), std::begin(locations), [](const auto& en) { return en.value; });
+    //         std::sort(std::begin(locations), std::end(locations));
+    //         const auto end = std::unique(std::begin(locations), std::end(locations));
+    //         AD_WARNING("{} ({}):", key, end - std::begin(locations));
+    //         fmt::print(stderr, "  \"{}\"\n", acmacs::string::join("\"\n  \"", std::begin(locations), end));
+    //         if (key == acmacs::messages::key::location_not_found)
+    //             fmt::print(stderr, "locdb \"{}\"\n", acmacs::string::join("\" \"", std::begin(locations), end));
+    //     }
+    //     else if (key == acmacs::messages::key::location_field_not_found) {
+    //         AD_WARNING("{} ({}):", key, value.size());
+    //         for (const auto& val : value)
+    //             fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
+    //         acmacs::Counter<std::string> possible_locations;
+    //         for (const auto& val : value) {
+    //             for (const auto& part : acmacs::virus::name::possible_locations_in_name(val.value))
+    //                 possible_locations.count(part);
+    //         }
+    //         AD_WARNING("possible locations ({}):\n{}", possible_locations.size(), possible_locations.report_sorted_max_first(" {first:30s} {second:4d}\n"));
+    //     }
+    //     else {
+    //         AD_WARNING("{} ({}):", key, value.size());
+    //         for (const auto& val : value)
+    //             fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
+    //     }
+    //     fmt::print(stderr, "\n");
+    // }
 
 } // report_messages
 
@@ -258,15 +260,15 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
 
         if ((opt.all_lab_messages || whocc_lab(entry.sequence)) && (opt.all_subtypes_messages || our_subtype(entry.sequence.type_subtype()))) {
             for (const auto& msg : entry.fasta.messages) {
-                if (msg == acmacs::virus::name::parsing_message_t::location_not_found) {
+                if (msg.key == acmacs::messages::key::location_not_found) {
                     if (msg.value == "CRIE")
-                        fmt::print(stderr, "{}:{}: [CRIE] {}\n", entry.fasta.filename, entry.fasta.line_no, msg);
+                        AD_WARNING("CRIE ({}) @@ {}:{}", msg.key, entry.fasta.filename, entry.fasta.line_no);
                     location_not_found.count(msg.value);
                 }
-                else if (msg == acmacs::virus::name::parsing_message_t::unrecognized_passage)
+                else if (msg.key == acmacs::messages::key::unrecognized_passage)
                     unrecognized_passage.count(msg.value);
                 else {
-                    fmt::print(stderr, "{}:{}: {} --> {}\n", entry.fasta.filename, entry.fasta.line_no, msg, *entry.sequence.name());
+                    AD_WARNING("\"{}\" ({}) -> \"{}\" @@ {}:{}", msg.value, msg.key, *entry.sequence.name(), entry.fasta.filename, entry.fasta.line_no);
                     ++errors;
                 }
             }

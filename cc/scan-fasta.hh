@@ -27,7 +27,7 @@ namespace acmacs::seqdb
                     std::string country; // ncbi
                     std::string filename;
                     size_t line_no; // of the sequence name in filename
-                    acmacs::virus::name::parsing_messages_t messages;
+                    acmacs::messages::messages_t messages;
                 };
 
                 struct master_ref_t
@@ -47,25 +47,12 @@ namespace acmacs::seqdb
                     bool remove{false};
                 };
 
-                // using message_t = acmacs::virus::v2::name::parsing_message_t;
-
-                struct message_line_t
-                {
-                    std::string_view key;
-                    std::string value;
-                    std::string filename;
-                    size_t line_no;
-                };
-
-                using messages_t = std::vector<message_line_t>;
-
                 struct scan_results_t
                 {
                     std::vector<scan_result_t> results;
-                    messages_t messages;
+                    acmacs::messages::messages_t messages;
 
                     void merge(scan_results_t&& source);
-                    void merge(messages_t&& new_messages);
                 };
 
                 constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
@@ -165,7 +152,7 @@ namespace acmacs::seqdb
                 std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
                 // returns error and warning messages
-                messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names);
+                acmacs::messages::messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names);
                 void fix_gisaid_name(scan_result_t& source, debug dbg);
                 std::string fix_ncbi_name(std::string_view source, debug dbg);
                 // date::year_month_day parse_date(const acmacs::uppercase& source, std::string_view filename, size_t line_no);

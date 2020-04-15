@@ -30,12 +30,7 @@ namespace acmacs::seqdb
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
                 static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
-                static void set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages);
-
-                inline void add_message(messages_t& target, messages_t&& to_add)
-                {
-                    std::move(std::begin(to_add), std::end(to_add), std::back_inserter(target));
-                }
+                static void set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, acmacs::messages::messages_t& messages);
 
             } // namespace fasta
         }     // namespace scan
@@ -52,19 +47,7 @@ void acmacs::seqdb::v3::scan::fasta::scan_results_t::merge(scan_results_t&& sour
     results.resize(results.size() + source.results.size());
     std::move(std::begin(source.results), std::end(source.results), std::next(std::begin(results), pos));
 
-    merge(std::move(source.messages));
-
-} // acmacs::seqdb::v3::scan::fasta::scan_results_t::merge
-
-// ----------------------------------------------------------------------
-
-void acmacs::seqdb::v3::scan::fasta::scan_results_t::merge(messages_t&& new_messages)
-{
-    using diff_t = decltype(results.begin() - results.begin());
-
-    const auto pos_messages = static_cast<diff_t>(messages.size());
-    messages.resize(messages.size() + new_messages.size());
-    std::move(std::begin(new_messages), std::end(new_messages), std::next(std::begin(messages), pos_messages));
+    acmacs::messages::move(messages, std::move(source.messages));
 
 } // acmacs::seqdb::v3::scan::fasta::scan_results_t::merge
 
@@ -78,7 +61,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
     acmacs::locationdb::get(); // load locbd outside of threading code, it is not thread safe
 
     std::vector<std::vector<scan_result_t>> sequences_per_file(filenames.size());
-    std::vector<messages_t> messages_per_file(filenames.size());
+    std::vector<acmacs::messages::messages_t> messages_per_file(filenames.size());
 #pragma omp parallel for default(shared) schedule(static, 4)
     for (size_t f_no = 0; f_no < filenames.size(); ++f_no) {
         const auto& filename = filenames[f_no];
@@ -106,9 +89,9 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                             scan_result->sequence.remove_dates();
                         }
                         if (scan_result->fasta.type_subtype.h_or_b() == "B" && scan_result->fasta.lineage.empty())
-                            messages.push_back({"invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name), scan_result->fasta.filename, scan_result->fasta.line_no});
+                            messages.emplace_back("invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name), acmacs::messages::position_t{scan_result->fasta.filename, scan_result->fasta.line_no}, MESSAGE_CODE_POSITION);
                         sequences_per_file[f_no].push_back(std::move(*scan_result));
-                        add_message(messages_per_file[f_no], std::move(messages));
+                        acmacs::messages::move(messages_per_file[f_no], std::move(messages));
                     }
                 }
                 else
@@ -132,7 +115,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
         std::move(per_file.begin(), per_file.end(), std::back_inserter(all_sequences));
 
     for (auto it = std::next(std::begin(messages_per_file)); it != std::end(messages_per_file); ++it)
-        add_message(messages_per_file.front(), std::move(*it));
+        acmacs::messages::move(messages_per_file.front(), std::move(*it));
 
     return {all_sequences, messages_per_file.front()};
 
@@ -397,7 +380,7 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names)
+acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names)
 {
     switch (name_adjustements) {
       case scan_name_adjustments::gisaid:
@@ -418,9 +401,9 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
         AD_WARNING("no year at the end of name: \"{}\" @@ {}:{}", source.sequence.name(), source.fasta.filename, source.fasta.line_no);
 
-    messages_t messages;
+    acmacs::messages::messages_t messages;
     for (const auto& msg : name_parse_result.messages)
-        messages.push_back({msg.key, fmt::format("{} \"{}\"", msg.value, name_parse_result.raw), source.fasta.filename, source.fasta.line_no});
+        messages.emplace_back(msg.key, fmt::format("{} \"{}\"", msg.value, name_parse_result.raw), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
 
     set_country(name_parse_result.country, source, messages);
 
@@ -431,7 +414,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
         if (passage.empty()) {
-            messages.push_back({acmacs::virus::name::parsing_message_t::unrecognized_passage, passage_extra, source.fasta.filename, source.fasta.line_no});
+            messages.emplace_back(acmacs::messages::key::unrecognized_passage, passage_extra, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
             source.sequence.add_passage(acmacs::virus::Passage{passage_extra});
         }
         else {
@@ -446,13 +429,13 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
     // parse lineage
 
     // if (!result.passage.empty())
-    //     messages.push_back({"name field contains passage", result.passage, source.fasta.filename, source.fasta.line_no});
+    //     messages.emplace_back("name field contains passage", result.passage, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
 
     if (const auto annotations = source.sequence.annotations(); !annotations.empty()) {
         if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
             source.sequence.remove_annotations();
         else if (!std::regex_match(std::begin(annotations), std::end(annotations), re_valid_annotations))
-            messages.push_back({"fasta name contains annotations", fmt::format("{}", annotations), source.fasta.filename, source.fasta.line_no});
+            messages.emplace_back("fasta name contains annotations", fmt::format("{}", annotations), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
     }
     return messages;
 
@@ -460,7 +443,7 @@ acmacs::seqdb::v3::scan::fasta::messages_t acmacs::seqdb::v3::scan::fasta::norma
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, messages_t& messages)
+void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, acmacs::messages::messages_t& messages)
 {
     using namespace std::string_view_literals;
 
@@ -497,7 +480,7 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
         }
         else {
             if (!is_valid({source.fasta.country, country}))
-                messages.push_back({"country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country), source.fasta.filename, source.fasta.line_no});
+                messages.emplace_back("country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
             source.sequence.country(source.fasta.country); // prefer country from fasta
         }
     }
