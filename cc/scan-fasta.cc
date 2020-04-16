@@ -8,6 +8,7 @@
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/string-strip.hh"
+#include "acmacs-base/string-join.hh"
 #include "locationdb/locdb.hh"
 #include "acmacs-virus/virus-name-normalize.hh"
 #include "seqdb-3/scan-fasta.hh"
@@ -175,11 +176,11 @@ std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan
         return {input, {}};
 
     if (*input.first != '>')
-        throw scan_error(acmacs::string::concat(':', input.line_no, ": '>' expected"));
+        throw scan_error{fmt::format(":{}, : '>' expected", input.line_no)};
     const auto name_start = ++input.first;
     for (; !input.done() && *input.first != '\n'; ++input.first);
     if (input.done())
-        throw scan_error(acmacs::string::concat(':', input.line_no, ": unexpected end of input"));
+        throw scan_error{fmt::format(":{}: unexpected end of input", input.line_no)};
     input.name_line_no = input.line_no;
     ++input.line_no;
     auto name_size = static_cast<size_t>(input.first - name_start);
@@ -195,7 +196,7 @@ std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan
               if (eol)
                   return {input, {name, std::string_view(seq_start, static_cast<size_t>(input.first - seq_start))}};
               else
-                  throw scan_error(acmacs::string::concat(':', input.line_no, ": unexpected '>'"));
+                  throw scan_error{fmt::format(":{}: unexpected '>'", input.line_no)};
               // break;
           case '\n':
               ++input.line_no;
