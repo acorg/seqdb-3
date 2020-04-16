@@ -24,9 +24,14 @@ namespace acmacs::seqdb
         {
             namespace fasta
             {
-                static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
+                static std::optional<scan_result_t> name_gisaid_fields(std::string_view name, const hint_t& hints, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
+                static std::optional<scan_result_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
+                static std::optional<scan_result_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
+                static std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
+
+                static date::year_month_day gisaid_parse_date(std::string_view source, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
                 static std::string_view parse_lab(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
-                static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+                static acmacs::virus::type_subtype_t gisaid_parse_subtype(const acmacs::uppercase& source, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
                 static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
@@ -75,27 +80,28 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
                 std::tie(file_input, sequence_ref) = scan(file_input);
 
                 try {
-                std::optional<scan_result_t> scan_result;
-                for (auto parser : {&name_gisaid_fields, &name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
-                    scan_result = (*parser)(sequence_ref.name, hints, filename, file_input.name_line_no);
-                    if (scan_result.has_value())
-                        break;
-                }
-                if (scan_result.has_value()) {
-                    auto messages = normalize_name(*scan_result, options.dbg, options.name_adjustements, options.prnt_names);
-                    if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
-                        if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
-                            || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
-                            scan_result->sequence.remove_dates();
-                        }
-                        if (scan_result->fasta.type_subtype.h_or_b() == "B" && scan_result->fasta.lineage.empty())
-                            messages.emplace_back("invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name), acmacs::messages::position_t{scan_result->fasta.filename, scan_result->fasta.line_no}, MESSAGE_CODE_POSITION);
-                        sequences_per_file[f_no].push_back(std::move(*scan_result));
-                        acmacs::messages::move_and_add_source(messages_per_file[f_no], std::move(messages), acmacs::messages::position_t{filename, file_input.name_line_no});
+                    std::optional<scan_result_t> scan_result;
+                    for (auto parser : {&name_gisaid_fields, &name_gisaid_spaces, &name_gisaid_underscores, &name_plain}) {
+                        scan_result = (*parser)(sequence_ref.name, hints, messages_per_file[f_no], filename, file_input.name_line_no);
+                        if (scan_result.has_value())
+                            break;
                     }
-                }
-                else
-                    fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
+                    if (scan_result.has_value()) {
+                        auto messages = normalize_name(*scan_result, options.dbg, options.name_adjustements, options.prnt_names);
+                        if (import_sequence(sequence_ref.sequence, scan_result->sequence, options)) {
+                            if (!scan_result->sequence.reassortant().empty()  // dates for reassortants in gisaid are irrelevant
+                                || scan_result->sequence.lab_in({"NIBSC"})) { // dates provided by NIBSC cannot be trusted, they seem to be put date when they made reassortant
+                                scan_result->sequence.remove_dates();
+                            }
+                            if (scan_result->fasta.type_subtype.h_or_b() == "B" && scan_result->fasta.lineage.empty())
+                                messages.emplace_back("invalid-lineage", fmt::format("no lineage for \"{}\"", scan_result->fasta.name),
+                                                      acmacs::messages::position_t{scan_result->fasta.filename, scan_result->fasta.line_no}, MESSAGE_CODE_POSITION);
+                            sequences_per_file[f_no].push_back(std::move(*scan_result));
+                            acmacs::messages::move_and_add_source(messages_per_file[f_no], std::move(messages), acmacs::messages::position_t{filename, file_input.name_line_no});
+                        }
+                    }
+                    else
+                        fmt::print(stderr, "WARNING: {}:{}: unable to parse fasta name: {}\n", filename, file_input.name_line_no, sequence_ref.name);
                 }
                 catch (manually_excluded& /*msg*/) {
                     // fmt::print("INFO: manually excluded: {} {} {}:{}\n", sequence_ref.name.substr(0, sequence_ref.name.find("_|_")), msg, filename, file_input.name_line_no);
@@ -206,7 +212,7 @@ std::tuple<acmacs::seqdb::v3::scan::fasta::scan_input_t, acmacs::seqdb::v3::scan
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_fields(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_fields(std::string_view name, const hint_t& /*hints*/, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     // Isolate name_|_a=Isolate ID_|_b=Type_|_c=Passage details/history_|_d=Lineage_|_e=Collection date_|_f=Submitter_|_g=Sample ID by sample provider_|_
     // h=Sample ID by submitting lab_|_i=Last modified_|_j=Originating lab_|_k=Submitting lab_|_l=Segment_|_m=Segment number_|_n=Identifier_|_o=DNA Accession no._|_p=DNA INSDC_|_
@@ -215,7 +221,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     auto fields = acmacs::string::split(name, "_|_");
     if ((fields.size() != 18 && fields.size() != 19) || fields[1].substr(0, 2) != "a=" || !fields.back().empty()) {
         if (fields.size() > 1)
-            fmt::print(stderr, "{}:{}: warning: name_gisaid_fields: unexpected number of fields: {}: {}\n", filename, line_no, fields.size(), name);
+            AD_WARNING("name_gisaid_fields: unexpected number of fields: {}: {} @@ {}:{}\n", fields.size(), name, filename, line_no);
         return std::nullopt;
     }
 
@@ -229,14 +235,14 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
 
     for (auto it = std::next(std::begin(fields)); it != std::prev(std::end(fields)); ++it) {
         if (it->at(1) != '=')
-            throw scan_error(fmt::format("{}:{}: error: field {} unrecognized: {}", filename, line_no, it - std::begin(fields), *it));
+            throw scan_error(fmt::format("ERROR: field {} unrecognized: {} @@ {}:{}", it - std::begin(fields), *it, filename, line_no));
         if (it->size() > 2) { // non-empty value
             switch (it->at(0)) {
                 case 'a':
                     result.sequence.add_isolate_id(it->substr(2));
                     break;
                 case 'b':
-                    result.fasta.type_subtype = parse_subtype(it->substr(2), filename, line_no);
+                    result.fasta.type_subtype = gisaid_parse_subtype(it->substr(2), messages, filename, line_no);
                     break;
                 case 'c':
                     result.fasta.passage = it->substr(2);
@@ -245,7 +251,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                     result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(it->substr(2), filename, line_no)};
                     break;
                 case 'e':
-                    result.sequence.add_date(seqdb::scan::format_date(parse_date(it->substr(2), filename, line_no)));
+                    result.sequence.add_date(seqdb::scan::format_date(gisaid_parse_date(it->substr(2), messages, filename, line_no)));
                     break;
                 case 'f':
                     result.sequence.add_submitter(acmacs::string::strip(it->substr(2)));
@@ -257,7 +263,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                     lab_id = it->substr(2);
                     break;
                 case 'i':
-                    result.sequence.add_gisaid_last_modified(seqdb::scan::format_date(parse_date(it->substr(2), filename, line_no)));
+                    result.sequence.add_gisaid_last_modified(seqdb::scan::format_date(gisaid_parse_date(it->substr(2), messages, filename, line_no)));
                     break;
                 case 'j':
                     result.sequence.add_originating_lab(acmacs::string::strip(it->substr(2)));
@@ -283,7 +289,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
                 case 'x': // manually excluded
                     throw manually_excluded{it->substr(2)};
                 default:
-                    throw scan_error(fmt::format("{}:{}: error: field {} unrecognized: {}", filename, line_no, it - std::begin(fields), *it));
+                    throw scan_error(fmt::format("ERROR: field {} unrecognized: {} @@ {}:{}", it - std::begin(fields), *it, filename, line_no));
             }
         }
     }
@@ -296,7 +302,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_spaces(std::string_view name, const hint_t& /*hints*/, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_spaces(std::string_view name, const hint_t& /*hints*/, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     // name | date | passage | lab_id | lab | subtype | lineage
 
@@ -314,13 +320,13 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     result.fasta.name = fields[0];
     result.fasta.filename = filename;
     result.fasta.line_no = line_no;
-    result.sequence.add_date(seqdb::scan::format_date(parse_date(acmacs::string::strip(fields[1]), filename, line_no)));
+    result.sequence.add_date(seqdb::scan::format_date(gisaid_parse_date(acmacs::string::strip(fields[1]), messages, filename, line_no)));
     if (fields.size() > 2)
         result.fasta.passage = acmacs::string::strip(fields[2]);
     if (fields.size() > 4)
         result.sequence.add_lab_id(parse_lab(acmacs::string::strip(fields[4]), filename, line_no), acmacs::string::strip(fields[3]));
     if (fields.size() > 5)
-        result.fasta.type_subtype = parse_subtype(acmacs::string::strip(fields[5]), filename, line_no);
+        result.fasta.type_subtype = gisaid_parse_subtype(acmacs::string::strip(fields[5]), messages, filename, line_no);
     if (fields.size() > 6)
         result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(acmacs::string::strip(fields[6]), filename, line_no)};
 
@@ -333,20 +339,20 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_gisaid_underscores(std::string_view name, const hint_t& hints, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     const auto fields = acmacs::string::split(name, "_|_");
     if (fields.size() < 2)
         return std::nullopt;
     std::string source_without_underscores(name);
     ::string::replace(source_without_underscores, '_', ' ');
-    return name_gisaid_spaces(source_without_underscores, hints, filename, line_no);
+    return name_gisaid_spaces(source_without_underscores, hints, messages, filename, line_no);
 
 } // acmacs::seqdb::v3::scan::fasta::name_gisaid_underscores
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_plain(std::string_view name, const hint_t& hints, std::string_view /*filename*/, size_t /*line_no*/)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::scan::fasta::name_plain(std::string_view name, const hint_t& hints, acmacs::messages::messages_t& /*messages*/, std::string_view /*filename*/, size_t /*line_no*/)
 {
     scan_result_t result;
     result.fasta.entry_name = result.fasta.name = name;
@@ -437,7 +443,7 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
         if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
             source.sequence.remove_annotations();
         else if (!std::regex_match(std::begin(annotations), std::end(annotations), re_valid_annotations))
-            messages.emplace_back("fasta name contains annotations", fmt::format("{}", annotations), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+            messages.emplace_back(acmacs::messages::key::fasta_name_contains_annotations, fmt::format("{}", annotations), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
     }
     return messages;
 
@@ -482,7 +488,7 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
         }
         else {
             if (!is_valid({source.fasta.country, country}))
-                messages.emplace_back("country-name-mismatch", fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+                messages.emplace_back(acmacs::messages::key::fasta_country_name_mismatch, fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
             source.sequence.country(source.fasta.country); // prefer country from fasta
         }
     }
@@ -509,7 +515,7 @@ static const std::regex re_CDC_LV_name{"/(19\\d\\d|20[0-2]\\d)[_\\-]?CDC[_\\-]?L
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, acmacs::messages::messages_t& messages, debug dbg)
+void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, acmacs::messages::messages_t& /*messages*/, debug dbg)
 {
     const std::string name_orig{dbg == debug::yes ? source.fasta.name : std::string{}};
 
@@ -609,7 +615,7 @@ bool acmacs::seqdb::v3::scan::fasta::import_sequence(std::string_view raw_sequen
 
 // ----------------------------------------------------------------------
 
-date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view src, std::string_view filename, size_t line_no)
+date::year_month_day acmacs::seqdb::v3::scan::fasta::gisaid_parse_date(std::string_view src, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     const std::string source_s = ::string::upper(src);
     const std::string_view source = source_s;
@@ -640,10 +646,10 @@ date::year_month_day acmacs::seqdb::v3::scan::fasta::parse_date(std::string_view
     };
 
     if (!source.empty() && !month_and_day_unknown() && !day_unknown() && !extract_date())
-        AD_ERROR("cannot parse date: [{}] @@ {}:{}", source, filename, line_no);
+        messages.emplace_back(acmacs::messages::key::gisaid_invalid_date, source, acmacs::messages::position_t{filename, line_no}, MESSAGE_CODE_POSITION);
     return result;
 
-} // acmacs::seqdb::v3::scan::fasta::parse_date
+} // acmacs::seqdb::v3::scan::fasta::gisaid_parse_date
 
 // ----------------------------------------------------------------------
 
@@ -670,10 +676,10 @@ std::string_view acmacs::seqdb::v3::scan::fasta::parse_lab(const acmacs::upperca
 
 // ----------------------------------------------------------------------
 
-acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
+acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::gisaid_parse_subtype(const acmacs::uppercase& source, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     if (source.empty())
-        AD_WARNING("@@ {}:{}: no subtype", filename, line_no);
+        messages.emplace_back(acmacs::messages::key::gisaid_invalid_subtype, source, acmacs::messages::position_t{filename, line_no}, MESSAGE_CODE_POSITION);
     if (source.size() >= 8 && source->front() == 'A') {
         if (source[5] != '0' && source[7] == '0') // H3N0
             return acmacs::virus::type_subtype_t{fmt::format("A({})", source->substr(4, 2))};
@@ -684,7 +690,7 @@ acmacs::virus::type_subtype_t acmacs::seqdb::v3::scan::fasta::parse_subtype(cons
         return acmacs::virus::type_subtype_t{"B"};
     return {};
 
-} // acmacs::seqdb::v3::scan::fasta::parse_subtype
+} // acmacs::seqdb::v3::scan::fasta::gisaid_parse_subtype
 
 // ----------------------------------------------------------------------
 

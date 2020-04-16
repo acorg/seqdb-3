@@ -30,9 +30,9 @@ inline std::string_view string_view(cursor_t begin, cursor_t end) { return std::
 enum class na_field : int { genbank_accession = 0, host, segment_no, subtype, country, date, sequence_length, virus_name, age, gender, completeness };
 constexpr inline na_field& operator++(na_field& fld) { return fld = static_cast<na_field>(static_cast<int>(fld) + 1); }
 
-static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
+static acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
 static std::string fix_country(std::string_view source);
-static std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no);
+static std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
 static acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
@@ -131,7 +131,6 @@ std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::messages:
     }
     else {
         messages.emplace_back(acmacs::messages::key::ncbi_influenza_a_not_fixed, source, MESSAGE_CODE_POSITION);
-        // AD_WARNING("INFLUENZA A VIRUS not fixed: \"{}\"", source);
         return std::string{source};
     }
 
@@ -161,7 +160,6 @@ std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::messages:
     }
     else {
         messages.emplace_back(acmacs::messages::key::ncbi_influenza_b_not_fixed, source, MESSAGE_CODE_POSITION);
-        // AD_WARNING("INFLUENZA B VIRUS not fixed: \"{}\"", source);
         return std::string{source};
     }
 
@@ -186,7 +184,6 @@ std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messag
     }
     else {
         messages.emplace_back(acmacs::messages::key::ncbi_not_fixed, source, MESSAGE_CODE_POSITION);
-        // AD_WARNING("ncbi rest not fixed: \"{}\"", source);
         return std::string{source};
     }
 
@@ -194,7 +191,7 @@ std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messag
 
 // ----------------------------------------------------------------------
 
-acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std::string_view filename, size_t line_no)
+acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     using namespace acmacs::regex;
 
@@ -222,7 +219,7 @@ acmacs::virus::type_subtype_t parse_subtype(const acmacs::uppercase& source, std
         return acmacs::virus::type_subtype_t{res->front()};
     }
 
-    AD_WARNING("unrecognized subtype: \"{}\" @@ {}:{}", source, filename, line_no);
+    messages.emplace_back(acmacs::messages::key::ncbi_unrecognized_subtype, source, acmacs::messages::position_t{filename, line_no}, MESSAGE_CODE_POSITION);
     return acmacs::virus::type_subtype_t{};
 }
 
@@ -255,7 +252,7 @@ std::string fix_country(std::string_view source)
 
 // ----------------------------------------------------------------------
 
-std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, std::string_view filename, size_t line_no)
+std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_dat_entry(cursor_t& cur, cursor_t end, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no)
 {
     acmacs::seqdb::v3::scan::fasta::scan_result_t result;
     result.fasta.filename = filename;
@@ -278,7 +275,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influenza_na_d
                     result.fasta.name = token;
                     break;
                 case na_field::subtype:
-                    result.fasta.type_subtype = parse_subtype(token, filename, line_no);
+                    result.fasta.type_subtype = parse_subtype(token, messages, filename, line_no);
                     break;
                 case na_field::date:
                     if (const auto dt = parse_date(token, filename, line_no); date::year_ok(dt))
@@ -371,7 +368,7 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::
     auto cur = std::begin(influenza_na_dat);
     const auto end = std::end(influenza_na_dat);
     for (size_t line_no = 1; cur != end; ++line_no) {
-        if (auto scan_result = read_influenza_na_dat_entry(cur, end, filename_dat, line_no); scan_result.has_value()) {
+        if (auto scan_result = read_influenza_na_dat_entry(cur, end, results.messages, filename_dat, line_no); scan_result.has_value()) {
             auto messages = normalize_name(*scan_result, options.dbg, scan_name_adjustments::ncbi, options.prnt_names);
             // fmt::print("{:4d} {:8s} \"{}\" {} {}\n", line_no, *res->fasta.type_subtype, res->fasta.name, res->fasta.country, res->sequence.sample_id_by_sample_provider());
             if (scan_result->fasta.type_subtype.empty() && !scan_result->sequence.name().empty())
@@ -405,6 +402,7 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
     while (!file_input.done()) {
         scan_output_t sequence_ref;
         std::tie(file_input, sequence_ref) = scan(file_input);
+        const acmacs::messages::position_t file_pos{filename_fna, file_input.name_line_no};
         if (const auto fields = acmacs::string::split(sequence_ref.name, "|"); fields.size() == 5) {
             if (const auto found = ncbi_id_to_entry.find(fields[3]); found != ncbi_id_to_entry.end()) {
                 if (import_sequence(sequence_ref.sequence, found->second->sequence, options)) {
@@ -416,13 +414,13 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
                         if (found->second->sequence.name().empty())
                             found->second->sequence.name(result_for_name_in_fna.sequence.name());
                         else if (result_for_name_in_fna.sequence.name() != found->second->sequence.name())
-                            results.messages.emplace_back("ncbi-dat-fna-name-difference", fmt::format("dat:\"{}\" fna:\"{}\"", found->second->sequence.name(), result_for_name_in_fna.sequence.name()), acmacs::messages::position_t{result_for_name_in_fna.fasta.filename, result_for_name_in_fna.fasta.line_no}, MESSAGE_CODE_POSITION);
+                            results.messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", found->second->sequence.name(), result_for_name_in_fna.sequence.name()), file_pos, MESSAGE_CODE_POSITION);
                     }
                 }
             }
         }
         else
-            AD_WARNING("unrecognized ncbi fna name: \"{}\"", sequence_ref.name);
+            results.messages.emplace_back(acmacs::messages::key::ncbi_unrecognized_fna_name, sequence_ref.name, file_pos, MESSAGE_CODE_POSITION);
     }
 
 }

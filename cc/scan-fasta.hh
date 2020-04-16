@@ -16,8 +16,17 @@ namespace acmacs::messages::inline v1
         constexpr static inline std::string_view ncbi_not_fixed{"ncbi-not-fixed"};
         constexpr static inline std::string_view ncbi_influenza_a_not_fixed{"ncbi-influenza-a-not-fixed"};
         constexpr static inline std::string_view ncbi_influenza_b_not_fixed{"ncbi-influenza-b-not-fixed"};
+        constexpr static inline std::string_view ncbi_unrecognized_subtype{"ncbi-unrecognized-subtype"};
+        constexpr static inline std::string_view ncbi_unrecognized_fna_name{"ncbi-unrecognized-fna-name"};
+        constexpr static inline std::string_view ncbi_dat_fna_name_difference{"ncbi-dat-fna-name-difference"};
+
+        constexpr static inline std::string_view gisaid_invalid_date{"gisaid-invalid-date"};
+        constexpr static inline std::string_view gisaid_invalid_subtype{"gisaid-invalid-subtype"};
 
         constexpr static inline std::string_view fasta_no_year_at_the_end_of_name{"fasta-no-year-at-the-end-of-name"};
+        constexpr static inline std::string_view fasta_name_contains_annotations{"fasta-name-contains-annotations"};
+        constexpr static inline std::string_view fasta_country_name_mismatch{"fasta-country-name-mismatch"};
+
     }
 }
 
@@ -159,11 +168,6 @@ namespace acmacs::seqdb
                 // details
 
                 std::tuple<scan_input_t, scan_output_t> scan(scan_input_t input);
-
-                std::optional<scan_result_t> name_gisaid_fields(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
-                std::optional<scan_result_t> name_gisaid_spaces(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
-                std::optional<scan_result_t> name_gisaid_underscores(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
-                std::optional<scan_result_t> name_plain(std::string_view name, const hint_t& hints, std::string_view filename, size_t line_no);
 
                 // returns error and warning messages
                 acmacs::messages::messages_t normalize_name(scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names);
