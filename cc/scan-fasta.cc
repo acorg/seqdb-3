@@ -455,31 +455,48 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
 {
     using namespace std::string_view_literals;
 
-#include "acmacs-base/global-constructors-push.hh"
-    using pp = std::pair<std::string_view, std::string_view>; // fasta, name_parse
-    static std::array valid_mismatches{
-        pp{"UNITED STATES OF AMERICA"sv, "GEORGIA"sv},
-        pp{"NEW ZEALAND"sv, "UNITED KINGDOM"sv},
-        pp{"PERU"sv, "URUGUAY"sv},
-        // pp{"HONG KONG"sv, "CHINA"sv},
-        // pp{"COOK ISLANDS"sv, "NEW ZEALAND"sv},
-        pp{"ARGENTINA"sv, "SPAIN"sv},
-        pp{"UNITED STATES OF AMERICA"sv, "CUBA"sv}, // SANTA CLARA
-        pp{"BOLIVIA"sv, "ARGENTINA"sv}, // SANTA CRUZ
-        pp{"GERMANY"sv, "BELGIUM"sv}, // DAMME
-        pp{"CHINA"sv, "SOUTH KOREA"sv},
-        // pp{"GREENLAND"sv, "DENMARK"sv},
+    enum class use_name_from { fasta_no_warn, fasta_warn, name_parse };
+    struct pp
+    {
+        std::string_view fasta;
+        std::string_view name_parse;
+        use_name_from use;
     };
-#include "acmacs-base/diagnostics-pop.hh"
 
-    const auto is_valid = [](pp&& countries) {
-        if (countries.first == countries.second)
-            return true;
+    static std::array valid_mismatches{
+        pp{"UNITED STATES OF AMERICA"sv, "GEORGIA"sv, use_name_from::fasta_no_warn},
+        pp{"NEW ZEALAND"sv, "UNITED KINGDOM"sv, use_name_from::fasta_no_warn},
+        pp{"PERU"sv, "URUGUAY"sv, use_name_from::fasta_no_warn},
+        // pp{"HONG KONG"sv, "CHINA"sv, use_name_from::fasta_no_warn},
+        // pp{"COOK ISLANDS"sv, "NEW ZEALAND"sv, use_name_from::fasta_no_warn},
+        pp{"ARGENTINA"sv, "SPAIN"sv, use_name_from::fasta_no_warn},
+        pp{"UNITED STATES OF AMERICA"sv, "CUBA"sv, use_name_from::fasta_no_warn}, // SANTA CLARA
+        pp{"BOLIVIA"sv, "ARGENTINA"sv, use_name_from::fasta_no_warn},             // SANTA CRUZ
+        pp{"GERMANY"sv, "BELGIUM"sv, use_name_from::fasta_no_warn},               // DAMME
+        pp{"CHINA"sv, "SOUTH KOREA"sv, use_name_from::fasta_no_warn},
+        // pp{"GREENLAND"sv, "DENMARK"sv, use_name_from::fasta_no_warn},
+
+        pp{"REUNION"sv, "LA REUNION"sv, use_name_from::name_parse},
+        pp{"GUAM"sv, "NORTHERN MARIANA ISLANDS"sv, use_name_from::name_parse},
+        pp{"CZECHOSLOVAKIA"sv, "CZECH REPUBLIC"sv, use_name_from::name_parse},
+        pp{"UNITED STATES OF AMERICA"sv, "SOUTH KOREA"sv, use_name_from::name_parse}, // A/SOUTH KOREA/6859/2018 -> error in ncbi?
+        pp{"MACAU"sv, "CHINA"sv, use_name_from::name_parse},
+        pp{"STATE OF PALESTINE"sv, "ISRAEL"sv, use_name_from::name_parse},
+        pp{"KOREA"sv, "SOUTH KOREA"sv, use_name_from::name_parse},
+        pp{"USSR"sv, "RUSSIA"sv, use_name_from::name_parse},
+        pp{"FRANCE"sv, "LA REUNION"sv, use_name_from::name_parse},
+                // pp{sv, sv, use_name_from::name_parse},
+                // pp{sv, sv, use_name_from::name_parse},
+    };
+
+    const auto validate = [](std::string_view from_fasta, std::string_view from_name_parse) -> use_name_from {
+        if (from_fasta == from_name_parse)
+            return use_name_from::name_parse;
         for (const auto& en : valid_mismatches) {
-            if (en == countries)
-                return true;
+            if (en.fasta == from_fasta && en.name_parse == from_name_parse)
+                return en.use;
         }
-        return false;
+        return use_name_from::fasta_warn;
     };
 
     if (!country.empty()) {
@@ -487,9 +504,20 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
             source.sequence.country(std::move(country));
         }
         else {
-            if (!is_valid({source.fasta.country, country}))
-                messages.emplace_back(acmacs::messages::key::fasta_country_name_mismatch, fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
-            source.sequence.country(source.fasta.country); // prefer country from fasta
+            switch (validate(source.fasta.country, country)) {
+                case use_name_from::fasta_no_warn:
+                    source.sequence.country(source.fasta.country);
+                    break;
+                case use_name_from::fasta_warn:
+                    messages.emplace_back(acmacs::messages::key::fasta_country_name_mismatch,
+                                          fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country),
+                                          acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+                    source.sequence.country(source.fasta.country);
+                    break;
+                case use_name_from::name_parse:
+                    source.sequence.country(country);
+                    break;
+            }
         }
     }
     else if (!source.fasta.country.empty())

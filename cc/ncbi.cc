@@ -39,6 +39,7 @@ static date::year_month_day parse_date(std::string_view source, std::string_view
 static std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
 static std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
 static std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
+static void fix_ncbi_name_remove_meaningless(std::string& source);
 
 // ----------------------------------------------------------------------
 
@@ -80,6 +81,7 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
         fixed.assign(source.substr(prefix_cdna_a.size()));
     else
         fixed = fix_ncbi_name_rest(source, messages, dbg);
+    fix_ncbi_name_remove_meaningless(fixed);
     ::string::replace_in_place(fixed, '_', ' ');
     acmacs::string::strip_in_place(fixed);
     return fixed;
@@ -96,7 +98,9 @@ std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view sourc
     ")"
 
     // "(H1N1)", "(MIXED,H1N1)", "(MIXED.H1N1)", "(MIXED)", "(H1N1)(H1N1)" "(HxNx)"
-#define NCBI_MIXED_AND_SUBTYPE "(?:\\((?:MIXED|(?:MIXED[\\.,])?(?:[HNX\\d\\?\\-/V]+))\\))*"
+#define NCBI_SUBTYPE "H\\d{1,2}/?(?:N(?:\\d{1,2}|-|\\?)V?)?\\b"
+#define NCBI_SUBTYPE_OPTIONAL "(?:" NCBI_SUBTYPE "\\s+)?"
+#define NCBI_MIXED_AND_SUBTYPE "(?:\\((?:MIXED|(?:MIXED[\\.,])?" NCBI_SUBTYPE ")\\))*"
 #define NCBI_REASSORTANT_IN_PAREN "(?:\\((X-\\d+[A-Z]*)\\))?"
 #define NCBI_PASSAGED_IN_PAREN "(?:\\(([A-Z]+[\\-\\s]PASSAGED?)\\))?"
 #define NCBI_CLONE "(?:\\((CLONE)=([A-Z\\d]+)\\))?"
@@ -113,12 +117,11 @@ std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::messages:
         look_replace_t{std::regex("^ *\\(A/REASSORTANT/(?:A/)?" NCBI_VIRUS_NAME "\\(([^\\(\\)]+)\\)" NCBI_MIXED_AND_SUBTYPE "\\)", std::regex::icase), {"A/$2 $1"}},
         look_replace_t{std::regex("^ *\\(A/((?:NYMC )?X-[\\dA-Z]+)\\((?:A/)?" NCBI_VIRUS_NAME "\\)\\(([^\\(\\)]+)\\)\\)", std::regex::icase), {"A/$2$3 $1"}},
         look_replace_t{std::regex("^ *\\(" NCBI_VIRUS_NAME NCBI_CLONE NCBI_REASSORTANT_IN_PAREN NCBI_PASSAGED_IN_PAREN NCBI_MIXED_AND_SUBTYPE "\\)", std::regex::icase), {"$1 $2 $3 $4 $5"}},
-        look_replace_t{std::regex("^ STRAIN " NCBI_VIRUS_NAME NCBI_MIXED_AND_SUBTYPE " SEGMENT ", std::regex::icase), {"$1"}},
-        look_replace_t{std::regex("^ " NCBI_VIRUS_NAME NCBI_MIXED_AND_SUBTYPE " [A-Z]+ GENE ", std::regex::icase), {"$1"}},
         look_replace_t{std::regex("^ *\\(" NCBI_MIXED_AND_SUBTYPE "\\) SEGMENT \\d ISOLATE " NCBI_VIRUS_NAME NCBI_MIXED_AND_SUBTYPE " CRNA SEQUENCE", std::regex::icase), {"$1"}},
+        look_replace_t{std::regex("^ STRAIN " NCBI_VIRUS_NAME NCBI_MIXED_AND_SUBTYPE " SEGMENT ", std::regex::icase), {"$1"}},
         look_replace_t{std::regex("^[A-Z\\s\\d,]* STRAIN[\\s:]+" NCBI_VIRUS_NAME "\\s*" NCBI_MIXED_AND_SUBTYPE, std::regex::icase), {"$1$2"}},
-        look_replace_t{std::regex("^\\s+" NCBI_VIRUS_NAME "\\s*" NCBI_MIXED_AND_SUBTYPE, std::regex::icase), {"$1$2"}},
-        // look_replace_t{std::regex("^(?:H\\d{1,2}N\\d{1,2})$", std::regex::icase), {""}},
+        look_replace_t{std::regex("^\\s+" NCBI_SUBTYPE "$", std::regex::icase), {""}},
+        look_replace_t{std::regex("^\\s+" NCBI_SUBTYPE_OPTIONAL NCBI_VIRUS_NAME "\\s*" NCBI_MIXED_AND_SUBTYPE, std::regex::icase), {"$1$2"}}, // " [A-Z]+ GENE "
     };
 #include "acmacs-base/diagnostics-pop.hh"
 
@@ -188,6 +191,38 @@ std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messag
     }
 
 } // fix_ncbi_name_rest
+
+// ----------------------------------------------------------------------
+
+void fix_ncbi_name_remove_meaningless(std::string& source)
+{
+#include "acmacs-base/global-constructors-push.hh"
+    static const std::regex re_meaningless("\\s*(?:"
+                                           "genomic"
+                                           "|"
+                                           "gene"
+                                           "|"
+                                           "RNA"
+                                           "|"
+                                           "(?:for\\s*)(?:pre)?ha?emagglutinin(?:,?\\s*HA\\d?\\s*DOMAIN|\\s*MRNA)?"
+                                           "|"
+                                           "(?:precursor\\s*)HA1 region"
+                                           "|"
+                                           ",?\\s*partial\\s*cds"
+                                           "|"
+                                           "segment\\s*\\d"
+                                           "|"
+                                           "\\d\\s*SUBUNIT"
+                                           ")",
+                                           std::regex::icase);
+#include "acmacs-base/diagnostics-pop.hh"
+
+    std::smatch match_meaningless;
+    while (std::regex_search(source, match_meaningless, re_meaningless)) {
+        source.erase(static_cast<size_t>(match_meaningless.position(0)), static_cast<size_t>(match_meaningless.length(0)));
+    }
+
+} // fix_ncbi_name_remove_meaningless
 
 // ----------------------------------------------------------------------
 
