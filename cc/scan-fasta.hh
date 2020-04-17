@@ -13,9 +13,7 @@ namespace acmacs::messages::inline v1
 {
     namespace key
     {
-        constexpr static inline std::string_view ncbi_not_fixed{"ncbi-not-fixed"};
-        constexpr static inline std::string_view ncbi_influenza_a_not_fixed{"ncbi-influenza-a-not-fixed"};
-        constexpr static inline std::string_view ncbi_influenza_b_not_fixed{"ncbi-influenza-b-not-fixed"};
+        constexpr static inline std::string_view ncbi_unrecognized{"ncbi-unrecognized"};
         constexpr static inline std::string_view ncbi_unrecognized_subtype{"ncbi-unrecognized-subtype"};
         constexpr static inline std::string_view ncbi_unrecognized_fna_name{"ncbi-unrecognized-fna-name"};
         constexpr static inline std::string_view ncbi_dat_fna_name_difference{"ncbi-dat-fna-name-difference"};
