@@ -411,14 +411,8 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
         if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
             messages.emplace_back(acmacs::messages::key::fasta_no_year_at_the_end_of_name, source.sequence.name(), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no},
                                   MESSAGE_CODE_POSITION);
-
-        for (const auto& msg : name_parse_result.messages) {
-            const auto val = msg.value == name_parse_result.raw ? msg.value : fmt::format("{} \"{}\"", msg.value, name_parse_result.raw);
-            messages.emplace_back(msg.key, val, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
-        }
-
+        acmacs::messages::move_and_add_source(messages, std::move(name_parse_result.messages), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no});
         set_country(name_parse_result.country, source, messages);
-
         source.sequence.continent(std::move(name_parse_result.continent));
         source.sequence.reassortant(name_parse_result.reassortant);
         source.sequence.annotations(std::move(name_parse_result.extra));
