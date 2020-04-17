@@ -387,38 +387,44 @@ static const std::regex re_name_ends_with_year{"/(19\\d\\d|20[0-2]\\d)$"};
 
 #include "acmacs-base/diagnostics-pop.hh"
 
-acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements, print_names prnt_names)
+acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, debug dbg, scan_name_adjustments name_adjustements,
+                                                                            print_names prnt_names)
 {
     acmacs::messages::messages_t messages;
     switch (name_adjustements) {
-      case scan_name_adjustments::gisaid:
-          fix_gisaid_name(source, messages, dbg);
-          break;
-      case scan_name_adjustments::ncbi:
-          source.fasta.name = fix_ncbi_name(source.fasta.name, messages, dbg);
-          break;
-      case scan_name_adjustments::none:
-          // AD_DEBUG_IF(dbg, "source.fasta.name: \"{}\"", source.fasta.name);
-          break;
+        case scan_name_adjustments::gisaid:
+            fix_gisaid_name(source, messages, dbg);
+            break;
+        case scan_name_adjustments::ncbi:
+            source.fasta.name = fix_ncbi_name(source.fasta.name, messages, dbg);
+            break;
+        case scan_name_adjustments::none:
+            // AD_DEBUG_IF(dbg, "source.fasta.name: \"{}\"", source.fasta.name);
+            break;
     }
     if (prnt_names == print_names::yes)
         fmt::print("print_names: {}\n", source.fasta.name);
 
-    auto name_parse_result = acmacs::virus::name::parse(source.fasta.name, acmacs::virus::name::warn_on_empty::no);
-    source.sequence.name(name_parse_result.name());
-    if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
-        messages.emplace_back(acmacs::messages::key::fasta_no_year_at_the_end_of_name, source.sequence.name(), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+    if (!source.fasta.name.empty()) {
+        auto name_parse_result = acmacs::virus::name::parse(source.fasta.name, acmacs::virus::name::warn_on_empty::no);
+        source.sequence.name(name_parse_result.name());
+        if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
+            messages.emplace_back(acmacs::messages::key::fasta_no_year_at_the_end_of_name, source.sequence.name(), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no},
+                                  MESSAGE_CODE_POSITION);
 
-    for (const auto& msg : name_parse_result.messages) {
-        const auto val = msg.value == name_parse_result.raw ? msg.value : fmt::format("{} \"{}\"", msg.value, name_parse_result.raw);
-        messages.emplace_back(msg.key, val, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+        for (const auto& msg : name_parse_result.messages) {
+            const auto val = msg.value == name_parse_result.raw ? msg.value : fmt::format("{} \"{}\"", msg.value, name_parse_result.raw);
+            messages.emplace_back(msg.key, val, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+        }
+
+        set_country(name_parse_result.country, source, messages);
+
+        source.sequence.continent(std::move(name_parse_result.continent));
+        source.sequence.reassortant(name_parse_result.reassortant);
+        source.sequence.annotations(std::move(name_parse_result.extra));
     }
-
-    set_country(name_parse_result.country, source, messages);
-
-    source.sequence.continent(std::move(name_parse_result.continent));
-    source.sequence.reassortant(name_parse_result.reassortant);
-    source.sequence.annotations(std::move(name_parse_result.extra));
+    else {
+    }
 
     const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
     if (!passage_extra.empty()) {
@@ -444,7 +450,8 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
         if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
             source.sequence.remove_annotations();
         else if (!std::regex_match(std::begin(annotations), std::end(annotations), re_valid_annotations))
-            messages.emplace_back(acmacs::messages::key::fasta_name_contains_annotations, fmt::format("{}", annotations), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+            messages.emplace_back(acmacs::messages::key::fasta_name_contains_annotations, fmt::format("{}", annotations), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no},
+                                  MESSAGE_CODE_POSITION);
     }
     return messages;
 

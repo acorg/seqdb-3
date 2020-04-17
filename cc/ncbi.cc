@@ -68,54 +68,61 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
 
 std::string acmacs::seqdb::v3::scan::fasta::fix_ncbi_name(std::string_view source, acmacs::messages::messages_t& messages, debug dbg)
 {
+    static auto paren{std::fopen("/n/ncbi/paren", "w")}, rest{std::fopen("/n/ncbi/rest", "w")};
+    static int count{0};
 
-    static const std::string_view prefix_a{"INFLUENZA A VIRUS"};
-    static const std::string_view prefix_b{"INFLUENZA B VIRUS "};
-    static const std::string_view prefix_cdna_a{"CDNA ENCODING HA OF INFLUENZA TYPE A "};
-
-    std::string fixed;
-    if (acmacs::string::startswith_ignore_case(source, prefix_a))
-        fixed = fix_ncbi_name_influenza_a(source.substr(prefix_a.size()), messages, dbg);
-    else if (acmacs::string::startswith_ignore_case(source, prefix_b))
-        fixed = fix_ncbi_name_influenza_b(source.substr(prefix_b.size()), messages, dbg);
-    else if (acmacs::string::startswith_ignore_case(source, prefix_cdna_a))
-        fixed.assign(source.substr(prefix_cdna_a.size()));
+    static const std::regex re_prefix_influenza_ab_virus{"^Influenza [AB] virus *", std::regex::icase|std::regex::ECMAScript|std::regex::optimize};
+    if (std::cmatch match; std::regex_search(std::begin(source), std::end(source), match, re_prefix_influenza_ab_virus)) {
+        if (auto prefix = acmacs::string::prefix_in_parentheses(source.substr(match.length(0))); !prefix.empty()) {
+            return std::string{acmacs::string::remove_prefix_ignore_case(prefix, "STRAIN ")};
+        }
+        else
+            fmt::print(rest, "{}\n", source);
+    }
     else
-        fixed = fix_ncbi_name_rest(source, messages, dbg);
-    // fix_ncbi_name_remove_meaningless(fixed);
-    ::string::replace_in_place(fixed, '_', ' ');
-    acmacs::string::strip_in_place(fixed);
-    return fixed;
+        fmt::print(rest, "{}\n", source);
+    // if (++count >= 1000)
+    //     abort();
+
+    // constexpr const std::string_view prefix_influenza{"INFLUENZA "};
+    // constexpr const std::string_view prefix_virus{"VIRUS"};
+    // constexpr const auto prefix_influenza_ab_virus_size = prefix_influenza.size() + 2 + prefix_virus.size();
+    // if (source.size() > (prefix_influenza_ab_virus_size + 2) && acmacs::string::startswith_ignore_case(source, prefix_influenza) &&
+    //     (std::toupper(source[prefix_influenza.size()]) == 'A' || std::toupper(source[prefix_influenza.size()]) == 'B')
+    //     && acmacs::string::startswith_ignore_case(source.substr(prefix_influenza.size() + 2), prefix_virus)) {
+    //     source.remove_prefix(prefix_influenza_ab_virus_size + (source[prefix_influenza_ab_virus_size] == ' ' ? 1 : 0));
+    //     if (auto prefix = acmacs::string::prefix_in_parentheses(source); !prefix.empty())
+    //         fmt::print(paren, "{}\n", prefix);
+    //     else
+    //         fmt::print(rest, "{}\n", source);
+    // }
+    // else
+    //     fmt::print(rest, "{}\n", source);
+
+    return std::string{};
+
+    // fmt::print("{}\n", source);
+    // return std::string{source};
+
+    // static const std::string_view prefix_a{"INFLUENZA A VIRUS"};
+    // static const std::string_view prefix_b{"INFLUENZA B VIRUS "};
+    // static const std::string_view prefix_cdna_a{"CDNA ENCODING HA OF INFLUENZA TYPE A "};
+
+    // std::string fixed;
+    // if (acmacs::string::startswith_ignore_case(source, prefix_a))
+    //     fixed = fix_ncbi_name_influenza_a(source.substr(prefix_a.size()), messages, dbg);
+    // else if (acmacs::string::startswith_ignore_case(source, prefix_b))
+    //     fixed = fix_ncbi_name_influenza_b(source.substr(prefix_b.size()), messages, dbg);
+    // else if (acmacs::string::startswith_ignore_case(source, prefix_cdna_a))
+    //     fixed.assign(source.substr(prefix_cdna_a.size()));
+    // else
+    //     fixed = fix_ncbi_name_rest(source, messages, dbg);
+    // // fix_ncbi_name_remove_meaningless(fixed);
+    // ::string::replace_in_place(fixed, '_', ' ');
+    // acmacs::string::strip_in_place(fixed);
+    // return fixed;
 
 } // acmacs::seqdb::v3::scan::fasta::fix_ncbi_name
-
-// ----------------------------------------------------------------------
-
-namespace acmacs::string
-{
-    // if the first symbol of source is '(', returns the segement inside parentheses (including nested parentheses).
-    // otherwise returns an empty segment
-    // if there is no matching ')' returns the whole source except initial '('
-    inline std::string_view prefix_in_parentheses(std::string_view source)
-    {
-        if (source.empty() || source[0] != '(')
-            return {};
-        int paren_level{1};
-        for (auto cc = std::next(std::begin(source)); cc != std::end(source); ++cc) {
-            switch (*cc) {
-              case '(':
-                  ++paren_level;
-                  break;
-              case ')':
-                  --paren_level;
-                  if (paren_level == 0)
-                      return source.substr(1, static_cast<size_t>(cc - std::begin(source) - 1));
-                  break;
-            }
-        }
-        return source.substr(1);
-    }
-}
 
 // ----------------------------------------------------------------------
 
