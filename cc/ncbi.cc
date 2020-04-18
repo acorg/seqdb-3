@@ -555,27 +555,37 @@ inline void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& d
 
     fna_result.fasta.name = fna_name;
     auto fna_name_messages = normalize_name(fna_result, acmacs::debug::no, scan_name_adjustments::ncbi, print_names::no);
+    const auto use_fna = [&]() { dat_result.sequence.name(fna_result.sequence.name());
+            acmacs::messages::move_and_add_source(messages, std::move(fna_name_messages), fna_pos);
+    };
     if (!fna_result.sequence.name().empty()) {
         const auto dat_good = dat_result.name_fields.good(), fna_good = fna_result.name_fields.good();
         if (dat_result.sequence.name().empty() || (!dat_good && fna_good)) { // dat bad, fna good
-            dat_result.sequence.name(fna_result.sequence.name());
-            acmacs::messages::move_and_add_source(messages, std::move(fna_name_messages), fna_pos);
+            use_fna();
         }
         else if (!dat_good || fna_good) {
-            std::string_view fnan = fna_result.sequence.name(), datn = dat_result.sequence.name();
-            if (dat_good && fna_good) {
-                if (fnan != datn) {
-                    AD_DEBUG("++  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
-                    messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+            if (std::string_view fnan = fna_result.sequence.name(), datn = dat_result.sequence.name(); fnan != datn) {
+                const auto& fnaf = fna_result.name_fields;
+                const auto& datf = dat_result.name_fields;
+                if (dat_good && fna_good) {
+                    if (datf.subtype != fnaf.subtype && datf.host == fnaf.host && datf.location == fnaf.location && datf.isolation == fnaf.isolation && datf.year == fnaf.year && datf.reassortant == fnaf.reassortant && datf.extra == fnaf.extra) {
+                        // just subtypes are different
+                        if (datf.subtype.size() < fnaf.subtype.size()) // fna is better
+                            use_fna();
+                    }
+                    else {
+                        AD_DEBUG("++  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
+                        messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+                    }
                 }
-            }
-            else if (dat_good && !fna_good) { // dat good, fna bad
-                // do nothing
-            }
-            else {              // both bad
-                if (fnan != datn) {
-                    AD_DEBUG("BB  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
-                    messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+                else if (dat_good && !fna_good) { // dat good, fna bad
+                    // do nothing
+                }
+                else { // both bad
+                    if (fnan != datn) {
+                        AD_DEBUG("BB  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
+                        messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+                    }
                 }
             }
             // while (fnan != datn) {
