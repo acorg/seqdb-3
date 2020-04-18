@@ -10,7 +10,6 @@
 #include "acmacs-base/string-strip.hh"
 #include "acmacs-base/string-join.hh"
 #include "locationdb/locdb.hh"
-#include "acmacs-virus/virus-name-normalize.hh"
 #include "seqdb-3/scan-fasta.hh"
 #include "seqdb-3/scan-align.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -406,16 +405,16 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
         fmt::print("print_names: {}\n", source.fasta.name);
 
     if (!source.fasta.name.empty()) {
-        auto name_parse_result = acmacs::virus::name::parse(source.fasta.name, acmacs::virus::name::warn_on_empty::no);
-        source.sequence.name(name_parse_result.name());
-        if (!name_parse_result.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
+        source.name_fields = acmacs::virus::name::parse(source.fasta.name, acmacs::virus::name::warn_on_empty::no);
+        source.sequence.name(source.name_fields.name());
+        if (!source.name_fields.good() && source.sequence.year() >= 2016 && !std::regex_search(*source.sequence.name(), re_name_ends_with_year))
             messages.emplace_back(acmacs::messages::key::fasta_no_year_at_the_end_of_name, source.sequence.name(), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no},
                                   MESSAGE_CODE_POSITION);
-        acmacs::messages::move_and_add_source(messages, std::move(name_parse_result.messages), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no});
-        set_country(name_parse_result.country, source, messages);
-        source.sequence.continent(std::move(name_parse_result.continent));
-        source.sequence.reassortant(name_parse_result.reassortant);
-        source.sequence.annotations(std::move(name_parse_result.extra));
+        acmacs::messages::move_and_add_source(messages, std::move(source.name_fields.messages), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no});
+        set_country(source.name_fields.country, source, messages);
+        source.sequence.continent(source.name_fields.continent);
+        source.sequence.reassortant(source.name_fields.reassortant);
+        source.sequence.annotations(source.name_fields.extra);
     }
     else {
     }

@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "acmacs-base/debug.hh"
-#include "acmacs-virus/parsing-message.hh"
+#include "acmacs-virus/virus-name-normalize.hh"
 #include "seqdb-3/scan-sequence.hh"
 
 // ----------------------------------------------------------------------
@@ -66,6 +66,7 @@ namespace acmacs::seqdb
                     sequence_t sequence;
                     std::optional<master_ref_t> reference; // master entry with identical nuc sequence and nuc_shift
                     bool remove{false};
+                    acmacs::virus::name::parsed_fields_t name_fields; // for merging dat and fan names for ncbi
                 };
 
                 struct scan_results_t

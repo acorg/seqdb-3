@@ -216,6 +216,7 @@ namespace acmacs::seqdb
                 void name(acmacs::virus::name_t&& a_name) { name_ = std::move(a_name); }
                 // void host(acmacs::virus::host_t&& a_host) { host_ = std::move(a_host); }
                 void annotations(std::string&& a_annotations) { annotations_ = std::move(a_annotations); }
+                void annotations(std::string_view a_annotations) { annotations_.assign(a_annotations); }
                 void remove_annotations() { annotations_.clear(); }
                 void lineage(const acmacs::virus::lineage_t& lin) { lineage_ = lin; }
                 void add_clade(const clade_t& clade) { clades_.add(clade); }
