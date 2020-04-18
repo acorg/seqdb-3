@@ -192,7 +192,7 @@ template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted
 
 void report_messages(acmacs::messages::messages_t& messages)
 {
-    acmacs::virus::name::report_by_type(messages);
+    acmacs::virus::name::report(messages);
 
     // std::map<std::string_view, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
     // for (const auto& msg : messages)
