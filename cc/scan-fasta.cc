@@ -444,8 +444,8 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
         if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
             source.sequence.remove_annotations();
         else if (!std::regex_match(std::begin(annotations), std::end(annotations), re_valid_annotations))
-            messages.emplace_back(acmacs::messages::key::fasta_name_contains_annotations, fmt::format("{}", annotations), acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no},
-                                  MESSAGE_CODE_POSITION);
+            messages.emplace_back(acmacs::messages::key::fasta_name_contains_annotations, fmt::format("\"{}\" <- \"{}\"", annotations, source.fasta.name),
+                                  acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
     }
     return messages;
 
