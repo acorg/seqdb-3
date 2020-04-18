@@ -547,6 +547,33 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::
 
 // ----------------------------------------------------------------------
 
+inline void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_result, acmacs::messages::messages_t& messages, std::string_view fna_name,
+                                const acmacs::messages::position_t& fna_pos)
+{
+    using namespace acmacs::seqdb::v3::scan::fasta;
+    scan_result_t fna_result{dat_result};
+
+    fna_result.fasta.name = fna_name;
+    auto fna_name_messages = normalize_name(fna_result, acmacs::debug::no, scan_name_adjustments::ncbi, print_names::no);
+    if (!fna_result.sequence.name().empty()) {
+        if (dat_result.sequence.name().empty()) {
+            dat_result.sequence.name(fna_result.sequence.name());
+            acmacs::messages::move_and_add_source(messages, std::move(fna_name_messages), fna_pos);
+        }
+        else if (std::string_view fnan = fna_result.sequence.name(), datn = dat_result.sequence.name(); fnan != datn) {
+            // fna and dat names are different
+            AD_DEBUG("{:70s}    {:70s}", fnan, datn);
+            if (acmacs::string::startswith(fnan, "A(") && acmacs::string::startswith(datn, "A/") && fnan.substr(fnan.find(')') + 1) == datn.substr(1))
+                ;
+            else
+                messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+        }
+    }
+
+} // merge_dat_fna_names
+
+// ----------------------------------------------------------------------
+
 void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options)
 {
     using namespace acmacs::seqdb::v3::scan::fasta;
@@ -560,38 +587,29 @@ void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results,
     const std::string_view influenza_fna(influenza_fna_s);
     // AD_DEBUG("influenza_fna: {}", influenza_fna.size());
 
-    const auto fna_dat_difference_report = [&](std::string_view fna, std::string_view dat, const auto& file_pos) {
-        if (fna == dat)
-            return;
-        if (acmacs::string::startswith(fna, "A(") && acmacs::string::startswith(dat, "A/") && fna.substr(fna.find(')') + 1) == dat.substr(1))
-            return;
-        results.messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", dat, fna), file_pos, MESSAGE_CODE_POSITION);
-    };
-
     scan_input_t file_input{influenza_fna.begin(), influenza_fna.end()};
     while (!file_input.done()) {
         scan_output_t sequence_ref;
         std::tie(file_input, sequence_ref) = scan(file_input);
-        const acmacs::messages::position_t file_pos{filename_fna, file_input.name_line_no};
-        if (const auto fields = acmacs::string::split(sequence_ref.name, "|"); fields.size() == 5) {
-            if (const auto found = ncbi_id_to_entry.find(fields[3]); found != ncbi_id_to_entry.end()) {
-                if (import_sequence(sequence_ref.sequence, found->second->sequence, options)) {
-                    // merge names from dat and fna
-                    scan_result_t result_for_name_in_fna{*found->second};
-                    result_for_name_in_fna.fasta.name = fields[4];
-                    acmacs::messages::move_and_add_source(results.messages, normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi, options.prnt_names),
-                                                          acmacs::messages::position_t{filename_fna, file_input.name_line_no});
-                    if (!result_for_name_in_fna.sequence.name().empty()) {
-                        if (found->second->sequence.name().empty())
-                            found->second->sequence.name(result_for_name_in_fna.sequence.name());
-                        else
-                            fna_dat_difference_report(result_for_name_in_fna.sequence.name(), found->second->sequence.name(), file_pos);
-                    }
-                }
+        const acmacs::messages::position_t fna_pos{filename_fna, file_input.name_line_no};
+        if (const auto fields_fna = acmacs::string::split(sequence_ref.name, "|"); fields_fna.size() == 5) {
+            if (const auto found = ncbi_id_to_entry.find(fields_fna[3]); found != ncbi_id_to_entry.end() && import_sequence(sequence_ref.sequence, found->second->sequence, options)) {
+                merge_dat_fna_names(*found->second, results.messages, fields_fna[4], fna_pos);
+                // // merge names from dat and fna
+                // scan_result_t result_for_name_in_fna{*found->second};
+                // result_for_name_in_fna.fasta.name = fields_fna[4];
+                // acmacs::messages::move_and_add_source(results.messages, normalize_name(result_for_name_in_fna, options.dbg, scan_name_adjustments::ncbi, options.prnt_names),
+                //                                       acmacs::messages::position_t{filename_fna, file_input.name_line_no});
+                // if (!result_for_name_in_fna.sequence.name().empty()) {
+                //     if (found->second->sequence.name().empty())
+                //         found->second->sequence.name(result_for_name_in_fna.sequence.name());
+                //     else
+                //         fna_dat_difference_report(result_for_name_in_fna.sequence.name(), found->second->sequence.name(), file_pos);
+                // }
             }
         }
         else
-            results.messages.emplace_back(acmacs::messages::key::ncbi_unrecognized_fna_name, sequence_ref.name, file_pos, MESSAGE_CODE_POSITION);
+            results.messages.emplace_back(acmacs::messages::key::ncbi_unrecognized_fna_name, sequence_ref.name, fna_pos, MESSAGE_CODE_POSITION);
     }
 }
 
