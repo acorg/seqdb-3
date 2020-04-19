@@ -90,7 +90,7 @@ namespace acmacs::seqdb
                 constexpr auto nuc_shift() const { return shift_nuc_; }
                 constexpr const acmacs::virus::type_subtype_t& type_subtype() const { return type_subtype_; }
                 constexpr const acmacs::virus::lineage_t& lineage() const { return lineage_; }
-                std::optional<std::string> date() const
+                std::optional<std::string_view> date() const
                 {
                     if (dates_.empty())
                         return std::nullopt;
