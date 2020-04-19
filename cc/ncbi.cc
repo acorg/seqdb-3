@@ -554,15 +554,14 @@ void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_resu
     using namespace acmacs::seqdb::v3::scan::fasta;
     scan_result_t fna_result{dat_result};
 
+    constexpr const std::string_view unknown{"UNKNOWN"};
+
     fna_result.fasta.name = fna_name;
     auto fna_name_messages = normalize_name(fna_result, acmacs::debug::no, scan_name_adjustments::ncbi, print_names::no);
     const auto use_fna = [&]() {
         dat_result.sequence.name(fna_result.sequence.name());
         acmacs::messages::move_and_add_source(messages, std::move(fna_name_messages), fna_pos);
     };
-
-    enum dat_fna_good : size_t { both_bad, fna_good, dat_good, both_good };
-    const enum dat_fna_good dat_fna_good {acmacs::bits::from_bool(dat_result.name_fields.good(), fna_result.name_fields.good())};
 
     const auto& fnaf = fna_result.name_fields;
     const auto& datf = dat_result.name_fields;
@@ -576,17 +575,18 @@ void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_resu
         reassortant_diff = 0xb10,
         extra_diff = 0b1
     }; // subtype, host, location, isolation, year, reassortant, extra
-    const auto dat_fna_diff{acmacs::bits::from_bool(!(datf.subtype == fnaf.subtype), !(datf.host == fnaf.host), !(datf.location == fnaf.location), !(datf.isolation == fnaf.isolation), !(datf.year == fnaf.year),
-                                         !(datf.reassortant == fnaf.reassortant), !(datf.extra == fnaf.extra))};
+    const auto dat_fna_diff{acmacs::bits::from_bool(!(datf.subtype == fnaf.subtype), !(datf.host == fnaf.host), !(datf.location == fnaf.location), !(datf.isolation == fnaf.isolation),
+                                                    !(datf.year == fnaf.year), !(datf.reassortant == fnaf.reassortant), !(datf.extra == fnaf.extra))};
 
     // AD_DEBUG("++  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
-    switch (dat_fna_good) {
-        case both_bad:
+    switch (acmacs::bits::from_bool(dat_result.name_fields.good(), fna_result.name_fields.good(), dat_result.name_fields.not_so_good(), fna_result.name_fields.not_so_good())) {
+        case 0: // bot are bad
             // use longest?
             if (dat_fna_diff != dat_fna_same)
                 AD_DEBUG("BB  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
             break;
-        case both_good:
+        case 0b1100: // both are good
+        case 0b1111: // both are not so good (both locations are unknown)
             switch (dat_fna_diff) {
                 case dat_fna_same: // use dat, do nothing
                     break;
@@ -604,18 +604,6 @@ void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_resu
                     else
                         AD_DEBUG("H+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
                     break;
-              case subtype_diff | host_diff:
-                  switch (acmacs::bits::from_bool(datf.subtype.size() == fnaf.subtype.size(), datf.subtype.size() < fnaf.subtype.size(), datf.host.size() == fnaf.host.size(), datf.host.size() < fnaf.host.size())) {
-                    case 0b0000: // both in fnaf are longer
-                        use_fna();
-                        break;
-                    case 0b0101: // both in datf are longer
-                        break;
-                    default:
-                        AD_DEBUG("SH+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
-                        break;
-                  }
-                  break;
                 case location_diff: // use longer location
                     if (datf.location.size() < fnaf.location.size())
                         use_fna();
@@ -629,6 +617,7 @@ void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_resu
                         AD_DEBUG("I+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
                     break;
                 case year_diff: // check date
+                case year_diff | isolation_diff:
                     if (const auto date = dat_result.sequence.date(); date.has_value()) {
                         if (const auto year = date->substr(0, 4); fnaf.year == year)
                             use_fna();
@@ -644,14 +633,87 @@ void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_resu
                 case extra_diff:
                     AD_DEBUG("E+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
                     break;
+                case subtype_diff | host_diff:
+                    switch (acmacs::bits::from_bool(datf.subtype.size() == fnaf.subtype.size(), datf.subtype.size() < fnaf.subtype.size(), datf.host.size() == fnaf.host.size(),
+                                                    datf.host.size() < fnaf.host.size())) {
+                        case 0b0000: // both in fnaf are longer
+                            use_fna();
+                            break;
+                        case 0b0101: // both in datf are longer
+                            break;
+                        default:
+                            AD_DEBUG("SH+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                    }
+                    break;
+                case subtype_diff | location_diff:
+                    switch (acmacs::bits::from_bool(datf.subtype.size() == fnaf.subtype.size(), datf.subtype.size() < fnaf.subtype.size(), datf.location.size() == fnaf.location.size(),
+                                                    datf.location.size() < fnaf.location.size())) {
+                        case 0b0000: // both in fnaf are longer
+                            use_fna();
+                            break;
+                        case 0b0101: // both in datf are longer
+                            break;
+                        default:
+                            AD_DEBUG("HL+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                    }
+                    break;
+                case host_diff | location_diff:
+                    switch (acmacs::bits::from_bool(datf.host.size() == fnaf.host.size(), datf.host.size() < fnaf.host.size(), datf.location.size() == fnaf.location.size(),
+                                                    datf.location.size() < fnaf.location.size() && fnaf.location != unknown)) {
+                        case 0b0000: // both in fnaf are longer and fnaf data is not unknown
+                            use_fna();
+                            break;
+                        case 0b0101: // both in datf are longer
+                            if (datf.location == unknown)
+                                AD_DEBUG("HL+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                        default:
+                            AD_DEBUG("HL+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                    }
+                    break;
+                case host_diff | isolation_diff:
+                    switch (acmacs::bits::from_bool(datf.host.size() == fnaf.host.size(), datf.host.size() < fnaf.host.size(), datf.isolation.size() == fnaf.isolation.size(),
+                                                    datf.isolation.size() < fnaf.isolation.size() && fnaf.isolation != unknown)) {
+                        case 0b0000: // both in fnaf are longer and fnaf data is not unknown
+                            use_fna();
+                            break;
+                        case 0b0101: // both in datf are longer
+                            if (datf.isolation == unknown)
+                                AD_DEBUG("HI+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                        default:
+                            AD_DEBUG("HI+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                    }
+                    break;
+                case location_diff | isolation_diff:
+                    switch (acmacs::bits::from_bool(datf.location.size() == fnaf.location.size(), datf.location.size() < fnaf.location.size() && fnaf.location != unknown,
+                                                    datf.isolation.size() == fnaf.isolation.size(), datf.isolation.size() < fnaf.isolation.size() && fnaf.isolation != unknown)) {
+                        case 0b0000: // both in fnaf are longer and fnaf data is not unknown
+                            use_fna();
+                            break;
+                        case 0b0101: // both in datf are longer
+                            if (datf.location == unknown || datf.isolation == unknown)
+                                AD_DEBUG("LI+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                        default:
+                            AD_DEBUG("LI+ {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                            break;
+                    }
+                    break;
                 default:
                     AD_DEBUG("++  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
                     break;
             }
             break;
-        case dat_good: // use dat, do nothing
+        case 0b1000: // dat is good
+        case 0b1101: // dat is better
             break;
-        case fna_good:
+        case 0b0100: // fna is good
+        case 0b1110: // fna is better
             use_fna();
             break;
     }
