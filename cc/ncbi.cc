@@ -1,4 +1,5 @@
 #include <map>
+#include <bitset>
 #include "acmacs-base/regex.hh"
 #include "acmacs-base/timeit.hh"
 #include "acmacs-base/read-file.hh"
@@ -37,6 +38,7 @@ static std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> read_influen
 static acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static void read_influenza_fna(acmacs::seqdb::v3::scan::fasta::scan_results_t& results, const std::string_view directory, const acmacs::seqdb::v3::scan::fasta::scan_options_t& options);
 static date::year_month_day parse_date(std::string_view source, std::string_view filename, size_t line_no);
+static void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_result, acmacs::messages::messages_t& messages, std::string_view fna_name, const acmacs::messages::position_t& fna_pos);
 // static std::string fix_ncbi_name_influenza_a(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
 // static std::string fix_ncbi_name_influenza_b(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
 // static std::string fix_ncbi_name_rest(std::string_view source, acmacs::messages::messages_t& messages, acmacs::debug dbg);
@@ -547,8 +549,15 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t read_influenza_na_dat(const std::
 
 // ----------------------------------------------------------------------
 
-inline void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_result, acmacs::messages::messages_t& messages, std::string_view fna_name,
-                                const acmacs::messages::position_t& fna_pos)
+template <typename ... Arg> inline std::bitset<32> bool_to_bits(bool val, Arg ... args)
+{
+    if constexpr (sizeof...(args) > 0)
+        return (std::bitset<32>{val} << sizeof...(args)) | bool_to_bits(args ...);
+    else
+        return std::bitset<32>{val};
+}
+
+void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_result, acmacs::messages::messages_t& messages, std::string_view fna_name, const acmacs::messages::position_t& fna_pos)
 {
     using namespace acmacs::seqdb::v3::scan::fasta;
     scan_result_t fna_result{dat_result};
@@ -558,49 +567,121 @@ inline void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& d
     const auto use_fna = [&]() { dat_result.sequence.name(fna_result.sequence.name());
             acmacs::messages::move_and_add_source(messages, std::move(fna_name_messages), fna_pos);
     };
-    if (!fna_result.sequence.name().empty()) {
-        const auto dat_good = dat_result.name_fields.good(), fna_good = fna_result.name_fields.good();
-        if (dat_result.sequence.name().empty() || (!dat_good && fna_good)) { // dat bad, fna good
-            use_fna();
-        }
-        else if (!dat_good || fna_good) {
-            if (std::string_view fnan = fna_result.sequence.name(), datn = dat_result.sequence.name(); fnan != datn) {
-                const auto& fnaf = fna_result.name_fields;
-                const auto& datf = dat_result.name_fields;
-                if (dat_good && fna_good) {
-                    if (datf.subtype != fnaf.subtype && datf.host == fnaf.host && datf.location == fnaf.location && datf.isolation == fnaf.isolation && datf.year == fnaf.year && datf.reassortant == fnaf.reassortant && datf.extra == fnaf.extra) {
-                        // just subtypes are different
-                        if (datf.subtype.size() < fnaf.subtype.size()) // fna is better
-                            use_fna();
-                    }
-                    else {
-                        AD_DEBUG("++  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
-                        messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
-                    }
-                }
-                else if (dat_good && !fna_good) { // dat good, fna bad
-                    // do nothing
-                }
-                else { // both bad
-                    if (fnan != datn) {
-                        AD_DEBUG("BB  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
-                        messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
-                    }
-                }
-            }
-            // while (fnan != datn) {
-            //     if (acmacs::string::startswith(fnan, "A(") && acmacs::string::startswith(datn, "A/")) {
-            //         fnan.remove_prefix(fnan.find('/') + 1);
-            //         datn.remove_prefix(datn.find('/') + 1);
-            //     }
-            //     else {
-            //         AD_DEBUG("{:70s}    {:70s}", fna_result.sequence.name(), dat_result.sequence.name());
-            //         // messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
-            //         break;
-            //     }
-            // }
-        }
+
+    enum dat_fna_good : size_t { both_bad, fna_good, dat_good, both_good };
+    const enum dat_fna_good dat_fna_good{bool_to_bits(dat_result.name_fields.good(), fna_result.name_fields.good()).to_ulong()};
+
+    const auto& fnaf = fna_result.name_fields;
+    const auto& datf = dat_result.name_fields;
+    enum dat_fna_diff : size_t { dat_fna_same=0, subtype_diff=0b1000000, host_diff=0b100000, location_diff=0b10000, isolation_diff=0b1000, year_diff=0b100, reassortant_diff=0xb10, extra_diff=0b1 }; // subtype, host, location, isolation, year, reassortant, extra
+    const enum dat_fna_diff dat_fna_diff{bool_to_bits(!(datf.subtype == fnaf.subtype), !(datf.host == fnaf.host), !(datf.location == fnaf.location), !(datf.isolation == fnaf.isolation), !(datf.year == fnaf.year), !(datf.reassortant == fnaf.reassortant), !(datf.extra == fnaf.extra)).to_ulong()};
+
+    switch(dat_fna_good) {
+      case both_bad:
+          // use longest?
+          AD_DEBUG("BB  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+          break;
+      case both_good:
+          // AD_DEBUG("++  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+          switch (dat_fna_diff) {
+            case dat_fna_same:
+                // use dat, do nothing
+                break;
+            case subtype_diff:
+                // use longer subtype
+                if (datf.subtype.size() < fnaf.subtype.size())
+                    use_fna();
+                else if (datf.subtype.size() == fnaf.subtype.size())
+                    AD_DEBUG("S+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            case host_diff:
+                // use longer host in case it is long enough
+                if (datf.host.size() < fnaf.host.size() && fnaf.host.size() > 3)
+                    use_fna();
+                else if (datf.host.size() > fnaf.host.size() && datf.host.size() > 3)
+                    ;           // use dat
+                else
+                    AD_DEBUG("H+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            case location_diff:
+                // use longer location
+                if (datf.location.size() < fnaf.location.size())
+                    use_fna();
+                else if (datf.location.size() == fnaf.location.size())
+                    AD_DEBUG("L+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            case isolation_diff:
+                AD_DEBUG("I+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            case year_diff:
+                AD_DEBUG("Y+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            case reassortant_diff:
+                AD_DEBUG("R+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            case extra_diff:
+                AD_DEBUG("E+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+            default:
+                AD_DEBUG("++  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+                break;
+          }
+          break;
+      case dat_good:
+          // use dat, do nothing
+          // AD_DEBUG("+B  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+          break;
+      case fna_good:
+          use_fna();
+          // AD_DEBUG("B+  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
+          break;
     }
+
+    return;
+
+    // if (!fna_result.sequence.name().empty()) {
+    //     const auto dat_good = dat_result.name_fields.good(), fna_good = fna_result.name_fields.good();
+    //     if (dat_result.sequence.name().empty() || (!dat_good && fna_good)) { // dat bad, fna good
+    //         use_fna();
+    //     }
+    //     else if (!dat_good || fna_good) {
+    //         if (std::string_view fnan = fna_result.sequence.name(), datn = dat_result.sequence.name(); fnan != datn) {
+    //             const auto& fnaf = fna_result.name_fields;
+    //             const auto& datf = dat_result.name_fields;
+    //             if (dat_good && fna_good) {
+    //                 if (datf.subtype != fnaf.subtype && datf.host == fnaf.host && datf.location == fnaf.location && datf.isolation == fnaf.isolation && datf.year == fnaf.year && datf.reassortant == fnaf.reassortant && datf.extra == fnaf.extra) {
+    //                     // just subtypes are different
+    //                     if (datf.subtype.size() < fnaf.subtype.size()) // fna is better
+    //                         use_fna();
+    //                 }
+    //                 else {
+    //                     AD_DEBUG("++  {:70s}{}    {:70s}{} h:{} l:{} i:{} y:{} r:{} e:{}", dat_result.sequence.name(), datf.extra, fna_result.sequence.name(), fnaf.extra, datf.host == fnaf.host, datf.location == fnaf.location, datf.isolation == fnaf.isolation, datf.year == fnaf.year, datf.reassortant == fnaf.reassortant, datf.extra == fnaf.extra); // both good but different
+    //                     messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+    //                 }
+    //             }
+    //             else if (dat_good && !fna_good) { // dat good, fna bad
+    //                 // do nothing
+    //             }
+    //             else { // both bad
+    //                 if (fnan != datn) {
+    //                     AD_DEBUG("BB  {:70s}    {:70s}", dat_result.sequence.name(), fna_result.sequence.name()); // both good but different
+    //                     messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+    //                 }
+    //             }
+    //         }
+    //         // while (fnan != datn) {
+    //         //     if (acmacs::string::startswith(fnan, "A(") && acmacs::string::startswith(datn, "A/")) {
+    //         //         fnan.remove_prefix(fnan.find('/') + 1);
+    //         //         datn.remove_prefix(datn.find('/') + 1);
+    //         //     }
+    //         //     else {
+    //         //         AD_DEBUG("{:70s}    {:70s}", fna_result.sequence.name(), dat_result.sequence.name());
+    //         //         // messages.emplace_back(acmacs::messages::key::ncbi_dat_fna_name_difference, fmt::format("dat:\"{}\" fna:\"{}\"", datn, fnan), fna_pos, MESSAGE_CODE_POSITION);
+    //         //         break;
+    //         //     }
+    //         // }
+    //     }
+    // }
 
 } // merge_dat_fna_names
 
