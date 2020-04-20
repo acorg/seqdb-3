@@ -63,6 +63,7 @@ struct Options : public argv
     option<bool>      nucs{*this, "nucs", desc{"export nucleotide sequences instead of amino acid"}};
     option<bool>      not_aligned{*this, "not-aligned", desc{"do not align for exporting"}};
     option<bool>      most_common_length{*this, "most-common-length", desc{"truncate or extend with - all sequences to make them all of the same length,\n                                       most common among original sequences"}};
+    option<size_t>    length{*this, "length", dflt{0ul}, desc{"truncate or extend with - all sequences to make them all of the same length,\n                                       0 - do not truncate/extend"}};
 
 };
 
@@ -174,6 +175,7 @@ int main(int argc, char* const argv[])
                                   .wrap(opt.wrap ? 80 : 0)
                                   .aligned(opt.not_aligned ? acmacs::seqdb::export_options::aligned::no : acmacs::seqdb::export_options::aligned::yes)
                                   .most_common_length(opt.most_common_length ? acmacs::seqdb::export_options::most_common_length::yes : acmacs::seqdb::export_options::most_common_length::no)
+                                  .length(opt.length)
                                   .name_format(opt.name_format))
             .print(seqdb, opt.name_format, opt.print /* || opt.fasta */)
             .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty());

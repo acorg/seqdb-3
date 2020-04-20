@@ -1336,6 +1336,9 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
             const acmacs::Counter counter(to_export, [](const auto& en) { return en.second.size(); });
             ranges::for_each(to_export, [most_common_length = counter.max().first](auto& en) { en.second.resize(most_common_length, '-'); });
         }
+        else if (options.e_length > 0) {
+            ranges::for_each(to_export, [length = options.e_length](auto& en) { en.second.resize(length, '-'); });
+        }
 
         switch (options.e_format) {
             case export_options::format::fasta_aa:

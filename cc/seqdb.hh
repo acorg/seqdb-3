@@ -101,6 +101,7 @@ namespace acmacs::seqdb::inline v3
         aligned e_aligned{aligned::yes};
         most_common_length e_most_common_length{most_common_length::no};
         std::string e_name_format{"{seq_id}"};
+        size_t e_length{0};     // truncate/extend all sequences to this length
 
         export_options& fasta(bool nucs)
         {
@@ -125,6 +126,11 @@ namespace acmacs::seqdb::inline v3
         export_options& most_common_length(most_common_length a_most_common_length = most_common_length::yes)
         {
             e_most_common_length = a_most_common_length;
+            return *this;
+        }
+        export_options& length(size_t len)
+        {
+            e_length = len;
             return *this;
         }
         export_options& name_format(std::string_view name_format)
