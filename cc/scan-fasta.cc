@@ -10,6 +10,7 @@
 #include "acmacs-base/string-strip.hh"
 #include "acmacs-base/string-join.hh"
 #include "locationdb/locdb.hh"
+#include "acmacs-virus/host.hh"
 #include "seqdb-3/scan-fasta.hh"
 #include "seqdb-3/scan-align.hh"
 #include "seqdb-3/hamming-distance.hh"
@@ -34,7 +35,8 @@ namespace acmacs::seqdb
                 static acmacs::virus::type_subtype_t gisaid_parse_subtype(const acmacs::uppercase& source, acmacs::messages::messages_t& messages, std::string_view filename, size_t line_no);
                 static std::string_view parse_lineage(const acmacs::uppercase& source, std::string_view filename, size_t line_no);
                 static acmacs::seqdb::v3::scan::fasta::hint_t find_hints(std::string_view filename);
-                static acmacs::uppercase fix_passage(const acmacs::uppercase& passage);
+                static acmacs::uppercase fix_passage(std::string_view passage);
+                static void check_passage(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, acmacs::messages::messages_t& messages);
                 static void set_country(std::string_view country, acmacs::seqdb::v3::scan::fasta::scan_result_t& source, acmacs::messages::messages_t& messages);
 
             } // namespace fasta
@@ -419,25 +421,10 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
     else {
     }
 
-    const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
-    if (!passage_extra.empty()) {
-        if (passage.empty()) {
-            messages.emplace_back(acmacs::messages::key::unrecognized_passage, passage_extra, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
-            source.sequence.add_passage(acmacs::virus::Passage{passage_extra});
-        }
-        else {
-            source.sequence.add_passage(acmacs::virus::Passage{passage});
-            source.sequence.annotations(acmacs::string::join(" ", source.sequence.annotations(), passage_extra));
-        }
-    }
-    else if (!passage.empty())
-        source.sequence.add_passage(acmacs::virus::Passage{passage});
+    check_passage(source, messages);
 
     // adjust subtype
     // parse lineage
-
-    // if (!result.passage.empty())
-    //     messages.emplace_back("name field contains passage", result.passage, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
 
     if (const auto annotations = source.sequence.annotations(); !annotations.empty()) {
         if (std::regex_match(std::begin(annotations), std::end(annotations), re_empty_annotations_if_just))
@@ -449,6 +436,30 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
     return messages;
 
 } // acmacs::seqdb::v3::scan::fasta::normalize_name
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::scan::fasta::check_passage(acmacs::seqdb::v3::scan::fasta::scan_result_t& source, acmacs::messages::messages_t& messages)
+{
+    const auto [passage, passage_extra] = acmacs::virus::parse_passage(fix_passage(source.fasta.passage), acmacs::virus::passage_only::yes);
+    if (!passage_extra.empty()) {
+        if (passage.empty()) {
+            if (!acmacs::virus::name::is_host(passage_extra)) {
+                messages.emplace_back(acmacs::messages::key::unrecognized_passage, passage_extra, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+                source.sequence.add_passage(acmacs::virus::Passage{passage_extra});
+            }
+        }
+        else {
+            source.sequence.add_passage(acmacs::virus::Passage{passage});
+            source.sequence.annotations(acmacs::string::join(" ", source.sequence.annotations(), passage_extra));
+        }
+    }
+    else if (!passage.empty())
+        source.sequence.add_passage(acmacs::virus::Passage{passage});
+
+    // if (!result.passage.empty())
+    //     messages.emplace_back("name field contains passage", result.passage, acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
+}
 
 // ----------------------------------------------------------------------
 
@@ -604,31 +615,60 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, acma
 
 // ----------------------------------------------------------------------
 
-acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(const acmacs::uppercase& passage)
+acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(std::string_view passage)
 {
-    const std::array to_remove{
-        std::string_view{"PASSAGE DETAILS:"},
-        std::string_view{"PASSAGE HISTORY:"},
-        std::string_view{"PASSAGE:"},
-        std::string_view{"YAMAGATA LINEAGE;"},
-        std::string_view{"YAMAGATA LINEAGE"},
-        std::string_view{"VICTORIA LINEAGE;"},
-        std::string_view{"VICTORIA LINEAGE"},
-        std::string_view{"LINEAGE: SWL;"},
-        std::string_view{"LINEAGE: A(H1N1)PDM09"},
-        std::string_view{"LINEAGE:"},
+    using namespace acmacs::regex;
+#include "acmacs-base/global-constructors-push.hh"
+    static const std::array fix_data{
+        look_replace_t{std::regex("^("
+                                  "EXPERIMENTAL,\\s+PART\\s+\\d+\\s+OF\\s+\\d+"
+                                  "|"
+                                  "EXPERIMENTALLY INFECTED HORSE"
+                                  "|"
+                                  "PASSAGE\\s+(?:DETAILS|HISTORY):"
+                                  "|"
+                                  "PASSAGE:"
+                                  "|"
+                                  "(?:YAMAGATA|VICTORIA)\\s+LINEAGE;?"
+                                  "|"
+                                  "LINEAGE:\\s*(?:SWL|A\\(H1N1\\)PDM09)?;?"
+                                  "|"
+                                  "PRIMARY\\s+SPECIMEN"
+                                  ")",
+                                  std::regex::icase),
+                       {"$` $'"}},
     };
+#include "acmacs-base/diagnostics-pop.hh"
 
-    std::string result{*passage};
-    for (const auto& en : to_remove) {
-        if (const auto found = result.find(en); found != std::string::npos)
-            result.erase(found, en.size());
-    }
-    return ranges::to<std::string>(
-        result
-        | ranges::views::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
-        | ranges::views::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }) // collapse spaces
-                      );
+    acmacs::uppercase result;
+    if (const auto res = scan_replace(passage, fix_data); res.has_value())
+        return ::string::collapse_spaces(acmacs::string::strip(res->back()));
+    else
+        return ::string::collapse_spaces(acmacs::string::strip(passage));
+
+    // const std::array to_remove{
+    //     std::string_view{"PASSAGE DETAILS:"},
+    //     std::string_view{"PASSAGE HISTORY:"},
+    //     std::string_view{"PASSAGE:"},
+    //     std::string_view{"YAMAGATA LINEAGE;"},
+    //     std::string_view{"YAMAGATA LINEAGE"},
+    //     std::string_view{"VICTORIA LINEAGE;"},
+    //     std::string_view{"VICTORIA LINEAGE"},
+    //     std::string_view{"LINEAGE: SWL;"},
+    //     std::string_view{"LINEAGE: A(H1N1)PDM09"},
+    //     std::string_view{"LINEAGE:"},
+    // };
+
+    // std::string result{*passage};
+    // for (const auto& en : to_remove) {
+    //     if (const auto found = result.find(en); found != std::string::npos)
+    //         result.erase(found, en.size());
+    // }
+    // return ranges::to<std::string>(
+    //     result
+    //     | ranges::views::trim([](char cc) { return std::isspace(cc); }) // remove leading and trailing spaces
+    //     | ranges::views::adjacent_filter([](char first, char second) { return !std::isspace(first) || !std::isspace(second); }) // collapse spaces
+    //                   );
 
 } // acmacs::seqdb::v3::scan::fasta::fix_passage
 

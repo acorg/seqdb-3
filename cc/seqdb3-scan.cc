@@ -192,41 +192,16 @@ template <typename Key> static inline std::vector<std::pair<Key, size_t>> sorted
 
 void report_messages(acmacs::messages::messages_t& messages)
 {
-    acmacs::virus::name::report(messages);
-
-    // std::map<std::string_view, acmacs::seqdb::scan::fasta::messages_t, std::less<>> messages_per_key;
-    // for (const auto& msg : messages)
-    //     messages_per_key.try_emplace(msg.key).first->second.push_back(msg);
-    // for (auto& [key, value] : messages_per_key) {
-    //     // std::sort(std::begin(value), std::end(value));
-    //     if (key == acmacs::messages::key::location_not_found || key == acmacs::messages::key::unrecognized_passage) {
-    //         std::vector<std::string> locations(value.size());
-    //         std::transform(std::begin(value), std::end(value), std::begin(locations), [](const auto& en) { return en.value; });
-    //         std::sort(std::begin(locations), std::end(locations));
-    //         const auto end = std::unique(std::begin(locations), std::end(locations));
-    //         AD_WARNING("{} ({}):", key, end - std::begin(locations));
-    //         fmt::print(stderr, "  \"{}\"\n", acmacs::string::join("\"\n  \"", std::begin(locations), end));
-    //         if (key == acmacs::messages::key::location_not_found)
-    //             fmt::print(stderr, "locdb \"{}\"\n", acmacs::string::join("\" \"", std::begin(locations), end));
-    //     }
-    //     else if (key == acmacs::messages::key::location_field_not_found) {
-    //         AD_WARNING("{} ({}):", key, value.size());
-    //         for (const auto& val : value)
-    //             fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
-    //         acmacs::Counter<std::string> possible_locations;
-    //         for (const auto& val : value) {
-    //             for (const auto& part : acmacs::virus::name::possible_locations_in_name(val.value))
-    //                 possible_locations.count(part);
-    //         }
-    //         AD_WARNING("possible locations ({}):\n{}", possible_locations.size(), possible_locations.report_sorted_max_first(" {first:30s} {second:4d}\n"));
-    //     }
-    //     else {
-    //         AD_WARNING("{} ({}):", key, value.size());
-    //         for (const auto& val : value)
-    //             fmt::print(stderr, "    {} @@ {}:{}\n", val.value, val.filename, val.line_no);
-    //     }
-    //     fmt::print(stderr, "\n");
-    // }
+    const auto index = acmacs::messages::make_index(messages);
+    AD_INFO("Total messages: {}  keys: {}", messages.size(), index.size());
+    for (const auto& [first, last] : index) {
+        if (first != last) {
+            if (first->key == acmacs::messages::key::location_not_found || first->key == acmacs::messages::key::unrecognized_passage)
+                acmacs::messages::report_by_count(first, last);
+            else
+                acmacs::messages::report(first, last);
+        }
+    }
 
 } // report_messages
 
