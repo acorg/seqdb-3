@@ -1384,7 +1384,9 @@ std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string
                        fmt::arg("country", entry.entry->country),
                        fmt::arg("continent", entry.entry->continent),
                        fmt::arg("group_no", entry.group_no ? fmt::format("group:{}", entry.group_no) : std::string{}),
-                       fmt::arg("hamming_distance", entry.hamming_distance)
+                       fmt::arg("hamming_distance", entry.hamming_distance),
+                       fmt::arg("nuc_length", entry.seq().nuc_aligned_length_master()),
+                       fmt::arg("aa_length", entry.seq().aa_aligned_length_master())
                        );
 
 } // acmacs::seqdb::v3::subset::make_name

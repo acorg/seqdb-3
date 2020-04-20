@@ -148,7 +148,7 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned() const
 // align shift.
 void acmacs::seqdb::v3::scan::sequence_t::translate()
 {
-    constexpr size_t MINIMUM_SEQUENCE_AA_LENGTH = 400; // throw away everything shorter
+    constexpr size_t MINIMUM_SEQUENCE_AA_LENGTH = 200; // throw away everything shorter, HA1 is kinda 318, need to have just HA1 sequences to be able to make HA1 trees
 
     if (!nuc_.empty()) {
         using translated_t = std::tuple<std::string, size_t>; // translated longest part, nuc prefix size at which translation started

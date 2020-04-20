@@ -633,8 +633,8 @@ acmacs::uppercase acmacs::seqdb::v3::scan::fasta::fix_passage(std::string_view p
                                   "|"
                                   "LINEAGE:\\s*(?:SWL|A\\(H1N1\\)PDM09)?;?"
                                   "|"
-                                  "PRIMARY SPECIMEN"
-                                  "|"
+                                  // "PRIMARY SPECIMEN"
+                                  // "|"
                                   "PI"
                                   ")",
                                   acmacs::regex::icase),
