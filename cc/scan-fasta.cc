@@ -486,6 +486,9 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
         pp{"KOREA"sv, "SOUTH KOREA"sv, use_name_from::name_parse},
         pp{"USSR"sv, "RUSSIA"sv, use_name_from::name_parse},
         pp{"FRANCE"sv, "LA REUNION"sv, use_name_from::name_parse},
+        pp{"FIJI"sv, "FIJI ISLANDS"sv, use_name_from::name_parse},
+        pp{"NORTHERN MARIANA ISLANDS"sv, "GUAM"sv, use_name_from::name_parse},
+        pp{"UNITED STATES OF AMERICA"sv, "GERMANY"sv, use_name_from::name_parse}, // "A(H5N2)/RUDDY TURNSTONE/GERMANY/371/2003"
                 // pp{sv, sv, use_name_from::name_parse},
                 // pp{sv, sv, use_name_from::name_parse},
     };
