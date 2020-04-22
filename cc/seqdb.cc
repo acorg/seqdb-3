@@ -1301,6 +1301,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
         if (!refs_.empty()) {
             size_t with_hi_names = 0;
             std::string_view min_date = refs_.front().entry->date(), max_date = min_date;
+            Counter<std::string> by_year;
             Counter<size_t> aa_length, nuc_length;
             for (const auto& ref : refs_) {
                 const auto date = ref.entry->date();
@@ -1308,6 +1309,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
                     min_date = date;
                 else if (date > max_date)
                     max_date = date;
+                if (date.size() >= 4)
+                    by_year.count(date.substr(0, 4));
                 if (!ref.seq().hi_names.empty())
                     ++with_hi_names;
                 aa_length.count(ref.seq().aa_aligned_length_master());
@@ -1315,6 +1318,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
             }
             fmt::print(stderr, "Selected sequences: {:6d}\n      HiDb matches: {:6d}\n        Date range: {} - {}\n", refs_.size(), with_hi_names, min_date, max_date);
             fmt::print(stderr, "         AA length:{}\nNucleotide lengths:{}\n", aa_length.report_sorted_max_first(" {first}:{second}"), nuc_length.report_sorted_max_first(" {first}:{second}"));
+            fmt::print(stderr, "           by Year:{}\n", by_year.report_sorted_max_first(" {first}:{second}"));
         }
         else {
             fmt::print(stderr, "No sequences selected\n");
