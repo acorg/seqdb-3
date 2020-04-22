@@ -11,6 +11,7 @@ TARGETS = \
   $(DIST)/seqdb3-chart-clades \
   $(DIST)/seqdb3-seqid-by-name \
   $(DIST)/seqdb3-chart-dates \
+  $(DIST)/seqdb3-stat-by-clade-year-pos \
   $(DIST)/test-insertions-deletions
 
 SEQDB_SOURCES = \

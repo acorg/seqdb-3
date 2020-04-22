@@ -57,6 +57,7 @@ struct Options : public argv
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
     option<bool>      report_hamming_distance{*this, "report-hamming", desc{"Report hamming distance from base for all strains."}};
     option<str>       report_aa_at{*this, "report-aa-at", desc{"comma separated list: 142,144."}};
+    option<bool>      no_stat{*this, "no-stat"};
 
     // export
     option<str>       fasta{*this, "fasta", desc{"export to fasta, - for stdout"}};
@@ -169,7 +170,7 @@ int main(int argc, char* const argv[])
             .subset_by_hamming_distance_random(seqdb, opt.subset_by_hamming_distance_random, opt.output_size)
             .remove_nuc_duplicates(opt.remove_nuc_duplicates, opt.keep_all_hi_matched)
             .sort(sorting_order(opt.sort_by))
-            .report_stat() // static_cast<bool>(opt.fasta))
+            .report_stat(!opt.no_stat) // static_cast<bool>(opt.fasta))
             .report_aa_at(seqdb, aa_at_pos_report)
             .prepend(opt.prepend, seqdb)
             .prepend(opt.base_seq_id, seqdb)
