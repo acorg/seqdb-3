@@ -84,6 +84,12 @@ namespace acmacs::seqdb::inline v3
 
     // --------------------------------------------------
 
+    using pos1_list_t = std::vector<pos1_t>;
+    using pos0_list_t = std::vector<pos0_t>;
+    pos1_list_t extract_pos1_list(std::string_view source);
+
+    // --------------------------------------------------
+
     amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(const rjson::value& source);
     amino_acid_at_pos1_eq_t extract_aa_at_pos1_eq(std::string_view source); // "!183P"
     amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(std::string_view source); // space or comma separated list, e.g. "183P 141E !123K"

@@ -117,6 +117,17 @@ acmacs::seqdb::nucleotide_at_pos1_eq_list_t acmacs::seqdb::v3::extract_nuc_at_po
 } // acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list
 
 // ----------------------------------------------------------------------
+
+acmacs::seqdb::pos1_list_t acmacs::seqdb::v3::extract_pos1_list(std::string_view source)
+{
+    const auto fields = acmacs::string::split(source, acmacs::string::Split::RemoveEmpty);
+    pos1_list_t pos1_list{fields.size(), pos1_t{99999}};
+    std::transform(std::begin(fields), std::end(fields), std::begin(pos1_list), [](std::string_view field) { return pos1_t{acmacs::string::from_chars<size_t>(field)}; });
+    return pos1_list;
+
+} // acmacs::seqdb::v3::extract_aa_at_pos1_list
+
+// ----------------------------------------------------------------------
 /// Local Variables:
 /// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
 /// End:

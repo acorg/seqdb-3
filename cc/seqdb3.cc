@@ -56,6 +56,7 @@ struct Options : public argv
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
     option<bool>      report_hamming_distance{*this, "report-hamming", desc{"Report hamming distance from base for all strains."}};
+    option<str>       report_aa_at{*this, "report-aa-at", desc{"comma separated list: 142,144."}};
 
     // export
     option<str>       fasta{*this, "fasta", desc{"export to fasta, - for stdout"}};
@@ -131,6 +132,10 @@ int main(int argc, char* const argv[])
         if (!opt.nuc_at_pos->empty())
             nuc_at_pos = acmacs::seqdb::extract_nuc_at_pos1_eq_list(*opt.nuc_at_pos);
 
+        acmacs::seqdb::pos1_list_t aa_at_pos_report;
+        if (!opt.report_aa_at->empty())
+            aa_at_pos_report = acmacs::seqdb::extract_pos1_list(*opt.report_aa_at);
+
         if (opt.name_format->empty()) {
             if (opt.fasta->empty())
                 opt.name_format.add("\"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {seq_id}");
@@ -165,6 +170,7 @@ int main(int argc, char* const argv[])
             .remove_nuc_duplicates(opt.remove_nuc_duplicates, opt.keep_all_hi_matched)
             .sort(sorting_order(opt.sort_by))
             .report_stat() // static_cast<bool>(opt.fasta))
+            .report_aa_at(seqdb, aa_at_pos_report)
             .prepend(opt.prepend, seqdb)
             .prepend(opt.base_seq_id, seqdb)
             // .prepend_single_matching(opt.base_seq_regex, seqdb)

@@ -1331,6 +1331,24 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_aa_at(const Seqdb& seqdb, const pos1_list_t& pos1_list)
+{
+    if (!pos1_list.empty() && !refs_.empty()) {
+        std::vector<CounterChar> counters(pos1_list.size());
+        for (const auto& ref : refs_) {
+            for (auto index : acmacs::range(pos1_list.size()))
+                counters[index].count(ref.aa_at_pos(seqdb, pos1_list[index]));
+        }
+        fmt::print(stderr, "AA at pos stat:\n");
+        for (auto index : acmacs::range(pos1_list.size()))
+            fmt::print(stderr, "  {}\n{}", pos1_list[index], counters[index].report_sorted_max_first(fmt::format("    {:3d}{{first}}  {{second:5d}}\n", pos1_list[index])));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::report_aa_at
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options)
 {
     if (!filename.empty()) {
