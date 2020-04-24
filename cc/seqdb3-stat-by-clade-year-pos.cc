@@ -13,12 +13,11 @@ struct Options : public argv
 
     option<str> db{*this, "db"};
 
-    // select
-    option<str>       subtype{*this, "flu", desc{"B, A(H1N1), H1, A(H3N2), H3"}};
-    option<str>       lineage{*this, "lineage"};
-    option<str>       start_date{*this, "start-date"};
-    option<str>       end_date{*this, "end-date"};
-    option<str>       clade{*this, "clade"};
+    // option<str>       subtype{*this, "flu", desc{"B, A(H1N1), H1, A(H3N2), H3"}};
+    // option<str>       lineage{*this, "lineage"};
+    // option<str>       start_date{*this, "start-date"};
+    // option<str>       end_date{*this, "end-date"};
+    // option<str>       clade{*this, "clade"};
 
 };
 
