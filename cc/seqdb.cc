@@ -281,7 +281,7 @@ const acmacs::seqdb::v3::seq_id_index_t& acmacs::seqdb::v3::Seqdb::seq_id_index(
         for (const auto& entry : entries_) {
             for (auto [seq_no, seq] : acmacs::enumerate(entry.seqs)) {
                 for (const auto& designation : seq.designations())
-                    seq_id_index_.emplace(make_seq_id(acmacs::string::join(" ", entry.name, designation)), ref{entry, seq_no});
+                    seq_id_index_.emplace(make_seq_id(acmacs::string::join(acmacs::string::join_space, entry.name, designation)), ref{entry, seq_no});
             }
         }
         seq_id_index_.sort();     // force sorting to avoid future raise condition during access from different threads
@@ -566,13 +566,13 @@ const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::slaves()
 // returns designations with and without hash
 std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations(bool just_first) const
 {
-    const auto prefix = acmacs::string::join(" ", annotations, string::join(" ", reassortants));
+    const auto prefix = acmacs::string::join(acmacs::string::join_space, annotations, string::join(acmacs::string::join_space, reassortants));
     const auto prefixed_hash = fmt::format("h{}", hash);
     if (passages.empty()) {
-        return {acmacs::string::join(" ", prefix, prefixed_hash), prefix}; // not seq-id with hash must be first to support just_first
+        return {acmacs::string::join(acmacs::string::join_space, prefix, prefixed_hash), prefix}; // not seq-id with hash must be first to support just_first
     }
     else if (just_first) {
-        return {acmacs::string::join(" ", prefix, passages.front(), prefixed_hash)};
+        return {acmacs::string::join(acmacs::string::join_space, prefix, passages.front(), prefixed_hash)};
     }
     else {
         using namespace ranges::views;
@@ -582,7 +582,7 @@ std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations(bool just_fir
                 | for_each([&prefix,&hashes](std::string_view psg) {
                     return ranges::yield_from(
                         hashes
-                        | transform([&prefix,psg](std::string_view a_hash) -> std::string { return acmacs::string::join(" ", prefix, psg, a_hash); }));
+                        | transform([&prefix,psg](std::string_view a_hash) -> std::string { return acmacs::string::join(acmacs::string::join_space, prefix, psg, a_hash); }));
                 })
                 | ranges::to<std::vector>
                 | ranges::actions::sort
@@ -595,7 +595,7 @@ std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations(bool just_fir
 
 acmacs::seqdb::seq_id_t acmacs::seqdb::v3::ref::seq_id() const
 {
-    auto source = acmacs::string::join(" ", entry->name, seq().designation());
+    auto source = acmacs::string::join(acmacs::string::join_space, entry->name, seq().designation());
     if (entry->seqs.size() > 1 && seq_index > 0) {
         // there could be multiple seqs with the same designation, but seq_id must be unique, also garli does not like name duplicates
         std::vector<std::string> designations(entry->seqs.size());

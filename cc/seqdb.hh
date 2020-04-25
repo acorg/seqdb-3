@@ -262,10 +262,10 @@ namespace acmacs::seqdb::inline v3
         bool is_master() const { return seq().is_master(); }
         bool is_hi_matched() const { return !seq().hi_names.empty(); }
         seq_id_t seq_id() const;
-        std::string full_name() const { return acmacs::string::join(" ", entry->name, acmacs::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()); }
+        std::string full_name() const { return acmacs::string::join(acmacs::string::join_space, entry->name, acmacs::string::join(acmacs::string::join_space, seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()); }
         std::string full_name_with_date() const
         {
-            return fmt::format("{} [{}]", acmacs::string::join(" ", entry->name, acmacs::string::join(" ", seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()),
+            return fmt::format("{} [{}]", acmacs::string::join(acmacs::string::join_space, entry->name, acmacs::string::join(acmacs::string::join_space, seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()),
                                entry->date());
         }
         std::string hi_name_or_full_name() const
