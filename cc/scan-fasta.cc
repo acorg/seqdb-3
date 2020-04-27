@@ -486,6 +486,7 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
         pp{"BOLIVIA"sv, "ARGENTINA"sv, use_name_from::fasta_no_warn},             // SANTA CRUZ
         pp{"GERMANY"sv, "BELGIUM"sv, use_name_from::fasta_no_warn},               // DAMME
         pp{"CHINA"sv, "SOUTH KOREA"sv, use_name_from::fasta_no_warn},
+        pp{"INDIA"sv, "PAKISTAN"sv, use_name_from::fasta_no_warn},
         // pp{"GREENLAND"sv, "DENMARK"sv, use_name_from::fasta_no_warn},
 
         pp{"REUNION"sv, "LA REUNION"sv, use_name_from::name_parse},
@@ -525,7 +526,7 @@ void acmacs::seqdb::v3::scan::fasta::set_country(std::string_view country, acmac
                     break;
                 case use_name_from::fasta_warn:
                     messages.emplace_back(acmacs::messages::key::fasta_country_name_mismatch,
-                                          fmt::format("from-location:\"{}\" <-- \"{}\"  fasta/dat:\"{}\"", country, source.sequence.name(), source.fasta.country),
+                                          fmt::format("{:30s}  {:30s} <-- \"{}\"", fmt::format("\"{}\"", source.fasta.country), fmt::format("\"{}\"", country), source.sequence.name()),
                                           acmacs::messages::position_t{source.fasta.filename, source.fasta.line_no}, MESSAGE_CODE_POSITION);
                     source.sequence.country(source.fasta.country);
                     break;
