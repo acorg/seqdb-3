@@ -451,7 +451,8 @@ void acmacs::seqdb::v3::scan::fasta::check_passage(acmacs::seqdb::v3::scan::fast
         }
         else {
             source.sequence.add_passage(acmacs::virus::Passage{passage});
-            source.sequence.annotations(acmacs::string::join(acmacs::string::join_space, source.sequence.annotations(), passage_extra));
+            if (passage_extra.size() > 1)
+                source.sequence.annotations(acmacs::string::join(acmacs::string::join_space, source.sequence.annotations(), passage_extra));
         }
     }
     else if (!passage.empty())
