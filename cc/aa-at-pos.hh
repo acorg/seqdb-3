@@ -8,7 +8,7 @@
 
 // ----------------------------------------------------------------------
 
-namespace rjson::inline v2 { class value; }
+namespace rjson::v3 { class value; }
 
 namespace acmacs::seqdb::inline v3
 {
@@ -46,7 +46,7 @@ namespace acmacs::seqdb::inline v3
 
     using nucleotide_at_pos1_eq_list_t = std::vector<nucleotide_at_pos1_eq_t>;
 
-    nucleotide_at_pos1_eq_list_t extract_nuc_at_pos1_eq_list(const rjson::value& source);
+    nucleotide_at_pos1_eq_list_t extract_nuc_at_pos1_eq_list(const rjson::v3::value& source);
     nucleotide_at_pos1_eq_t extract_nuc_at_pos1_eq(std::string_view source);
     nucleotide_at_pos1_eq_list_t extract_nuc_at_pos1_eq_list(std::string_view source); // space or comma separated list, e.g. "1703A 384C 618C !1010G"
 
@@ -90,7 +90,7 @@ namespace acmacs::seqdb::inline v3
 
     // --------------------------------------------------
 
-    amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(const rjson::value& source);
+    amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(const rjson::v3::value& source);
     amino_acid_at_pos1_eq_t extract_aa_at_pos1_eq(std::string_view source); // "!183P"
     amino_acid_at_pos1_eq_list_t extract_aa_at_pos1_eq_list(std::string_view source); // space or comma separated list, e.g. "183P 141E !123K"
 

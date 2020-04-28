@@ -1,6 +1,6 @@
 #include <cctype>
 
-#include "acmacs-base/rjson-v2.hh"
+#include "acmacs-base/rjson-v3.hh"
 #include "acmacs-base/string.hh"
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/string-from-chars.hh"
@@ -37,27 +37,6 @@ template <typename R, size_t MIN_SIZE, size_t MAX_SIZE> inline R extract_aa_nuc_
 
 // ----------------------------------------------------------------------
 
-template <typename R, size_t MIN_SIZE, size_t MAX_SIZE> inline R extract_aa_nuc_at_pos1_eq_list(const rjson::value& source)
-{
-    return std::visit(
-        []<typename T>(T && arg)->R {
-            if constexpr (std::is_same_v<std::decay_t<T>, std::string>) {
-                return extract_aa_nuc_at_pos1_eq_list<R, MIN_SIZE, MAX_SIZE>(std::string_view{arg});
-            }
-            else if constexpr (std::is_same_v<std::decay_t<T>, rjson::array>) {
-                R pos1_aa_eq;
-                arg.for_each([&pos1_aa_eq](const rjson::value& entry) { pos1_aa_eq.push_back(extract_aa_nuc_at_pos1_eq<typename list_pos_conv<R>::at_pos1_eq_t, MIN_SIZE, MAX_SIZE>(entry.to<std::string_view>())); });
-                return pos1_aa_eq;
-            }
-            else
-                throw acmacs::seqdb::extract_at_pos_error{fmt::format("invalid aa/nuc-at-pos1 list: {}", arg)};
-        },
-        source.val_());
-
-} // acmacs::seqdb::v3::extract_aa_at_pos_eq_list
-
-// ----------------------------------------------------------------------
-
 template <typename R, size_t MIN_SIZE, size_t MAX_SIZE> inline R extract_aa_nuc_at_pos1_eq_list(std::string_view source)
 {
     const auto fields = acmacs::string::split(source, acmacs::string::Split::RemoveEmpty);
@@ -70,6 +49,27 @@ template <typename R, size_t MIN_SIZE, size_t MAX_SIZE> inline R extract_aa_nuc_
 
 // ======================================================================
 
+template <typename R, size_t MIN_SIZE, size_t MAX_SIZE> inline R extract_aa_nuc_at_pos1_eq_list(const rjson::v3::value& source)
+{
+    return source.visit(
+        [&source]<typename Content>(const Content& arg) -> R {
+            if constexpr (std::is_same_v<Content, rjson::v3::detail::string>) {
+                return extract_aa_nuc_at_pos1_eq_list<R, MIN_SIZE, MAX_SIZE>(arg.template to<std::string_view>());
+            }
+            else if constexpr (std::is_same_v<Content, rjson::v3::detail::array>) {
+                R pos1_aa_eq;
+                for (const rjson::v3::value& entry : arg)
+                    pos1_aa_eq.push_back(extract_aa_nuc_at_pos1_eq<typename list_pos_conv<R>::at_pos1_eq_t, MIN_SIZE, MAX_SIZE>(entry.to<std::string_view>()));
+                return pos1_aa_eq;
+            }
+            else
+                throw acmacs::seqdb::extract_at_pos_error{fmt::format("invalid aa/nuc-at-pos1 list: {}", source)};
+        });
+
+} // acmacs::seqdb::v3::extract_aa_at_pos_eq_list
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::amino_acid_at_pos1_eq_t acmacs::seqdb::v3::extract_aa_at_pos1_eq(std::string_view source)
 {
     return extract_aa_nuc_at_pos1_eq<acmacs::seqdb::amino_acid_at_pos1_eq_t, 2, 4>(source);
@@ -78,7 +78,7 @@ acmacs::seqdb::amino_acid_at_pos1_eq_t acmacs::seqdb::v3::extract_aa_at_pos1_eq(
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::amino_acid_at_pos1_eq_list_t acmacs::seqdb::v3::extract_aa_at_pos1_eq_list(const rjson::value& source)
+acmacs::seqdb::amino_acid_at_pos1_eq_list_t acmacs::seqdb::v3::extract_aa_at_pos1_eq_list(const rjson::v3::value& source)
 {
     return extract_aa_nuc_at_pos1_eq_list<acmacs::seqdb::amino_acid_at_pos1_eq_list_t, 2, 4>(source);
 
@@ -102,7 +102,7 @@ acmacs::seqdb::nucleotide_at_pos1_eq_t acmacs::seqdb::v3::extract_nuc_at_pos1_eq
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::nucleotide_at_pos1_eq_list_t acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list(const rjson::value& source)
+acmacs::seqdb::nucleotide_at_pos1_eq_list_t acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list(const rjson::v3::value& source)
 {
     return extract_aa_nuc_at_pos1_eq_list<acmacs::seqdb::nucleotide_at_pos1_eq_list_t, 2, 5>(source);
 
