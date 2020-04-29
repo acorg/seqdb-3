@@ -59,7 +59,7 @@ int main(int argc, char* const argv[])
         constexpr const int aa_width{4};
         constexpr const int aa_with_sep_width{aa_width + aa_sep_width * 2};
         constexpr const int year_sep_width{6};
-        constexpr const int year_width{4};
+        // constexpr const int year_width{4};
         constexpr const int clade_width{8};
         const int year_sep_prefix_width{static_cast<int>(all_aa.size() * aa_with_sep_width + year_sep_width) / 2};
 
@@ -69,7 +69,7 @@ int main(int argc, char* const argv[])
         fmt::print("\n");
 
         fmt::print("{:{}s}", "", clade_width);
-        for (const auto& y : years) {
+        for ([[maybe_unused]] const auto& y : years) {
             fmt::print("{:{}s}", "", aa_with_sep_width / 2);
             for (const auto aa : all_aa)
                 fmt::print("{:{}c}", aa, aa_with_sep_width);
