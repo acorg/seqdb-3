@@ -304,7 +304,7 @@ void acmacs::seqdb::v3::scan::sequence_t::import(std::string_view source)
     nuc_.resize(source.size(), '-');
     std::transform(std::begin(source), std::end(source), std::begin(nuc_), [](char c) { return std::toupper(c); });
 
-    const auto freq = acmacs::CounterChar(nuc_).sorted_pairs();
+    const auto freq = acmacs::CounterChar(nuc_).pairs(acmacs::CounterChar::sorted::yes);
 
     const auto most_freq_are_acgnt = [](const auto& frq) {
         const auto most_frequent_symbols_size = std::min(5UL, frq.size());
