@@ -4,6 +4,7 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
+#include "acmacs-whocc-data/labs.hh"
 #include "seqdb-3/seqdb.hh"
 
 // ----------------------------------------------------------------------
@@ -102,14 +103,6 @@ int main(int argc, char* const argv[])
             return source;
         };
 
-        const auto fix_lab = [](const acmacs::uppercase& source) -> acmacs::uppercase {
-            if (*source == "MELB")
-                return "VIDRL";
-            if (*source == "NIMR")
-                return "CRICK";
-            return source;
-        };
-
         const auto sorting_order = [](const acmacs::lowercase& desc) -> acmacs::seqdb::subset::sorting {
             if (desc == acmacs::lowercase{"none"})
                 return acmacs::seqdb::subset::sorting::none;
@@ -147,7 +140,7 @@ int main(int argc, char* const argv[])
         init()
             .subtype(acmacs::uppercase{*opt.subtype})
             .lineage(acmacs::uppercase{*opt.lineage})
-            .lab(fix_lab(acmacs::uppercase{*opt.lab}))
+            .lab(acmacs::whocc::lab_name_normalize(*opt.lab))
             .whocc_lab(opt.whocc_lab)
             .host(acmacs::uppercase{*opt.host})
             .dates(fix_date(opt.start_date), fix_date(opt.end_date))
