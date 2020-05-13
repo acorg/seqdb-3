@@ -13,6 +13,7 @@ struct Options : public argv
 
     option<str>  db{*this, "db"};
     option<str>  html{*this, "html", desc{"generate html"}};
+    option<bool> nuc{*this, "nuc", desc{"compare nucleotide sequences"}};
     option<bool> open{*this, "open", desc{"open html"}};
 
     argument<str_array> seq_ids{*this, arg_name{"seq-id or :T:<group-title>"}, mandatory};
@@ -48,15 +49,25 @@ int main(int argc, char* const argv[])
             else
                 seq_ids.push_back(seq_id);
         }
-        if (!seq_ids.empty())
+        if (!seq_ids.empty()) {
             subsets_by_title[title] = seqdb.find_by_seq_ids(seq_ids);
+            bool not_found_present = false;
+            for (size_t i = 0; i < seq_ids.size(); ++i) {
+                if (!subsets_by_title[title][i]) {
+                    AD_ERROR("{} not found", seq_ids[i]);
+                    not_found_present = true;
+                }
+            }
+            if (not_found_present)
+                throw std::runtime_error{"few sequences not found"};
+        }
 
         if (opt.html) {
-            acmacs::file::write(opt.html, acmacs::seqdb::compare_report_html("", subsets_by_title));
+            acmacs::file::write(opt.html, acmacs::seqdb::compare_report_html("", subsets_by_title, opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa));
             acmacs::open_or_quicklook(opt.open && opt.html != "-" && opt.html != "=", false, opt.html);
         }
         else
-            fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_by_title));
+            fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_by_title, opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa));
 
         return 0;
     }
