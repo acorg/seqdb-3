@@ -256,6 +256,8 @@ const char* local::sReportHtml = R"(<!DOCTYPE html>
      table.fasta-aa-entries tr.separator td {{ height: 1em; border-bottom: 1px solid #A0A0A0; }}
      table.fasta-aa-entries tr.group-title td {{ color: #FF8000; }}
 
+     table.all-letters {{ display: none; }}
+
      /* Ana and Lily colors of 2020-05-13 Subject: [Lab] Colour scheme for colouring amino acids by property group */
      [aA] {{ color: #A30000; }} /* hydrophobic */
      [aC] {{ color: #FFFF29; }} /* special */
