@@ -37,7 +37,7 @@ class CladeDefinitions : public acmacs::settings::Settings
             auto aa = aa_field.is_null() ? acmacs::seqdb::amino_acid_at_pos1_eq_list_t{} : acmacs::seqdb::extract_aa_at_pos1_eq_list(aa_field);
             const auto& nuc_field = getenv("nuc"sv);
             auto nuc = nuc_field.is_null() ? acmacs::seqdb::nucleotide_at_pos1_eq_list_t{} : acmacs::seqdb::extract_nuc_at_pos1_eq_list(nuc_field);
-            add(current_virus_type_, getenv("name"sv, ""sv), std::move(aa), std::move(nuc));
+            add(current_virus_type_, getenv_or("name"sv, ""sv), std::move(aa), std::move(nuc));
         }
         else
             return acmacs::settings::Settings::apply_built_in(name);
