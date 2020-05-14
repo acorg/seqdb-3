@@ -1,83 +1,10 @@
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/range.hh"
 #include "acmacs-base/range-v3.hh"
-#include "acmacs-base/color.hh"
+#include "acmacs-base/color-amino-acid.hh"
 #include "seqdb-3/compare.hh"
 
 // ----------------------------------------------------------------------
-
-using ac = std::pair<char, Color>;
-const std::array amino_acid_colors{
-     ac{'A', 0xA30000}, // hydrophobic
-     ac{'C', 0xFFFF29}, // special
-     ac{'D', 0x4CBB17}, // negative
-     ac{'E', 0x1A4F30}, // negative
-     ac{'F', 0x681226}, // hydrophobic
-     ac{'G', 0xF7CF08}, // special
-     ac{'H', 0x7571BC}, // positive
-     ac{'I', 0xFF5A3D}, // hydrophobic
-     ac{'K', 0x440FAE}, // positive
-     ac{'L', 0xC34822}, // hydrophobic
-     ac{'M', 0xEB1919}, // hydrophobic
-     ac{'N', 0x18E0F7}, // polar uncharged
-     ac{'P', 0xCD8D00}, // special
-     ac{'Q', 0x0080FF}, // polar uncharged
-     ac{'R', 0xB2A1FF}, // positive
-     ac{'S', 0x0F52BA}, // polar uncharged
-     ac{'T', 0x000080}, // polar uncharged
-     ac{'V', 0xF9BDED}, // hydrophobic
-     ac{'W', 0xC32290}, // hydrophobic
-     ac{'Y', 0xFF2976}, // hydrophobic
-     ac{'X', 0x808080},
-};
-
-const std::array nucleotide_colors{
-     ac{'A', 0x0080FF},
-     ac{'C', 0x4CBB17},
-     ac{'G', 0xEB1919},
-     ac{'T', 0xCD8D00},
-};
-
-inline std::string amino_acid_color(char aa)
-{
-    if (const auto found = std::find_if(std::begin(amino_acid_colors), std::end(amino_acid_colors), [aa](const auto& en) { return aa == en.first; }); found != std::end(amino_acid_colors))
-        return fmt::format("{:#}", found->second);
-    else
-        return fmt::format("{:#}", BLACK);
-}
-
-inline std::string nucleotide_color(char nuc)
-{
-    if (const auto found = std::find_if(std::begin(nucleotide_colors), std::end(nucleotide_colors), [nuc](const auto& en) { return nuc == en.first; }); found != std::end(amino_acid_colors))
-        return fmt::format("{:#}", found->second);
-    else
-        return fmt::format("{:#}", BLACK);
-}
-
-// // first variant with C being too bright
-// const std::array amino_acid_colors{
-//      ac{'A', 0xA30000}, // hydrophobic
-//      ac{'C', 0xFFFF29}, // special
-//      ac{'D', 0x4CBB17}, // negative
-//      ac{'E', 0x1A4F30}, // negative
-//      ac{'F', 0x681226}, // hydrophobic
-//      ac{'G', 0xF7CF08}, // special
-//      ac{'H', 0x7571BC}, // positive
-//      ac{'I', 0xFF5A3D}, // hydrophobic
-//      ac{'K', 0x440FAE}, // positive
-//      ac{'L', 0xC34822}, // hydrophobic
-//      ac{'M', 0xEB1919}, // hydrophobic
-//      ac{'N', 0x18E0F7}, // polar uncharged
-//      ac{'P', 0xCD8D00}, // special
-//      ac{'Q', 0x0080FF}, // polar uncharged
-//      ac{'R', 0xB2A1FF}, // positive
-//      ac{'S', 0x0F52BA}, // polar uncharged
-//      ac{'T', 0x000080}, // polar uncharged
-//      ac{'V', 0xF9BDED}, // hydrophobic
-//      ac{'W', 0xC32290}, // hydrophobic
-//      ac{'Y', 0xFF2976}, // hydrophobic
-//      ac{'X', 0x808080},
-// };
 
 static std::string css_amino_acid_colors();
 static std::string css_nucleotide_colors();
@@ -347,6 +274,7 @@ std::string css_amino_acid_colors()
      [aX] {{ color: {X}; }}
 )";
 
+    using namespace acmacs;
     return fmt::format(format, fmt::arg("A", amino_acid_color('A')), fmt::arg("C", amino_acid_color('C')), fmt::arg("D", amino_acid_color('D')), fmt::arg("E", amino_acid_color('E')),
                        fmt::arg("F", amino_acid_color('F')), fmt::arg("G", amino_acid_color('G')), fmt::arg("H", amino_acid_color('H')), fmt::arg("I", amino_acid_color('I')),
                        fmt::arg("K", amino_acid_color('K')), fmt::arg("L", amino_acid_color('L')), fmt::arg("M", amino_acid_color('M')), fmt::arg("N", amino_acid_color('N')),
@@ -367,6 +295,7 @@ std::string css_nucleotide_colors()
      [nT] {{ color: {T}; }}
     )";
 
+    using namespace acmacs;
     return fmt::format(format, fmt::arg("A", nucleotide_color('A')), fmt::arg("C", nucleotide_color('C')), fmt::arg("G", nucleotide_color('G')), fmt::arg("T", nucleotide_color('T')));
 }
 
