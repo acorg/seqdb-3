@@ -12,6 +12,7 @@ struct Options : public argv
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
     option<str> db{*this, "db"};
+    option<double> second_counter_threshold{*this, "threshold", dflt{0.05}, "fraction of the second frequent AA at pos must be bigger that this value to report"};
 
     argument<str_array> seqids{*this, arg_name{"seq-id or - to read them from stdin"}, mandatory};
 };
@@ -39,10 +40,12 @@ int main(int argc, char* const argv[])
                 aa_at_pos[*pos].count(aa.at(pos));
         }
 
+        const auto min_second_to_report = static_cast<size_t>(static_cast<double>(subset.size()) * *opt.second_counter_threshold);
+        AD_DEBUG("subset:{} threshold:{} min-second:{}", subset.size(), static_cast<double>(subset.size()) * *opt.second_counter_threshold, min_second_to_report);
         for (size_t pos{0}; pos < aa_at_pos.size(); ++pos) {
-            if (aa_at_pos[pos].size() < 2)
-                continue;       // just one AA at this pos in all sequences
-            fmt::print("{:3d} {}\n", pos + 1, aa_at_pos[pos].report_sorted_max_first("  {value}:{counter}"));
+            const auto data = aa_at_pos[pos].pairs(acmacs::CounterChar::sorted::yes);
+            if (data.size() > 1 && data[1].first != 'X' && data[1].second > min_second_to_report)
+                fmt::print("{:3d} {}\n", pos + 1, aa_at_pos[pos].report_sorted_max_first("  {value}:{counter}"));
         }
 
         return 0;
