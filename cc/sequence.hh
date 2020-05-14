@@ -39,12 +39,23 @@ namespace acmacs::seqdb::inline v3
 
     // --------------------------------------------------
 
-    using sequence_aligned_t = named_string_t<struct seqdb_sequence_aligned_tag_t>;
+    struct sequence_aligned_t : public named_string_t<struct seqdb_sequence_aligned_ref_tag_t>
+    {
+        using base = named_string_t<struct seqdb_sequence_aligned_ref_tag_t>;
+        using base::named_string_t;
+        constexpr char at(pos0_t pos0) const noexcept { return pos0 < size() ? operator[](*pos0) : ' '; }
+        constexpr pos0_t size() const noexcept { return pos0_t{base::size()}; }
+        constexpr void set(seqdb::pos0_t pos0, char aa) noexcept { if (pos0 < size()) get()[*pos0] = aa; }
+        constexpr void resize(seqdb::pos0_t new_size) { get().resize(*new_size); }
+    };
 
+    // not owning reference to a sequence
     struct sequence_aligned_ref_t : public named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>
     {
-        using named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>::named_string_view_t;
-        char at(pos0_t pos0) const noexcept { return *pos0 < size() ? operator[](*pos0) : ' '; }
+        using base = named_string_view_t<struct seqdb_sequence_aligned_ref_tag_t>;
+        using base::named_string_view_t;
+        constexpr char at(pos0_t pos0) const noexcept { return pos0 < size() ? operator[](*pos0) : ' '; }
+        constexpr pos0_t size() const noexcept { return pos0_t{base::size()}; }
     };
 
     using alignment_t = named_int_from_string_t<struct seqdb_alignment_tag_t>;
