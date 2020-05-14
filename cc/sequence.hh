@@ -44,9 +44,9 @@ namespace acmacs::seqdb::inline v3
         using base = named_string_t<struct seqdb_sequence_aligned_ref_tag_t>;
         using base::named_string_t;
         constexpr char at(pos0_t pos0) const noexcept { return pos0 < size() ? operator[](*pos0) : ' '; }
-        constexpr pos0_t size() const noexcept { return pos0_t{base::size()}; }
+        /*constexpr*/ pos0_t size() const noexcept { return pos0_t{base::size()}; }
         constexpr void set(seqdb::pos0_t pos0, char aa) noexcept { if (pos0 < size()) get()[*pos0] = aa; }
-        constexpr void resize(seqdb::pos0_t new_size) { get().resize(*new_size); }
+        /*constexpr*/ void resize(seqdb::pos0_t new_size) { get().resize(*new_size); }
     };
 
     // not owning reference to a sequence
