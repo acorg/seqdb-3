@@ -41,7 +41,7 @@ int main(int argc, char* const argv[])
         }
 
         const auto min_second_to_report = static_cast<size_t>(static_cast<double>(subset.size()) * *opt.second_counter_threshold);
-        AD_DEBUG("subset:{} threshold:{} min-second:{}", subset.size(), static_cast<double>(subset.size()) * *opt.second_counter_threshold, min_second_to_report);
+        // AD_DEBUG("subset:{} threshold:{} min-second:{}", subset.size(), static_cast<double>(subset.size()) * *opt.second_counter_threshold, min_second_to_report);
         for (size_t pos{0}; pos < aa_at_pos.size(); ++pos) {
             const auto data = aa_at_pos[pos].pairs(acmacs::CounterChar::sorted::yes);
             if (data.size() > 1 && data[1].first != 'X' && data[1].second > min_second_to_report)
