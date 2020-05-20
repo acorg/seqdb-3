@@ -16,10 +16,21 @@ TARGETS = \
   $(DIST)/seqdb3-stat-aa-at-pos \
   $(DIST)/test-insertions-deletions
 
-SEQDB_SOURCES = \
-  seqdb.cc \
-  scan-fasta.cc ncbi.cc scan-sequence.cc scan-align.cc eliminate-identical.cc scan-deletions.cc scan-lineages.cc scan-match-hidb.cc create.cc \
-  seq-id.cc seqdb-parse.cc compare.cc aa-at-pos.cc
+SEQDB_SOURCES =          \
+  seqdb.cc               \
+  scan-fasta.cc          \
+  ncbi.cc                \
+  scan-match-hidb.cc     \
+  create.cc              \
+  compare.cc             \
+  scan-lineages.cc       \
+  scan-sequence.cc       \
+  scan-align.cc          \
+  scan-deletions.cc      \
+  aa-at-pos.cc           \
+  seqdb-parse.cc         \
+  eliminate-identical.cc \
+  seq-id.cc
 
 SEQDB_LIB_MAJOR = 3
 SEQDB_LIB_MINOR = 0
