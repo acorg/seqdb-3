@@ -131,7 +131,7 @@ namespace acmacs::seqdb::inline v3
     struct amino_acid_nucleotide_at_pos1_eq_t_tag {};
 }
 
-template <> struct fmt::formatter<acmacs::seqdb::amino_acid_nucleotide_at_pos1_eq_t_tag> : public fmt::formatter<acmacs::fmt_default_formatter>
+template <> struct fmt::formatter<acmacs::seqdb::amino_acid_nucleotide_at_pos1_eq_t_tag> : public fmt::formatter<acmacs::fmt_helper::default_formatter>
 {
     template <typename AA_NUC, typename FormatContext> auto format(const AA_NUC& pos1_aa_eq, FormatContext& ctx)
     {
