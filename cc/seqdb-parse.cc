@@ -25,6 +25,45 @@ namespace local
         acmacs::seqdb::SeqdbSeq::labs_t& target_;
     };
 
+    class gisaid_data : public in_json::stack_entry
+    {
+      public:
+        gisaid_data(acmacs::seqdb::SeqdbSeq::gisaid_data_t& target) : target_{target} {}
+        const char* injson_name() override { return "gisaid"; }
+
+        void injson_put_array() override
+        {
+        }
+
+        void injson_pop_array() override
+        {
+            reset_key();
+        }
+
+        void injson_put_string(std::string_view data) override
+        {
+            switch (key_[0]) {
+                case 'i':
+                    target_.isolate_ids.emplace_back(data);
+                    break;
+              case 'S':         // todo
+              case 's':
+              case 'm':
+              case 'o':
+              case 'n':
+              case 't':
+              case 'D':
+              case 'd':
+                  break;
+                default:
+                    throw in_json::parse_error(fmt::format("gisaid: unexpected key: \"{}\"", key_));
+            }
+        }
+
+      private:
+        acmacs::seqdb::SeqdbSeq::gisaid_data_t& target_;
+    };
+
     class reference : public in_json::stack_entry
     {
       public:
@@ -74,7 +113,7 @@ namespace local
                   return std::make_unique<labs>(target_.lab_ids);
               case 'G':         // gisaid data
                   reset_key();
-                  return std::make_unique<in_json::ignore>();
+                  return std::make_unique<gisaid_data>(target_.gisaid);
               case 'R':         // master with identical sequence reference
                   reset_key();
                   return std::make_unique<reference>(target_.master);

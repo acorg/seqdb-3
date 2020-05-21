@@ -147,6 +147,11 @@ namespace acmacs::seqdb::inline v3
         using lab_ids_t = std::vector<std::string_view>;
         using labs_t = std::vector<std::pair<std::string_view, lab_ids_t>>;
 
+        struct gisaid_data_t
+        {
+            std::vector<std::string_view> isolate_ids; // gisaid accession numbers
+        };
+
         struct master_ref_t
         {
             std::string_view name;
@@ -171,6 +176,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<std::string_view> hi_names;
         std::string_view hash;
         labs_t lab_ids;
+        gisaid_data_t gisaid;
         mutable std::unique_ptr<std::vector<ref>> slaves_; // for master only, list of slaves pointing to this master
 
         bool has_lab(std::string_view lab) const
