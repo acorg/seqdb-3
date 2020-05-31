@@ -35,14 +35,24 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::sequence_aligned_t acmacs::seqdb::v3::find_common(const subsets_by_title_t& subsets, enum compare cmp_nuc_aa)
+acmacs::seqdb::v3::sequence_aligned_t acmacs::seqdb::v3::find_common(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa)
 {
     sequence_aligned_t target;
-    for ([[maybe_unused]] const auto& [_, ss] : subsets)
-        update_common(target, ss, cmp_nuc_aa);
+    for (const auto& en : subsets)
+        update_common(target, en.subset, cmp_nuc_aa);
     return target;
 
 } // acmacs::seqdb::v3::find_common
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::differences_t acmacs::seqdb::v3::find_differences(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa)
+{
+    const auto comm = find_common(subsets, cmp_nuc_aa);
+    differences_t diffs;
+    return diffs;
+
+} // acmacs::seqdb::v3::find_differences
 
 // ----------------------------------------------------------------------
 
