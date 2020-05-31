@@ -1,5 +1,4 @@
 #include "acmacs-base/argv.hh"
-#include "acmacs-base/fmt.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/quicklook.hh"
 #include "seqdb-3/compare.hh"

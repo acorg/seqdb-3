@@ -8,6 +8,7 @@ TARGETS = \
   $(DIST)/seqdb3 \
   $(DIST)/seqdb3-chart-sequenced \
   $(DIST)/seqdb3-compare-sequences \
+  $(DIST)/seqdb3-chart-compare-sequences \
   $(DIST)/seqdb3-chart-clades \
   $(DIST)/seqdb3-seqid-by-name \
   $(DIST)/seqdb3-chart-dates \

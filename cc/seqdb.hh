@@ -351,6 +351,7 @@ namespace acmacs::seqdb::inline v3
         subset& report_hamming_distance(bool do_report);
 
         subset& append(const subset& another);
+        subset& append(const ref& seq) { refs_.push_back(seq); return *this; }
 
         // returns new subset, this subset is not modified
         enum class matched_only { no, yes };

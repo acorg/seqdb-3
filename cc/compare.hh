@@ -8,7 +8,7 @@ namespace acmacs::seqdb
 {
     inline namespace v3
     {
-        using subsets_by_title_t = std::map<std::string, subset>;
+        using subsets_by_title_t = std::map<std::string, subset, std::less<>>;
         enum class compare {aa, nuc};
 
         std::string compare_report_text(const subset& sequences, enum compare cmp_nuc_aa, size_t split = 0);
