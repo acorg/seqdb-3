@@ -13,8 +13,60 @@ static std::string css_nucleotide_colors();
 
 namespace local
 {
-    class sequence_no_found : public std::runtime_error { public: sequence_no_found() : std::runtime_error{"sequence not found in seqdb"} {} };
+    class sequence_no_found : public std::runtime_error
+    {
+      public:
+        sequence_no_found() : std::runtime_error{"sequence not found in seqdb"} {}
+    };
 
+    inline acmacs::seqdb::sequence_aligned_ref_t aligned(const auto& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
+    {
+        if (!ref)
+            throw sequence_no_found{};
+        switch (cmp_nuc_aa) {
+            case acmacs::seqdb::compare::nuc:
+                return ref.nuc_aligned(acmacs::seqdb::get());
+            case acmacs::seqdb::compare::aa:
+                return ref.aa_aligned(acmacs::seqdb::get());
+        }
+    };
+
+} // namespace local
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::sequence_aligned_t acmacs::seqdb::v3::find_common(const subsets_by_title_t& subsets, enum compare cmp_nuc_aa)
+{
+    sequence_aligned_t target;
+    for ([[maybe_unused]] const auto& [_, ss] : subsets)
+        update_common(target, ss, cmp_nuc_aa);
+    return target;
+
+} // acmacs::seqdb::v3::find_common
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::update_common(sequence_aligned_t& target, const subset& source, enum compare cmp_nuc_aa)
+{
+    for (const auto& ref : source) {
+        const auto seq{local::aligned(ref, cmp_nuc_aa)};
+        const auto end{target.size()};
+        if (end < seq.size()) {
+            target.resize(seq.size());
+            std::copy(std::next(seq->begin(), static_cast<ssize_t>(*end)), seq->end(), std::next(target.get().begin(), static_cast<ssize_t>(*end)));
+        }
+        for (acmacs::seqdb::pos0_t pos{0}; pos < end; ++pos) {
+            if (seq.at(pos) != target.at(pos))
+                target.set(pos, ' ');
+        }
+    }
+
+} // acmacs::seqdb::v3::update_common
+
+// ======================================================================
+
+namespace local
+{
     static inline char seq_aa(char aa, std::string_view seq, size_t pos)
     {
         if (seq.size() <= pos)
@@ -36,7 +88,7 @@ namespace local
         return false;
     }
 
-    template <typename ... Ranges> inline std::vector<size_t> positions_with_differences(std::string_view master_sequence, Ranges&& ... rngs)
+    template <typename... Ranges> inline std::vector<size_t> positions_with_differences(std::string_view master_sequence, Ranges&&... rngs)
     {
         std::vector<size_t> result;
         for (size_t pos = 0; pos < master_sequence.size(); ++pos) {
@@ -48,18 +100,6 @@ namespace local
     }
 
     // ----------------------------------------------------------------------
-
-    inline std::string_view aligned(const auto& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
-    {
-        if (!ref)
-            throw sequence_no_found{};
-        switch (cmp_nuc_aa) {
-            case acmacs::seqdb::compare::nuc:
-                return ref.nuc_aligned(acmacs::seqdb::get());
-            case acmacs::seqdb::compare::aa:
-                return ref.aa_aligned(acmacs::seqdb::get());
-        }
-    };
 
     constexpr const char* compare_report_text_split_space = "  ";
 
@@ -89,7 +129,8 @@ namespace local
         return fmt::to_string(out);
     }
 
-    template <typename R1, typename R2> std::string compare_report_text(const acmacs::seqdb::v3::ref& master, std::string_view title1, enum acmacs::seqdb::compare cmp_nuc_aa, R1&& r1, std::string_view title2, R2&& r2)
+    template <typename R1, typename R2>
+    std::string compare_report_text(const acmacs::seqdb::v3::ref& master, std::string_view title1, enum acmacs::seqdb::compare cmp_nuc_aa, R1&& r1, std::string_view title2, R2&& r2)
     {
         if (!master)
             throw sequence_no_found{};

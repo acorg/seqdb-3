@@ -43,38 +43,10 @@ int main(int argc, char* const argv[])
                     subset.append(matched_seqdb[ind]);
             }
         }
-        fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_by_title, opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa));
-
-        // std::string title;
-        // std::vector<std::string_view> seq_ids;
-        // for (const auto& seq_id : *opt.seq_ids) {
-        //     if (seq_id.size() >= 3 && seq_id.substr(0, 3) == ":T:") {
-        //         if (!seq_ids.empty()) {
-        //             subsets_by_title[title] = seqdb.find_by_seq_ids(seq_ids);
-        //             seq_ids.clear();
-        //         }
-        //         title = seq_id.substr(3);
-        //         if (subsets_by_title.find(title) != subsets_by_title.end())
-        //             throw std::runtime_error(fmt::format("Group tag already exists: \"{}\"", title));
-        //     }
-        //     else if (seq_id.empty() || seq_id.front() == ':') {
-        //         throw std::runtime_error(fmt::format("Unrecognized command entry: \"{}\"", seq_id));
-        //     }
-        //     else
-        //         seq_ids.push_back(seq_id);
-        // }
-        // if (!seq_ids.empty()) {
-        //     subsets_by_title[title] = seqdb.find_by_seq_ids(seq_ids);
-        //     bool not_found_present = false;
-        //     for (size_t i = 0; i < seq_ids.size(); ++i) {
-        //         if (!subsets_by_title[title][i]) {
-        //             AD_ERROR("{} not found", seq_ids[i]);
-        //             not_found_present = true;
-        //         }
-        //     }
-        //     if (not_found_present)
-        //         throw std::runtime_error{"few sequences not found"};
-        // }
+        const auto nuc_aa{opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa};
+        const auto comm = acmacs::seqdb::v3::find_common(subsets_by_title, nuc_aa);
+        fmt::print("common: {}\n", comm);
+        fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_by_title, nuc_aa));
 
         // if (opt.html) {
         //     acmacs::file::write(opt.html, acmacs::seqdb::compare_report_html("", subsets_by_title, opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa));
