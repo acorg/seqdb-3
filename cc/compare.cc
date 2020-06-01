@@ -3,6 +3,7 @@
 #include "acmacs-base/range.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/color-amino-acid.hh"
+#include "acmacs-base/to-json.hh"
 #include "seqdb-3/compare.hh"
 
 // ----------------------------------------------------------------------
@@ -192,6 +193,23 @@ std::string acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids(size_t inden
     return fmt::to_string(output);
 
 } // acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids
+
+// ----------------------------------------------------------------------
+
+template <> inline to_json::val::val(const acmacs::seqdb::pos0_t& a_val, escape_double_quotes)
+{
+    push_back(fmt::format("{}", a_val));
+}
+
+std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) const
+{
+    using namespace to_json;
+    using namespace std::string_view_literals;
+
+    const auto positions{positions_to_report()};
+    return fmt::format(fmt::format("{{:{}}}", indent), object{key_val{"positions1"sv, array{std::begin(positions), std::end(positions), array::compact_output::yes}}});
+
+} // acmacs::seqdb::v3::subsets_to_compare_t::format_json
 
 // ----------------------------------------------------------------------
 

@@ -43,7 +43,8 @@ int main(int argc, char* const argv[])
             }
         }
         subsets_to_compare.make_counters();
-        fmt::print("{}\n\n{}\n", subsets_to_compare.format_seq_ids(0), subsets_to_compare.format_summary(0, 5, 0.2));
+        fmt::print("{}\n\n{}\n\n", subsets_to_compare.format_seq_ids(0), subsets_to_compare.format_summary(0, 5, 0.2));
+        fmt::print("{}\n", subsets_to_compare.format_json(2));
 
         // const auto comm = acmacs::seqdb::v3::find_common(subsets_to_compare, nuc_aa);
         // fmt::print("common: {}\n", comm);
