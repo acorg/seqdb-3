@@ -2,13 +2,20 @@
 function main()
 {
     console.log("compare_sequences_data", compare_sequences_data);
-    show_full_sequences();
+    show_most_frequent_per_group(document.querySelector("#compare-sequences .most-frequent-per-group"))
+    show_frequency_per_group(document.querySelector("#compare-sequences .frequency-per-group"))
+    show_full_sequences(document.querySelector("#compare-sequences .full-sequences"));
 }
 
 // --------------------------------------------------------------------------------
 
-function show_full_sequences()
+function show_full_sequences(div)
 {
+    const title = document.createElement("p");
+    title.classList.add("title");
+    title.innerHTML = "Full sequences";
+    div.appendChild(title);
+    
     const add_seqence = function(tr, seq_s) {
         const seq = [...seq_s];
         seq.forEach(function(aa, pos0) {
@@ -62,10 +69,28 @@ function show_full_sequences()
         });
     }
     tab1.appendChild(add_ruler());
-    document.querySelector("#full-sequences").appendChild(tab1);
+    div.appendChild(tab1);
 }
 
 // --------------------------------------------------------------------------------
+
+function show_most_frequent_per_group(div)
+{
+    const title = document.createElement("p");
+    title.classList.add("title");
+    title.innerHTML = "Most frequent per group";
+    div.appendChild(title);
+}
+
+// --------------------------------------------------------------------------------
+
+function show_frequency_per_group(div)
+{
+    const title = document.createElement("p");
+    title.classList.add("title");
+    title.innerHTML = "Frequency per group";
+    div.appendChild(title);
+}
 
 // --------------------------------------------------------------------------------
 
