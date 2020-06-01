@@ -62,10 +62,10 @@ function show_full_sequences(div)
             }
             else if (pos1 % 10 == 5) {
                 td.classList.add("sep-left-six");
-                td.innerHTML = ".";
+                //td.innerHTML = ".";
             }
-            else
-                td.innerHTML = ".";
+            // else
+            //     td.innerHTML = ".";
             tr.appendChild(td);
         }
         return tr;
@@ -81,15 +81,22 @@ function show_full_sequences(div)
     rearrange_group(compare_sequences_data.groups[0]);
 
     const tab1 = document.createElement("table");
+    tab1.appendChild(add_ruler());
     for (let group of compare_sequences_data.groups) {
-        tab1.appendChild(add_ruler());
         group.seq.forEach(function(id_seq, index) {
+            const is_master = id_seq.id == compare_sequences_data.groups[0].seq[0].id;
+            if (index == 0 && !is_master) {
+                const tr_space = document.createElement("tr");
+                tr_space.classList.add("group-space");
+                tr_space.innerHTML = "<td></td>";
+                tab1.appendChild(tr_space);
+            }
             const tr = document.createElement("tr");
             if (index == 0)
                 tr.innerHTML = `<td class="group-name" rowspan="${group.seq.length}">${group.name}</td><td class="seq-id">${id_seq.id}</td>`;
             else
                 tr.innerHTML = `<td class="seq-id">${id_seq.id}</td>`;
-            add_seqence(tr, id_seq.seq, id_seq.id == compare_sequences_data.groups[0].seq[0].id ? "" : compare_sequences_data.groups[0].seq[0].seq);
+            add_seqence(tr, id_seq.seq, is_master ? "" : compare_sequences_data.groups[0].seq[0].seq);
             tab1.appendChild(tr);
         });
     }
