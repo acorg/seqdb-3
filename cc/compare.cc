@@ -203,12 +203,12 @@ template <> inline to_json::val::val(const acmacs::seqdb::pos0_t& a_val, escape_
 
 template <> inline to_json::val::val(acmacs::seqdb::seq_id_t&& seq_id, escape_double_quotes)
 {
-    push_back(fmt::format("{}", seq_id));
+    push_back(fmt::format("\"{}\"", seq_id));
 }
 
 template <> inline to_json::val::val(acmacs::seqdb::sequence_aligned_ref_t&& seq, escape_double_quotes)
 {
-    push_back(fmt::format("{}", seq));
+    push_back(fmt::format("\"{}\"", seq));
 }
 
 std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) const
@@ -221,7 +221,7 @@ std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) 
     const auto make_sequence = [this](const seqdb::ref& ref) { return object{key_val{"id"sv, ref.seq_id()}, key_val{"seq"sv, local::aligned(ref, cmp_nuc_aa)}}; };
 
     const auto make_group_pos = [&positions](const subset_to_compare_t& group) {
-        const auto make_aa_counter = [](const auto& aap) { return object{key_val{"a"sv, aap.first}, key_val{"c", aap.second}}; };
+        const auto make_aa_counter = [](const auto& aap) { return object{key_val{"a"sv, std::string(1, aap.first)}, key_val{"c", aap.second}}; };
         object result;
         for (const auto pos : positions) {
             const auto aa_pairs{group.counters[*pos].pairs(subset_to_compare_t::counter_t::sorted::yes)};
