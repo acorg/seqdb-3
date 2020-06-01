@@ -15,9 +15,9 @@ function show_full_sequences()
             const aa_td = document.createElement("td");
             aa_td.classList.add(`aa${aa}`);
             aa_td.classList.add("aa");
-            if (pos0 % 10 == 0)
-                aa_td.classList.add("sep-left-one");
-            else if (pos0 % 10 == 5)
+            if (pos0 % 10 == 9)
+                aa_td.classList.add("sep-left-zero");
+            else if (pos0 % 10 == 4)
                 aa_td.classList.add("sep-left-six");
             aa_td.innerHTML = aa;
             tr.appendChild(aa_td);
@@ -30,14 +30,14 @@ function show_full_sequences()
         tr.innerHTML = `<td colspan="2"></td>`;
         for (let pos1 = 1; pos1 < 550; ++pos1) {
             const td = document.createElement("td");
-            if (pos1 % 10 == 1) {
-                td.classList.add("sep-left-one");
+            if (pos1 % 10 == 0) {
+                td.classList.add("sep-left-zero");
                 let pos_s = "" + pos1;
                 td.innerHTML = pos_s;
                 td.setAttribute("colspan", pos_s.length);
                 pos1 += pos_s.length - 1;
             }
-            else if (pos1 % 10 == 6) {
+            else if (pos1 % 10 == 5) {
                 td.classList.add("sep-left-six");
                 td.innerHTML = ".";
             }
