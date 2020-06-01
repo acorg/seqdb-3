@@ -62,7 +62,18 @@ std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_t::p
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width) const
+std::string acmacs::seqdb::v3::subset_to_compare_t::most_frequent(const std::vector<pos0_t>& positions) const
+{
+    std::string result(positions.size(), '/');
+    for (size_t pp{0}; pp < positions.size(); ++pp)
+        result[pp] = counters[*positions[pp]].max().first;
+    return result;
+
+} // acmacs::seqdb::v3::subset_to_compare_t::most_frequent
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent) const
 {
     const auto num_rows{max_counter_size()};
     fmt::memory_buffer output;
@@ -71,8 +82,15 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::ve
             fmt::format_to(output, "{}{:{}s}", prefix, name, name_width);
         else
             fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
-        for (const auto pos : positions) {
-            if (const auto aa{counters[*pos].sorted()}; row_no < aa.size())
+        for (size_t pp{0}; pp < positions.size(); ++pp) {
+            const auto pos{positions[pp]};
+            if (row_no == 0 && most_frequent) {
+                if (const auto aa{counters[*pos].sorted()[row_no]}; aa != (*most_frequent)[pp])
+                    fmt::format_to(output, "{:^{}c}", aa, column_width);
+                else
+                    fmt::format_to(output, "{:^{}c}", '.', column_width);
+            }
+            else if (const auto aa{counters[*pos].sorted()}; row_no < aa.size())
                 fmt::format_to(output, "{:^{}c}", aa[row_no], column_width);
             else
                 fmt::format_to(output, "{:^{}c}", ' ', column_width);
@@ -120,12 +138,17 @@ std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t inden
     const auto name_width{max_name()};
     const auto positions{positions_to_report()};
     fmt::memory_buffer output;
+    const auto most_frequent{subsets.front().most_frequent(positions)};
+    // fmt::format_to(output, "{}\n\n", most_frequent);
     fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
     for (const auto pos : positions)
         fmt::format_to(output, "{:^{}d}", pos, column_width);
     fmt::format_to(output, "\n");
-    for (const auto& ssc : subsets)
-        fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width));
+    bool first_group{true};
+    for (const auto& ssc : subsets) {
+        fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
+        first_group = false;
+    }
     return fmt::to_string(output);
 
 } // acmacs::seqdb::v3::subsets_to_compare_t::format_summary
