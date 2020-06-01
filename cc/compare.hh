@@ -13,7 +13,7 @@ namespace acmacs::seqdb::inline v3
     {
         std::string name;
         acmacs::seqdb::subset subset;
-        std::vector<acmacs::CounterCharSome<0, 256>> counters;
+        std::vector<acmacs::CounterCharSome<' ', '['>> counters;
 
         // using counter_t = typename std::decay_t<decltype(counters.front())>::counter_t;
 

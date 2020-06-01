@@ -65,7 +65,6 @@ std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_t::p
 std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width) const
 {
     const auto num_rows{max_counter_size()};
-    AD_DEBUG("num_rows {}", num_rows);
     fmt::memory_buffer output;
     for (size_t row_no{0}; row_no < num_rows; ++row_no) {
         if (row_no == 0)
