@@ -2,7 +2,7 @@
 
 .full-sequences table { border-collapse: collapse; }
 .full-sequences td.group-name { white-space: nowrap; vertical-align: top; }
-.full-sequences td.sep-left-zero { border-left: 1px solid black; }
-.full-sequences td.sep-left-six { border-left: 1px solid #C0C0C0; }
+.full-sequences td.sep-left-zero { border-left: 1px solid #C0C0C0; }
+.full-sequences td.sep-left-six { border-left: 1px solid #E0E0E0; }
 .full-sequences .aa { padding: 0.1em; font-family: monospace; font-size: 1.2em; }
 .full-sequences .aa-ruler { text-align: center; }

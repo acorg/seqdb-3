@@ -29,7 +29,7 @@ function show_full_sequences(div)
             group.seq.splice(0, 0, group.seq.splice(master_index, 1)[0]);
     };
 
-    const add_seqence = function(tr, seq_s) {
+    const add_seqence = function(tr, seq_s, master) {
         const seq = [...seq_s];
         seq.forEach(function(aa, pos0) {
             const aa_td = document.createElement("td");
@@ -39,7 +39,10 @@ function show_full_sequences(div)
                 aa_td.classList.add("sep-left-zero");
             else if (pos0 % 10 == 4)
                 aa_td.classList.add("sep-left-six");
-            aa_td.innerHTML = aa;
+            if (master.length > pos0 && aa == master[pos0])
+                aa_td.innerHTML = '&#xB7;';
+            else
+                aa_td.innerHTML = aa;
             tr.appendChild(aa_td);
         });
     };
@@ -86,7 +89,7 @@ function show_full_sequences(div)
                 tr.innerHTML = `<td class="group-name" rowspan="${group.seq.length}">${group.name}</td><td class="seq-id">${id_seq.id}</td>`;
             else
                 tr.innerHTML = `<td class="seq-id">${id_seq.id}</td>`;
-            add_seqence(tr, id_seq.seq);
+            add_seqence(tr, id_seq.seq, id_seq.id == compare_sequences_data.groups[0].seq[0].id ? "" : compare_sequences_data.groups[0].seq[0].seq);
             tab1.appendChild(tr);
         });
     }
