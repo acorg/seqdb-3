@@ -16,7 +16,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<acmacs::CounterCharSome<' ', '['>> counters;
         // std::vector<acmacs::CounterCharSome<0, 256>> counters;
 
-        // using counter_t = typename std::decay_t<decltype(counters.front())>::counter_t;
+        using counter_t = typename std::decay_t<decltype(counters.front())>;
 
         subset_to_compare_t(std::string_view a_name) : name{a_name} {}
         void make_counters(enum compare cmp_nuc_aa);
@@ -24,6 +24,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<pos0_t> positions_to_report() const;
         std::string most_frequent(const std::vector<pos0_t>& positions) const;
         std::string format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent = nullptr) const;
+        std::string format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent, double threshold) const;
         std::string format_seq_ids(size_t indent) const;
     };
 
@@ -37,7 +38,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<pos0_t> positions_to_report() const;
 
         size_t max_name() const { return std::accumulate(std::begin(subsets), std::end(subsets), 0ul, [](size_t max, const auto& ss) { return std::max(max, ss.name.size()); }); }
-        std::string format_summary(size_t indent, size_t column_width) const;
+        std::string format_summary(size_t indent, size_t column_width, double threshold = -1.0) const;
         std::string format_seq_ids(size_t indent) const;
     };
 

@@ -1,3 +1,4 @@
+#include "acmacs-base/string.hh"
 #include "acmacs-base/enumerate.hh"
 #include "acmacs-base/range.hh"
 #include "acmacs-base/range-v3.hh"
@@ -103,6 +104,31 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::ve
 
 // ----------------------------------------------------------------------
 
+std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent, double threshold) const
+{
+    fmt::memory_buffer output;
+    fmt::format_to(output, "{}{:{}s}", prefix, name, name_width);
+    for (size_t pp{0}; pp < positions.size(); ++pp) {
+        const auto pos{positions[pp]};
+        const auto aa_pairs{counters[*pos].pairs(counter_t::sorted::yes)};
+        const auto total{static_cast<double>(std::accumulate(std::begin(aa_pairs), std::end(aa_pairs), 0ul, [](size_t sum, const auto& ap) { return sum + ap.second; }))};
+        std::string aas{aa_pairs.front().first, ' ', ' '};
+        size_t offset{1};
+        for (auto aapp{std::next(std::begin(aa_pairs))}; aapp != std::end(aa_pairs); ++aapp) {
+            if ((static_cast<double>(aapp->second) / total) > threshold)
+                aas[offset++] = aapp->first;
+        }
+        if (most_frequent)
+            ::string::replace_in_place(aas, (*most_frequent)[pp], '.');
+        fmt::format_to(output, "{:^{}s}", aas, column_width);
+    }
+    fmt::format_to(output, "\n");
+    return fmt::to_string(output);
+
+} // acmacs::seqdb::v3::subset_to_compare_t::format_summary
+
+// ----------------------------------------------------------------------
+
 std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent) const
 {
     fmt::memory_buffer output;
@@ -132,7 +158,7 @@ std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t indent, size_t column_width) const
+std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t indent, size_t column_width, double threshold) const
 {
     const std::string prefix(indent, ' ');
     const auto name_width{max_name()};
@@ -146,7 +172,10 @@ std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t inden
     fmt::format_to(output, "\n");
     bool first_group{true};
     for (const auto& ssc : subsets) {
-        fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
+        if (threshold > 0.0)
+            fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent, threshold));
+        else
+            fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
         first_group = false;
     }
     return fmt::to_string(output);
