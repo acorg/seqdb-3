@@ -142,7 +142,7 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent
 
 } // acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids
 
-// ----------------------------------------------------------------------
+// ======================================================================
 
 std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report() const
 {
@@ -201,13 +201,45 @@ template <> inline to_json::val::val(const acmacs::seqdb::pos0_t& a_val, escape_
     push_back(fmt::format("{}", a_val));
 }
 
+template <> inline to_json::val::val(acmacs::seqdb::seq_id_t&& seq_id, escape_double_quotes)
+{
+    push_back(fmt::format("{}", seq_id));
+}
+
+template <> inline to_json::val::val(acmacs::seqdb::sequence_aligned_ref_t&& seq, escape_double_quotes)
+{
+    push_back(fmt::format("{}", seq));
+}
+
 std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) const
 {
     using namespace to_json;
     using namespace std::string_view_literals;
 
     const auto positions{positions_to_report()};
-    return fmt::format(fmt::format("{{:{}}}", indent), object{key_val{"positions1"sv, array{std::begin(positions), std::end(positions), array::compact_output::yes}}});
+
+    const auto make_sequence = [this](const seqdb::ref& ref) { return object{key_val{"id"sv, ref.seq_id()}, key_val{"seq"sv, local::aligned(ref, cmp_nuc_aa)}}; };
+
+    const auto make_group_pos = [&positions](const subset_to_compare_t& group) {
+        const auto make_aa_counter = [](const auto& aap) { return object{key_val{"a"sv, aap.first}, key_val{"c", aap.second}}; };
+        object result;
+        for (const auto pos : positions) {
+            const auto aa_pairs{group.counters[*pos].pairs(subset_to_compare_t::counter_t::sorted::yes)};
+            result << key_val{fmt::format("{}", pos), array{std::begin(aa_pairs), std::end(aa_pairs), make_aa_counter, array::compact_output::yes}};
+        }
+        return result;
+    };
+
+    const auto make_group = [make_group_pos, make_sequence](const subset_to_compare_t& group) {
+        return object{
+            key_val{"name"sv, group.name},
+            key_val{"pos1"sv, make_group_pos(group)},
+            key_val{"seq"sv, array{std::begin(group.subset), std::end(group.subset), make_sequence}},
+        };
+    };
+
+    const object data{key_val{"pos1"sv, array{std::begin(positions), std::end(positions), array::compact_output::yes}}, key_val{"groups"sv, array{std::begin(subsets), std::end(subsets), make_group}}};
+    return fmt::format(fmt::format("{{:{}}}", indent), data);
 
 } // acmacs::seqdb::v3::subsets_to_compare_t::format_json
 
