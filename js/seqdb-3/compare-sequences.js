@@ -11,11 +11,24 @@ function main()
 
 function show_full_sequences(div)
 {
-    const title = document.createElement("p");
-    title.classList.add("title");
-    title.innerHTML = "Full sequences";
-    div.appendChild(title);
-    
+    const find_master = function(group) {
+        let index = 0;
+        for (const seq of group.seq) {
+            if (Object.keys(group.pos1).every(function(pos1) { return group.pos1[pos1][0].a == seq.seq[pos1 - 1]; }))
+                return index;
+            ++index;
+        }
+        console.warn("master not found");
+        return 0;
+    };
+
+    // move master sequence (the one having most frequent aas at all positions) to the first element of the group
+    const rearrange_group = function(group) {
+        const master_index = find_master(group);
+        if (master_index > 0)
+            group.seq.splice(0, 0, group.seq.splice(master_index, 1)[0]);
+    };
+
     const add_seqence = function(tr, seq_s) {
         const seq = [...seq_s];
         seq.forEach(function(aa, pos0) {
@@ -55,6 +68,15 @@ function show_full_sequences(div)
         return tr;
     };
 
+    // ----------------------------------------------------------------------
+
+    const title = document.createElement("p");
+    title.classList.add("title");
+    title.innerHTML = "Full sequences";
+    div.appendChild(title);
+
+    rearrange_group(compare_sequences_data.groups[0]);
+
     const tab1 = document.createElement("table");
     for (let group of compare_sequences_data.groups) {
         tab1.appendChild(add_ruler());
@@ -80,6 +102,8 @@ function show_most_frequent_per_group(div)
     title.classList.add("title");
     title.innerHTML = "Most frequent per group";
     div.appendChild(title);
+
+
 }
 
 // --------------------------------------------------------------------------------
