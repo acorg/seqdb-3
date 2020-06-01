@@ -32,18 +32,21 @@ int main(int argc, char* const argv[])
         auto chart = acmacs::chart::import_from_file(opt.chart);
         auto matched_seqdb = acmacs::seqdb::get().match(*chart->antigens(), chart->info()->virus_type(acmacs::chart::Info::Compute::Yes));
 
-        acmacs::seqdb::v3::subsets_to_compare_t subsets_to_compare;
+        const auto nuc_aa{opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa};
+        acmacs::seqdb::v3::subsets_to_compare_t subsets_to_compare{nuc_aa};
         for (const auto& group_desc : opt.groups) {
             const auto fields{acmacs::string::split(group_desc)};
-            auto& subset = subsets_to_compare.emplace_back(fields[0]).subset;
+            auto& subset = subsets_to_compare.subsets.emplace_back(fields[0]).subset;
             for (auto indp{std::next(std::begin(fields))}; indp != std::end(fields); ++indp) {
                 if (const auto ind{acmacs::string::from_chars<size_t>(*indp)}; matched_seqdb[ind])
                     subset.append(matched_seqdb[ind]);
             }
         }
-        const auto nuc_aa{opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa};
-        const auto comm = acmacs::seqdb::v3::find_common(subsets_to_compare, nuc_aa);
-        fmt::print("common: {}\n", comm);
+        subsets_to_compare.make_counters();
+        fmt::print("{}\n\n{}\n", subsets_to_compare.format_seq_ids(0), subsets_to_compare.format_summary(0, 5));
+
+        // const auto comm = acmacs::seqdb::v3::find_common(subsets_to_compare, nuc_aa);
+        // fmt::print("common: {}\n", comm);
 //        fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_to_compare, nuc_aa));
 
         // if (opt.html) {

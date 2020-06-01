@@ -35,24 +35,133 @@ namespace local
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::sequence_aligned_t acmacs::seqdb::v3::find_common(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa)
+void acmacs::seqdb::v3::subset_to_compare_t::make_counters(enum compare cmp_nuc_aa)
 {
-    sequence_aligned_t target;
-    for (const auto& en : subsets)
-        update_common(target, en.subset, cmp_nuc_aa);
-    return target;
+    for (const auto& ref : subset) {
+        const auto seq{local::aligned(ref, cmp_nuc_aa)};
+        if (counters.size() < *seq.size())
+            counters.resize(*seq.size());
+        for (pos0_t pos{0}; pos < seq.size(); ++pos)
+            counters[*pos].count(seq.at(pos));
+    }
 
-} // acmacs::seqdb::v3::find_common
+} // acmacs::seqdb::v3::subset_to_compare_t::make_counters
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::differences_t acmacs::seqdb::v3::find_differences(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa)
+std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_t::positions_to_report() const
 {
-    const auto comm = find_common(subsets, cmp_nuc_aa);
-    differences_t diffs;
-    return diffs;
+    std::vector<pos0_t> positions;
+    for (size_t pos{0}; pos < counters.size(); ++pos) {
+        if (counters[pos].size() > 1)
+            positions.push_back(pos0_t{pos});
+    }
+    return positions;
 
-} // acmacs::seqdb::v3::find_differences
+} // acmacs::seqdb::v3::subset_to_compare_t::positions_to_report
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width) const
+{
+    const auto num_rows{max_counter_size()};
+    AD_DEBUG("num_rows {}", num_rows);
+    fmt::memory_buffer output;
+    for (size_t row_no{0}; row_no < num_rows; ++row_no) {
+        if (row_no == 0)
+            fmt::format_to(output, "{}{:{}s}", prefix, name, name_width);
+        else
+            fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
+        for (const auto pos : positions) {
+            if (const auto aa{counters[*pos].sorted()}; row_no < aa.size())
+                fmt::format_to(output, "{:^{}c}", aa[row_no], column_width);
+            else
+                fmt::format_to(output, "{:^{}c}", ' ', column_width);
+        }
+        fmt::format_to(output, "\n");
+    }
+    return fmt::to_string(output);
+
+} // acmacs::seqdb::v3::subset_to_compare_t::format_summary
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent) const
+{
+    fmt::memory_buffer output;
+    fmt::format_to(output, "{:{}c}{}\n", ' ', indent, name);
+    for (const auto& ref : subset) {
+        fmt::format_to(output, "{:{}c}{}\n", ' ', indent + 2, ref.seq_id());
+        // fmt::format_to(output, "{:{}c}{}\n", ' ', indent + 2, local::aligned(ref, compare::aa));
+    }
+    return fmt::to_string(output);
+
+} // acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids
+
+// ----------------------------------------------------------------------
+
+std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report() const
+{
+    std::vector<pos0_t> positions;
+    for (const auto& ssc : subsets) {
+        const auto spos = ssc.positions_to_report();
+        positions.insert(std::end(positions), std::begin(spos), std::end(spos));
+    }
+    std::sort(std::begin(positions), std::end(positions));
+    positions.erase(std::unique(std::begin(positions), std::end(positions)), std::end(positions));
+    return positions;
+
+} // acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t indent, size_t column_width) const
+{
+    const std::string prefix(indent, ' ');
+    const auto name_width{max_name()};
+    const auto positions{positions_to_report()};
+    fmt::memory_buffer output;
+    fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
+    for (const auto pos : positions)
+        fmt::format_to(output, "{:^{}d}", pos, column_width);
+    fmt::format_to(output, "\n");
+    for (const auto& ssc : subsets)
+        fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width));
+    return fmt::to_string(output);
+
+} // acmacs::seqdb::v3::subsets_to_compare_t::format_summary
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids(size_t indent) const
+{
+    fmt::memory_buffer output;
+    for (const auto& ssc : subsets)
+        fmt::format_to(output, "{}\n", ssc.format_seq_ids(indent));
+    return fmt::to_string(output);
+
+} // acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids
+
+// ----------------------------------------------------------------------
+
+// acmacs::seqdb::v3::sequence_aligned_t acmacs::seqdb::v3::find_common(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa)
+// {
+//     sequence_aligned_t target;
+//     for (const auto& en : subsets)
+//         update_common(target, en.subset, cmp_nuc_aa);
+//     return target;
+
+// } // acmacs::seqdb::v3::find_common
+
+// ----------------------------------------------------------------------
+
+// acmacs::seqdb::v3::differences_t acmacs::seqdb::v3::find_differences(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa)
+// {
+//     const auto comm = find_common(subsets, cmp_nuc_aa);
+//     differences_t diffs;
+//     return diffs;
+
+// } // acmacs::seqdb::v3::find_differences
 
 // ----------------------------------------------------------------------
 
