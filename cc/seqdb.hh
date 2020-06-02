@@ -36,6 +36,7 @@ namespace acmacs::seqdb::inline v3
         subset select_by_name(std::string_view name) const;
         subset select_by_name_hash(std::string_view name, std::string_view hash) const;
         subset select_by_name(const std::vector<std::string_view>& names) const;
+        subset select_by_accession_number(const std::vector<std::string_view>& accession_numbers) const;
         subset select_by_regex(std::string_view re) const;
         subset select_slaves() const;
         ref find_hi_name(std::string_view full_name) const;
@@ -150,6 +151,7 @@ namespace acmacs::seqdb::inline v3
         struct gisaid_data_t
         {
             std::vector<std::string_view> isolate_ids; // gisaid accession numbers
+            std::vector<std::string_view> sample_ids_by_sample_provider; // ncbi accession numbers
         };
 
         struct master_ref_t

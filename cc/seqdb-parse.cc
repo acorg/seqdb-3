@@ -46,8 +46,10 @@ namespace local
                 case 'i':
                     target_.isolate_ids.emplace_back(data);
                     break;
-              case 'S':         // todo
               case 's':
+                    target_.sample_ids_by_sample_provider.emplace_back(data);
+                    break;
+              case 'S':         // todo
               case 'm':
               case 'o':
               case 'n':

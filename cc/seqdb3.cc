@@ -21,6 +21,7 @@ struct Options : public argv
     option<str>       seq_id_from{*this, "seq-id-from", desc{"read list of seq ids from a file (one per line) and initially select them all"}};
     option<str>       name{*this, 'n', "name", desc{"initially filter by name (name only, full string equality)"}};
     option<str>       names_from{*this, "names-from", desc{"read names from a file (one per line)\n                                       and initially select them all (name only, full string equality)"}};
+    option<str>       accession_numbers_from{*this, "accession-numbers-from", desc{"read accession numbers (gisaid and/or ncbi) names from a file (one per line)\n                                       and initially select them all (full string equality)"}};
     option<str>       subtype{*this, "flu", desc{"B, A(H1N1), H1, A(H3N2), H3"}};
     option<str>       host{*this, "host"};
     option<str>       lab{*this, "lab"};
@@ -87,6 +88,8 @@ int main(int argc, char* const argv[])
                 return seqdb.select_by_name(*opt.name);
             else if (opt.names_from)
                 return seqdb.select_by_name(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.names_from)), "\n"));
+            else if (opt.accession_numbers_from)
+                return seqdb.select_by_accession_number(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.accession_numbers_from)), "\n"));
             else
                 return seqdb.all();
         };

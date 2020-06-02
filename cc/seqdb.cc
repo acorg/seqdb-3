@@ -209,6 +209,29 @@ void acmacs::seqdb::v3::Seqdb::select_by_name(std::string_view name, subset& sub
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_accession_number(const std::vector<std::string_view>& accession_numbers) const
+{
+    const auto intersect = [&accession_numbers](const std::vector<std::string_view> ids) {
+        for (const auto& id : ids) {
+            if (std::find(std::begin(accession_numbers), std::end(accession_numbers), id) != std::end(accession_numbers))
+                return true;
+        }
+        return false;
+    };
+
+    subset ss;
+    for (const auto& entry : entries_) {
+        for (auto [seq_no, seq] : acmacs::enumerate(entry.seqs)) {
+            if (intersect(seq.gisaid.isolate_ids) || intersect(seq.gisaid.sample_ids_by_sample_provider))
+                ss.refs_.emplace_back(&entry, seq_no);
+        }
+    }
+    return ss;
+
+} // acmacs::seqdb::v3::Seqdb::select_by_accession_number
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name_hash(std::string_view name, std::string_view hash) const
 {
     subset ss;
