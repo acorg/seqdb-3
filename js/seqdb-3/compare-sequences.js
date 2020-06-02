@@ -113,28 +113,31 @@ function show_positions_with_diversity(div)
         const tr = document.createElement("tr");
         tr.classList.add("position-ruler");
         tr.innerHTML = `<td colspan="2"></td>`; // group-name + sequence-name
-        for (const pos1 of compare_sequences_data.pos1) {
+        compare_sequences_data.pos1.forEach(function(pos1, index) {
             const td = document.createElement("td");
+            if (index > 0 && (index % 10 == 0 || index % 10 == 5))
+                td.classList.add("sep-left-six");
             td.innerHTML = "" + pos1;
             tr.appendChild(td);
-        }
+        });
         return tr;
     };
 
     const add_sequence = function(tr, seq, master) {
-        // compare_sequences_data.pos1
-        for (const pos1 of compare_sequences_data.pos1) {
+        compare_sequences_data.pos1.forEach(function(pos1, index) {
             const pos0 = pos1 - 1;
             const aa = seq[pos0];
             const aa_td = document.createElement("td");
             aa_td.classList.add(`aa${aa}`);
             aa_td.classList.add("aa");
+            if (index > 0 && (index % 10 == 0 || index % 10 == 5))
+                aa_td.classList.add("sep-left-six");
             if (master.length > pos0 && aa == master[pos0])
                 aa_td.innerHTML = '&#xB7;';
             else
                 aa_td.innerHTML = aa;
             tr.appendChild(aa_td);
-        }
+        });
     };
 
     // ----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-.compare-sequences .title { font-weight: bold; margin-top: 1em; }
+.compare-sequences .title { font-size: 1.2em; font-weight: bold; margin: 2em 0 0 0; }
 
 .compare-sequences td.group-name { white-space: nowrap; vertical-align: top; font-weight: bold; padding-right: 1em; }
 .compare-sequences td.seq-id { padding-right: 1em; }
