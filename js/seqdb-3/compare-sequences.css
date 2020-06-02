@@ -15,3 +15,9 @@
 .positions-with-diversity .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
 .positions-with-diversity .position-ruler { text-align: center; }
 .positions-with-diversity td.sep-left-six { border-left: 1px solid #E0E0E0; }
+
+.most-frequent-per-group table { border-collapse: collapse; }
+.most-frequent-per-group .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
+.most-frequent-per-group .position-ruler { text-align: center; }
+.most-frequent-per-group td.sep-left-six { border-left: 1px solid #E0E0E0; }
+

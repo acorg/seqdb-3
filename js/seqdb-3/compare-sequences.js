@@ -180,10 +180,26 @@ function show_positions_with_diversity(div)
 
 function show_most_frequent_per_group(div)
 {
-    const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 2); }
+    const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 1); }
 
-    // ----------------------------------------------------------------------
+    const add_aas = function(tr, positions, master_positions) {
+        compare_sequences_data.pos1.forEach(function(pos1, index) {
+            const aa = positions[pos1][0].a;
+            const aa_td = document.createElement("td");
+            aa_td.classList.add(`aa${aa}`);
+            aa_td.classList.add("aa");
+            if (index > 0 && (index % 10 == 0 || index % 10 == 5))
+                aa_td.classList.add("sep-left-six");
+            if (master_positions && aa == master_positions[pos1][0].a)
+                aa_td.innerHTML = '&#xB7;';
+            else
+                aa_td.innerHTML = aa;
+            tr.appendChild(aa_td);
+        });
+    };
     
+    // ----------------------------------------------------------------------
+
     const title = document.createElement("p");
     title.classList.add("title");
     title.innerHTML = "Most frequent per group";
@@ -191,8 +207,12 @@ function show_most_frequent_per_group(div)
 
     const tab1 = document.createElement("table");
     tab1.appendChild(add_ruler());
-    for (let group of compare_sequences_data.groups) {
-    }
+    compare_sequences_data.groups.forEach(function(group, index) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="group-name">${group.name}</td>`;
+        add_aas(tr, group.pos1, index == 0 ? null : compare_sequences_data.groups[0].pos1);
+        tab1.appendChild(tr);
+    });
     div.appendChild(tab1);
 
 }
