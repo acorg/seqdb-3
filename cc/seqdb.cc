@@ -213,8 +213,10 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_accession_number(c
 {
     const auto intersect = [&accession_numbers](const std::vector<std::string_view> ids) {
         for (const auto& id : ids) {
-            if (std::find(std::begin(accession_numbers), std::end(accession_numbers), id) != std::end(accession_numbers))
+            if (const auto found = std::find(std::begin(accession_numbers), std::end(accession_numbers), id); found != std::end(accession_numbers)) {
+                // AD_DEBUG("select_by_accession_number {}", ids);
                 return true;
+            }
         }
         return false;
     };

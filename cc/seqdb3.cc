@@ -83,13 +83,13 @@ int main(int argc, char* const argv[])
             if (!opt.seq_id->empty())
                 return seqdb.select_by_seq_id(*opt.seq_id);
             else if (opt.seq_id_from)
-                return seqdb.select_by_seq_id(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.seq_id_from)), "\n"));
+                return seqdb.select_by_seq_id(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.seq_id_from)), "\n", acmacs::string::Split::StripRemoveEmpty));
             else if (opt.name)
                 return seqdb.select_by_name(*opt.name);
             else if (opt.names_from)
-                return seqdb.select_by_name(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.names_from)), "\n"));
+                return seqdb.select_by_name(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.names_from)), "\n", acmacs::string::Split::StripRemoveEmpty));
             else if (opt.accession_numbers_from)
-                return seqdb.select_by_accession_number(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.accession_numbers_from)), "\n"));
+                return seqdb.select_by_accession_number(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.accession_numbers_from)), "\n", acmacs::string::Split::StripRemoveEmpty));
             else
                 return seqdb.all();
         };
