@@ -197,7 +197,7 @@ function show_most_frequent_per_group(div)
             tr.appendChild(aa_td);
         });
     };
-    
+
     // ----------------------------------------------------------------------
 
     const title = document.createElement("p");
@@ -214,17 +214,63 @@ function show_most_frequent_per_group(div)
         tab1.appendChild(tr);
     });
     div.appendChild(tab1);
-
 }
 
 // --------------------------------------------------------------------------------
 
 function show_frequency_per_group(div)
 {
+    const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 1); }
+
+    const max_aas_per_group = function(group) {
+        let max = 0;
+        for (const ens of Object.values(group))
+            max = Math.max(max, ens.length);
+        return max;
+    };
+
+    const add_aas = function(tr, positions, row) {
+        compare_sequences_data.pos1.forEach(function(pos1, index) {
+            const en = positions[pos1];
+            const aa_td = document.createElement("td");
+            if (row < en.length) {
+                const aa = en[row].a;
+                aa_td.classList.add(`aa${aa}`);
+                aa_td.classList.add("aa");
+                aa_td.innerHTML = aa;
+            }
+            else {
+            }
+            tr.appendChild(aa_td);
+        });
+    };
+
+    // ----------------------------------------------------------------------
+
     const title = document.createElement("p");
     title.classList.add("title");
     title.innerHTML = "Frequency per group";
     div.appendChild(title);
+
+    const tab1 = document.createElement("table");
+    tab1.appendChild(add_ruler());
+    compare_sequences_data.groups.forEach(function(group, index) {
+        if (index > 0) {
+            const tr_space = document.createElement("tr");
+            tr_space.classList.add("group-space");
+            tr_space.innerHTML = `<td colspan="${compare_sequences_data.pos1.length + 1}"></td>`;
+            tab1.appendChild(tr_space);
+        }
+        const n_aas = max_aas_per_group(group.pos1);
+        for (let row = 0; row < n_aas; ++row) {
+            const tr = document.createElement("tr");
+            if (row == 0)
+                tr.innerHTML = `<td class="group-name" rowspan="${n_aas}">${group.name}</td>`;
+            add_aas(tr, group.pos1, row);
+            tab1.appendChild(tr);
+        }
+    });
+    div.appendChild(tab1);
 }
 
 // --------------------------------------------------------------------------------
