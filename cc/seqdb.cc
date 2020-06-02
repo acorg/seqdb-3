@@ -1437,7 +1437,8 @@ std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string
                        fmt::arg("hamming_distance", entry.hamming_distance),
                        fmt::arg("nuc_length", entry.seq().nuc_aligned_length_master()),
                        fmt::arg("aa_length", entry.seq().aa_aligned_length_master()),
-                       fmt::arg("gisaid_accession_numbers", acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.isolate_ids))
+                       fmt::arg("gisaid_accession_numbers", acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.isolate_ids)),
+                       fmt::arg("ncbi_accession_numbers", acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.sample_ids_by_sample_provider))
                        );
 
 } // acmacs::seqdb::v3::subset::make_name

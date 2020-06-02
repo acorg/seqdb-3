@@ -46,7 +46,7 @@ struct Options : public argv
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, 'f', "name-format", desc{"{{seq_id}} {{full_name}} {{hi_name_or_full_name}} {{hi_names}} {{hi_name}} {{lineage}} {{name}}\n                                       {{date}} {{dates}} {{lab_id}} {{passage}} {{clades}} {{lab}} {{country}} {{continent}} {{group_no}}\n                                       {{hamming_distance}} {{nuc_length}} {{aa_length}} {{gisaid_accession_numbers}}"}};
+    option<str>       name_format{*this, 'f', "name-format", desc{"{{seq_id}} {{full_name}} {{hi_name_or_full_name}} {{hi_names}} {{hi_name}} {{lineage}} {{name}}\n                                       {{date}} {{dates}} {{lab_id}} {{passage}} {{clades}} {{lab}} {{country}} {{continent}} {{group_no}}\n                                       {{hamming_distance}} {{nuc_length}} {{aa_length}} {{gisaid_accession_numbers}} {{ncbi_accession_numbers}}"}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
@@ -179,8 +179,8 @@ int main(int argc, char* const argv[])
                                   .aligned(opt.not_aligned ? acmacs::seqdb::export_options::aligned::no : acmacs::seqdb::export_options::aligned::yes)
                                   .most_common_length(opt.most_common_length ? acmacs::seqdb::export_options::most_common_length::yes : acmacs::seqdb::export_options::most_common_length::no)
                                   .length(opt.length)
-                                  .name_format(opt.name_format))
-            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */)
+                                  .name_format(opt.name_format))         // acmacs::seqdb::v3::subset::make_name
+            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */) // acmacs::seqdb::v3::subset::make_name
             .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty());
 
         return 0;
