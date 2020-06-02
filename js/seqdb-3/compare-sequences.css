@@ -21,7 +21,7 @@
 
 .frequency-per-group .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
 .frequency-per-group .aa-and-count { padding: 0.1em 0.7em; vertical-align: middle; }
-.frequency-per-group .aa-count { color: #808080; text-align: right; width: 5em; }
+.frequency-per-group .aa-count { color: #808080; text-align: right; }
 .frequency-per-group .position-ruler { text-align: center; }
 .frequency-per-group td.sep-left-six { border-left: 1px solid #E0E0E0; }
 
