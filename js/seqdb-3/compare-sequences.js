@@ -234,10 +234,12 @@ function show_frequency_per_group(div)
             const en = positions[pos1];
             const aa_td = document.createElement("td");
             if (row < en.length) {
+                aa_td.classList.add("aa-and-count");
                 const aa = en[row].a;
-                aa_td.classList.add(`aa${aa}`);
-                aa_td.classList.add("aa");
-                aa_td.innerHTML = aa;
+                aa_td.innerHTML = `<table><tr><td class="aa aa${aa}">${aa}</td><td class="aa-count">${en[row].c}</td></tr></table>`;
+                // aa_td.classList.add(`aa${aa}`);
+                // aa_td.classList.add("aa");
+                // aa_td.innerHTML = aa;
             }
             else {
             }

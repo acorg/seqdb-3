@@ -1,28 +1,27 @@
 .compare-sequences .title { font-size: 1.2em; font-weight: bold; margin: 2em 0 0 0; }
+.compare-sequences table { border-collapse: collapse; }
 
 .compare-sequences td.group-name { white-space: nowrap; vertical-align: top; font-weight: bold; padding-right: 1em; }
 .compare-sequences td.seq-id { padding-right: 1em; }
 .compare-sequences tr.group-space { background: #F8F8F8; }
 .compare-sequences tr.group-space td { padding-top: 0.5em;  }
 
-.full-sequences table { border-collapse: collapse; }
 .full-sequences td.sep-left-zero { border-left: 1px solid #C0C0C0; }
 .full-sequences td.sep-left-six { border-left: 1px solid #E0E0E0; }
 .full-sequences .aa { padding: 0.1em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
 .full-sequences .aa-ruler { text-align: center; }
 
-.positions-with-diversity table { border-collapse: collapse; }
 .positions-with-diversity .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
 .positions-with-diversity .position-ruler { text-align: center; }
 .positions-with-diversity td.sep-left-six { border-left: 1px solid #E0E0E0; }
 
-.most-frequent-per-group table { border-collapse: collapse; }
 .most-frequent-per-group .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
 .most-frequent-per-group .position-ruler { text-align: center; }
 .most-frequent-per-group td.sep-left-six { border-left: 1px solid #E0E0E0; }
 
-.frequency-per-group table { border-collapse: collapse; }
 .frequency-per-group .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
+.frequency-per-group .aa-and-count { padding: 0.1em 0.7em; vertical-align: middle; }
+.frequency-per-group .aa-count { color: #808080; text-align: right; width: 5em; }
 .frequency-per-group .position-ruler { text-align: center; }
 .frequency-per-group td.sep-left-six { border-left: 1px solid #E0E0E0; }
 
