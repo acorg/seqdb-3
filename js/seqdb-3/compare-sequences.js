@@ -2,8 +2,9 @@
 function main()
 {
     console.log("compare_sequences_data", compare_sequences_data);
-    show_most_frequent_per_group(document.querySelector("#compare-sequences .most-frequent-per-group"))
-    show_frequency_per_group(document.querySelector("#compare-sequences .frequency-per-group"))
+    show_most_frequent_per_group(document.querySelector("#compare-sequences .most-frequent-per-group"));
+    show_frequency_per_group(document.querySelector("#compare-sequences .frequency-per-group"));
+    show_positions_with_diversity(document.querySelector("#compare-sequences .positions-with-diversity"));
     show_full_sequences(document.querySelector("#compare-sequences .full-sequences"));
 }
 
@@ -29,7 +30,7 @@ function show_full_sequences(div)
             group.seq.splice(0, 0, group.seq.splice(master_index, 1)[0]);
     };
 
-    const add_seqence = function(tr, seq_s, master) {
+    const add_sequence = function(tr, seq_s, master) {
         const seq = [...seq_s];
         seq.forEach(function(aa, pos0) {
             const aa_td = document.createElement("td");
@@ -50,7 +51,7 @@ function show_full_sequences(div)
     const add_ruler = function() {
         const tr = document.createElement("tr");
         tr.classList.add("aa-ruler");
-        tr.innerHTML = `<td colspan="2"></td>`;
+        tr.innerHTML = `<td colspan="2"></td>`; // group-name + sequence-name
         for (let pos1 = 1; pos1 < 550; ++pos1) {
             const td = document.createElement("td");
             if (pos1 % 10 == 0) {
@@ -88,7 +89,7 @@ function show_full_sequences(div)
             if (index == 0 && !is_master) {
                 const tr_space = document.createElement("tr");
                 tr_space.classList.add("group-space");
-                tr_space.innerHTML = "<td></td>";
+                tr_space.innerHTML = `<td colspan="${id_seq.seq.length + 2}"></td>`;
                 tab1.appendChild(tr_space);
             }
             const tr = document.createElement("tr");
@@ -96,7 +97,70 @@ function show_full_sequences(div)
                 tr.innerHTML = `<td class="group-name" rowspan="${group.seq.length}">${group.name}</td><td class="seq-id">${id_seq.id}</td>`;
             else
                 tr.innerHTML = `<td class="seq-id">${id_seq.id}</td>`;
-            add_seqence(tr, id_seq.seq, is_master ? "" : compare_sequences_data.groups[0].seq[0].seq);
+            add_sequence(tr, id_seq.seq, is_master ? "" : compare_sequences_data.groups[0].seq[0].seq);
+            tab1.appendChild(tr);
+        });
+    }
+    tab1.appendChild(add_ruler());
+    div.appendChild(tab1);
+}
+
+// --------------------------------------------------------------------------------
+
+function show_positions_with_diversity(div)
+{
+    const add_ruler = function() {
+        const tr = document.createElement("tr");
+        tr.classList.add("position-ruler");
+        tr.innerHTML = `<td colspan="2"></td>`; // group-name + sequence-name
+        for (const pos1 of compare_sequences_data.pos1) {
+            const td = document.createElement("td");
+            td.innerHTML = "" + pos1;
+            tr.appendChild(td);
+        }
+        return tr;
+    };
+
+    const add_sequence = function(tr, seq, master) {
+        // compare_sequences_data.pos1
+        for (const pos1 of compare_sequences_data.pos1) {
+            const pos0 = pos1 - 1;
+            const aa = seq[pos0];
+            const aa_td = document.createElement("td");
+            aa_td.classList.add(`aa${aa}`);
+            aa_td.classList.add("aa");
+            if (master.length > pos0 && aa == master[pos0])
+                aa_td.innerHTML = '&#xB7;';
+            else
+                aa_td.innerHTML = aa;
+            tr.appendChild(aa_td);
+        }
+    };
+
+    // ----------------------------------------------------------------------
+
+    const title = document.createElement("p");
+    title.classList.add("title");
+    title.innerHTML = "Positions with diversity";
+    div.appendChild(title);
+
+    const tab1 = document.createElement("table");
+    tab1.appendChild(add_ruler());
+    for (let group of compare_sequences_data.groups) {
+        group.seq.forEach(function(id_seq, index) {
+            const is_master = id_seq.id == compare_sequences_data.groups[0].seq[0].id;
+            if (index == 0 && !is_master) {
+                const tr_space = document.createElement("tr");
+                tr_space.classList.add("group-space");
+                tr_space.innerHTML = `<td colspan="${compare_sequences_data.pos1.length + 2}"></td>`;
+                tab1.appendChild(tr_space);
+            }
+            const tr = document.createElement("tr");
+            if (index == 0)
+                tr.innerHTML = `<td class="group-name" rowspan="${group.seq.length}">${group.name}</td><td class="seq-id">${id_seq.id}</td>`;
+            else
+                tr.innerHTML = `<td class="seq-id">${id_seq.id}</td>`;
+            add_sequence(tr, id_seq.seq, is_master ? "" : compare_sequences_data.groups[0].seq[0].seq);
             tab1.appendChild(tr);
         });
     }

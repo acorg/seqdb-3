@@ -1,9 +1,17 @@
 .compare-sequences .title { font-weight: bold; margin-top: 1em; }
 
+.compare-sequences td.group-name { white-space: nowrap; vertical-align: top; font-weight: bold; padding-right: 1em; }
+.compare-sequences td.seq-id { padding-right: 1em; }
+.compare-sequences tr.group-space { background: #F8F8F8; }
+.compare-sequences tr.group-space td { padding-top: 0.5em;  }
+
 .full-sequences table { border-collapse: collapse; }
-.full-sequences tr.group-space td { padding-top: 0.5em;  }
-.full-sequences td.group-name { white-space: nowrap; vertical-align: top;  }
 .full-sequences td.sep-left-zero { border-left: 1px solid #C0C0C0; }
 .full-sequences td.sep-left-six { border-left: 1px solid #E0E0E0; }
 .full-sequences .aa { padding: 0.1em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
 .full-sequences .aa-ruler { text-align: center; }
+
+.positions-with-diversity table { border-collapse: collapse; }
+.positions-with-diversity .aa { padding: 0.1em 0.7em; vertical-align: middle; font-family: monospace; font-size: 1.2em; }
+.positions-with-diversity .position-ruler { text-align: center; }
+.positions-with-diversity td.sep-left-six { border-left: 1px solid #E0E0E0; }
