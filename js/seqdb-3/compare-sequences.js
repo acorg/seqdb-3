@@ -241,6 +241,8 @@ function show_frequency_per_group(div)
             }
             else {
             }
+            if (index > 0 && (index % 10 == 0 || index % 10 == 5))
+                aa_td.classList.add("sep-left-six");
             tr.appendChild(aa_td);
         });
     };
