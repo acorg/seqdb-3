@@ -38,7 +38,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<pos0_t> positions_to_report() const;
 
         size_t max_name() const { return std::accumulate(std::begin(subsets), std::end(subsets), 0ul, [](size_t max, const auto& ss) { return std::max(max, ss.name.size()); }); }
-        std::string format_summary(size_t indent, size_t column_width, double threshold = -1.0) const;
+        std::string format_summary(size_t indent = 2, size_t column_width = 5, double threshold = -1.0) const;
         std::string format_seq_ids(size_t indent) const;
         std::string format_json(size_t indent) const;
     };
