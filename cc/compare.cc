@@ -4,6 +4,11 @@
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/color-amino-acid.hh"
 #include "acmacs-base/to-json.hh"
+#include "acmacs-base/string-compare.hh"
+#include "acmacs-base/read-file.hh"
+#include "acmacs-base/acmacsd.hh"
+#include "acmacs-base/color-amino-acid.hh"
+#include "acmacs-base/html.hh"
 #include "seqdb-3/compare.hh"
 
 // ----------------------------------------------------------------------
@@ -283,6 +288,36 @@ void acmacs::seqdb::v3::update_common(sequence_aligned_t& target, const subset& 
 
 } // acmacs::seqdb::v3::update_common
 
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::compare_sequences_generate_html(std::string_view html_filename, const subsets_to_compare_t& data)
+{
+    using namespace std::string_view_literals;
+
+    const auto prefix{html_filename.substr(0, html_filename.size() - 5)};
+    const auto data_filename{fmt::format("{}.data.js", prefix)};
+    const auto data_var_name{fmt::format("compare_sequences_{}", ::string::replace(prefix, "/"sv, "_"sv, "-"sv, "_"sv))};
+    acmacs::file::write(data_filename, fmt::format("const {} =\n{}", data_var_name, data.format_json(2)));
+
+    std::string data_filename_name{data_filename};
+    if (const auto pos = std::string_view{data_filename}.find_last_of('/'); pos != std::string_view::npos)
+        data_filename_name.erase(0, pos + 1);
+
+    const auto templates_dir{fmt::format("{}/share/templates/seqdb-3", acmacs::acmacsd_root())};
+    acmacs::html::Generator html;
+    html.title("Compare sequences"sv);
+    html.add_css(acmacs::amino_acid_nucleotide_color_css());
+    html.add_css(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.css", templates_dir))));
+    html.add_script_link(data_filename_name);
+    html.add_script(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.js", templates_dir))));
+    html.add_script(fmt::format(R"(document.addEventListener("DOMContentLoaded", function() {{ compare_sequences({}); }});)", data_var_name));
+    html.add_to_body(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.body.html", templates_dir))));
+    acmacs::file::write(html_filename, html.generate());
+
+} // acmacs::seqdb::v3::compare_sequences_generate_html
+
+// ======================================================================
+// ======================================================================
 // ======================================================================
 
 namespace local

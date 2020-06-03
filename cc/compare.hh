@@ -43,16 +43,7 @@ namespace acmacs::seqdb::inline v3
         std::string format_json(size_t indent) const;
     };
 
-    // ----------------------------------------------------------------------
-
-    // struct difference_t
-    // {
-    //     pos0_t pos;
-    // };
-
-    // using differences_t = std::vector<difference_t>;
-
-    // differences_t find_differences(const subsets_to_compare_t& subsets, enum compare cmp_nuc_aa);
+    void compare_sequences_generate_html(std::string_view html_filename, const subsets_to_compare_t& data);
 
     // ----------------------------------------------------------------------
 

@@ -1,3 +1,5 @@
+/* ${ACMACSD_ROOT}/share/templates/seqdb-3/compare-sequences.css */
+
 .compare-sequences .title { font-size: 1.2em; font-weight: bold; margin: 2em 0 0 0; }
 .compare-sequences table { border-collapse: collapse; }
 
@@ -24,4 +26,3 @@
 .frequency-per-group .aa-count { color: #808080; text-align: right; }
 .frequency-per-group .position-ruler { text-align: center; }
 .frequency-per-group td.sep-left-six { border-left: 1px solid #E0E0E0; }
-

@@ -1,16 +1,17 @@
+// ${ACMACSD_ROOT}/share/templates/seqdb-3/compare-sequences.js
 
-function main()
+function compare_sequences(compare_sequences_data)
 {
-    console.log("compare_sequences_data", compare_sequences_data);
-    show_most_frequent_per_group(document.querySelector("#compare-sequences .most-frequent-per-group"));
-    show_frequency_per_group(document.querySelector("#compare-sequences .frequency-per-group"));
-    show_positions_with_diversity(document.querySelector("#compare-sequences .positions-with-diversity"));
-    show_full_sequences(document.querySelector("#compare-sequences .full-sequences"));
+    // console.log("compare_sequences_data", compare_sequences_data);
+    show_most_frequent_per_group(compare_sequences_data, document.querySelector("#compare-sequences .most-frequent-per-group"));
+    show_frequency_per_group(compare_sequences_data, document.querySelector("#compare-sequences .frequency-per-group"));
+    show_positions_with_diversity(compare_sequences_data, document.querySelector("#compare-sequences .positions-with-diversity"));
+    show_full_sequences(compare_sequences_data, document.querySelector("#compare-sequences .full-sequences"));
 }
 
 // --------------------------------------------------------------------------------
 
-function show_full_sequences(div)
+function show_full_sequences(compare_sequences_data, div)
 {
     const find_master = function(group) {
         let index = 0;
@@ -124,7 +125,7 @@ function position_ruler(positions, initial_tds)
 
 // --------------------------------------------------------------------------------
 
-function show_positions_with_diversity(div)
+function show_positions_with_diversity(compare_sequences_data, div)
 {
     const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 2); };
 
@@ -178,7 +179,7 @@ function show_positions_with_diversity(div)
 
 // --------------------------------------------------------------------------------
 
-function show_most_frequent_per_group(div)
+function show_most_frequent_per_group(compare_sequences_data, div)
 {
     const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 1); }
 
@@ -218,7 +219,7 @@ function show_most_frequent_per_group(div)
 
 // --------------------------------------------------------------------------------
 
-function show_frequency_per_group(div)
+function show_frequency_per_group(compare_sequences_data, div)
 {
     const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 1); }
 
@@ -278,5 +279,3 @@ function show_frequency_per_group(div)
 }
 
 // --------------------------------------------------------------------------------
-
-document.addEventListener("DOMContentLoaded", main);
