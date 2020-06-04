@@ -1,7 +1,7 @@
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/string-split.hh"
-// #include "acmacs-base/read-file.hh"
 #include "acmacs-base/quicklook.hh"
+#include "acmacs-base/read-file.hh"
 #include "acmacs-chart-2/factory-import.hh"
 #include "acmacs-chart-2/chart.hh"
 #include "seqdb-3/compare.hh"
@@ -43,19 +43,15 @@ int main(int argc, char* const argv[])
             }
         }
         subsets_to_compare.make_counters();
+
+        if (opt.html) {
+            acmacs::seqdb::compare_sequences_generate_html(opt.html, subsets_to_compare);
+            acmacs::open_or_quicklook(opt.open && opt.html != "-" && opt.html != "=", false, opt.html);
+        }
+        if (opt.json)
+            acmacs::file::write(opt.json, subsets_to_compare.format_json(2));
+
         fmt::print("{}\n\n{}\n\n", subsets_to_compare.format_seq_ids(0), subsets_to_compare.format_summary(0, 5, 0.2));
-        fmt::print("{}\n", subsets_to_compare.format_json(2));
-
-        // const auto comm = acmacs::seqdb::v3::find_common(subsets_to_compare, nuc_aa);
-        // fmt::print("common: {}\n", comm);
-//        fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_to_compare, nuc_aa));
-
-        // if (opt.html) {
-        //     acmacs::file::write(opt.html, acmacs::seqdb::compare_report_html("", subsets_by_title, opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa));
-        //     acmacs::open_or_quicklook(opt.open && opt.html != "-" && opt.html != "=", false, opt.html);
-        // }
-        // else
-        //     fmt::print("{}\n", acmacs::seqdb::compare_report_text(subsets_by_title, opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa));
 
         return 0;
     }
