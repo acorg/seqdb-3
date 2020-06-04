@@ -19,6 +19,7 @@ namespace acmacs::seqdb::inline v3
         using counter_t = typename std::decay_t<decltype(counters.front())>;
 
         subset_to_compare_t(std::string_view a_name) : name{a_name} {}
+        subset_to_compare_t(std::string_view a_name, acmacs::seqdb::subset&& a_subset) : name{a_name}, subset{std::move(a_subset)} {}
         void make_counters(enum compare cmp_nuc_aa);
         size_t max_counter_size() const { return std::accumulate(std::begin(counters), std::end(counters), size_t{0}, [](size_t max, const auto& counter) { return std::max(max, counter.size()); }); }
         std::vector<pos0_t> positions_to_report() const;
@@ -58,25 +59,6 @@ namespace acmacs::seqdb::inline v3
         }
         return target;
     }
-
-} // namespace acmacs::seqdb::inline v3
-
-// ----------------------------------------------------------------------
-// old API
-
-namespace acmacs::seqdb::inline v3
-{
-    using subsets_by_title_t = std::map<std::string, subset, std::less<>>;
-
-    std::string compare_report_text(const subset& sequences, enum compare cmp_nuc_aa, size_t split = 0);
-    std::string compare_report_text(const subsets_by_title_t& subsets, enum compare cmp_nuc_aa);
-    std::string compare_report_text(const subset& set1, const subset& set2, enum compare cmp_nuc_aa);
-    std::string compare_report_html(std::string_view title, const subsets_by_title_t& subsets, enum compare cmp_nuc_aa);
-    std::string compare_report_html(std::string_view title, const subset& sequences, enum compare cmp_nuc_aa, size_t split = 0);
-    std::string compare_report_html(std::string_view title, const subset& set1, const subset& set2, enum compare cmp_nuc_aa);
-
-    // ----------------------------------------------------------------------
-
 
 } // namespace acmacs::seqdb::inline v3
 
