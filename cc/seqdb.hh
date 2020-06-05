@@ -303,6 +303,7 @@ namespace acmacs::seqdb::inline v3
       public:
         using refs_t = std::vector<ref>;
         enum class sorting { none, name_asc, name_desc, date_asc, date_desc };
+        enum class master_only { no, yes };
 
         subset() = default;
 
@@ -325,10 +326,10 @@ namespace acmacs::seqdb::inline v3
         subset& continent(const acmacs::uppercase& continent);
         subset& country(const acmacs::uppercase& country);
         subset& clade(const Seqdb& seqdb, const acmacs::uppercase& clade);
-        subset& recent(size_t recent);
+        subset& recent(size_t recent, master_only master);
         subset& recent_master(size_t recent_master);
-        subset& recent_matched(const std::vector<size_t>& recent_matched);
-        subset& recent_matched_master(const Seqdb& seqdb, const std::vector<size_t>& recent_matched_master);
+        subset& recent_matched(const std::vector<size_t>& recent_matched, master_only master);
+        subset& recent_matched_master(const std::vector<size_t>& recent_matched_master);
         subset& random(size_t random);
         subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
         subset& subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
