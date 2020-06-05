@@ -755,26 +755,12 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::clade(const Seqdb& seqdb, 
 
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent(size_t recent, master_only master)
 {
-    if (master == master_only::yes) {
-        recent_master(recent);
-    }
-    if (recent > 0 && refs_.size() > recent) {
-        sort_by_date_recent_first();
-        refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent)), std::end(refs_));
-    }
-    return *this;
-
-} // acmacs::seqdb::v3::subset::recent
-
-// ----------------------------------------------------------------------
-
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_master(size_t recent_master)
-{
-    if (recent_master > 0) {
-        keep_master_only();
-        if (refs_.size() > recent_master) {
+    if (recent > 0) {
+        if (master == master_only::yes)
+            keep_master_only();
+        if (refs_.size() > recent) {
             sort_by_date_recent_first();
-            refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent_master)), std::end(refs_));
+            refs_.erase(std::next(std::begin(refs_), static_cast<ssize_t>(recent)), std::end(refs_));
         }
     }
     return *this;
@@ -785,48 +771,42 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_master(size_t recen
 
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched(const std::vector<size_t>& recent_matched, master_only master)
 {
-    if (master == master_only::yes) {
-        recent_matched_master(recent_matched);
-    }
     if (recent_matched.size() > 1 && refs_.size() > recent_matched[0]) {
-        sort_by_date_recent_first();
-        const auto usable_size = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0])), std::end(refs_), [](const auto& en) { return !en.has_hi_names(); }) - std::begin(refs_);
-        refs_.erase(std::next(std::begin(refs_), std::min(usable_size, static_cast<ssize_t>(recent_matched[0] + recent_matched[1]))), std::end(refs_));
-    }
-    return *this;
-
-} // acmacs::seqdb::v3::subset::recent_matched
-
-// ----------------------------------------------------------------------
-
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::recent_matched_master(const std::vector<size_t>& recent_matched_master)
-{
-    if (recent_matched_master.size() > 1) {
-        keep_master_only();
-        if ((recent_matched_master[0] + recent_matched_master[1]) < refs_.size()) {
+        if (recent_matched.size() != 2)
+            throw std::runtime_error{fmt::format("invalid recent-matched specification: {} {}", recent_matched, recent_matched.size())};
+        if (master == master_only::yes)
+            keep_master_only();
+        if ((recent_matched[0] + recent_matched[1]) < refs_.size()) {
             sort_by_date_recent_first();
-            // if ref (master) has no hi names and one of its slaves has hi name, replace ref with slave that has hi names and return false
-            // if ref (master) has no hi names and none of its slaves has hi name, return true (to remove from refs_)
-            size_t number_to_keep = recent_matched_master[1];
-            const auto without_hi_names = [&number_to_keep, remove = true, keep = false](auto& ref) {
-                if (number_to_keep == 0)
-                    return remove;
-                if (ref.has_hi_names()) {
-                    --number_to_keep;
-                    return keep;
-                }
-                const auto& slaves = ref.seq().slaves();
-                if (const auto slave_to_use = std::find_if(std::begin(slaves), std::end(slaves), [](const auto& slave) { return slave.has_hi_names(); }); slave_to_use != std::end(slaves)) {
-                //     ref = *slave_to_use;
-                    --number_to_keep;
-                    return keep;
-                }
-                else
-                    return remove;
-            };
+            if (master == master_only::yes) {
+                // if ref (master) has no hi names and one of its slaves has hi name, replace ref with slave that has hi names and return false
+                // if ref (master) has no hi names and none of its slaves has hi name, return true (to remove from refs_)
+                size_t number_to_keep = recent_matched[1];
+                const auto without_hi_names = [&number_to_keep, remove = true, keep = false](auto& ref) {
+                    if (number_to_keep == 0)
+                        return remove;
+                    if (ref.has_hi_names()) {
+                        --number_to_keep;
+                        return keep;
+                    }
+                    const auto& slaves = ref.seq().slaves();
+                    if (const auto slave_to_use = std::find_if(std::begin(slaves), std::end(slaves), [](const auto& slave) { return slave.has_hi_names(); }); slave_to_use != std::end(slaves)) {
+                        //     ref = *slave_to_use;
+                        --number_to_keep;
+                        return keep;
+                    }
+                    else
+                        return remove;
+                };
 
-            const auto end = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched_master[0])), std::end(refs_), without_hi_names);
-            refs_.erase(end, std::end(refs_));
+                const auto end = std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0])), std::end(refs_), without_hi_names);
+                refs_.erase(end, std::end(refs_));
+            }
+            else {
+                const auto usable_size =
+                    std::remove_if(std::next(std::begin(refs_), static_cast<ssize_t>(recent_matched[0])), std::end(refs_), [](const auto& en) { return !en.has_hi_names(); }) - std::begin(refs_);
+                refs_.erase(std::next(std::begin(refs_), std::min(usable_size, static_cast<ssize_t>(recent_matched[0] + recent_matched[1]))), std::end(refs_));
+            }
         }
     }
     return *this;
