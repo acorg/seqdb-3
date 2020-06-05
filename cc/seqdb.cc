@@ -1346,7 +1346,6 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
             Counter<size_t> aa_length, nuc_length;
             for (const auto& ref : refs_) {
                 const auto date = ref.entry->date();
-                AD_DEBUG("date {}", date);
                 if (date < min_date)
                     min_date = date;
                 else if (date > max_date)
