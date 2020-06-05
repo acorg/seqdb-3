@@ -287,7 +287,7 @@ date::year_month_day parse_date(std::string_view source, std::string_view filena
           break;
     }
     if (!ok)
-        AD_ERROR("cannot parse date: [{}] @@ {}:{}", source, filename, line_no);
+        AD_ERROR("cannot parse date: [{}] (size: {}) @@ {}:{}", source, source.size(), filename, line_no);
     return result;
 
 } // parse_date
