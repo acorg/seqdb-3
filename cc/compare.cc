@@ -21,7 +21,7 @@ namespace local
         sequence_no_found() : std::runtime_error{"sequence not found in seqdb"} {}
     };
 
-    inline acmacs::seqdb::sequence_aligned_ref_t aligned(const auto& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
+    inline acmacs::seqdb::sequence_aligned_ref_t aligned(const acmacs::seqdb::ref& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
     {
         if (!ref)
             throw sequence_no_found{};
@@ -31,6 +31,8 @@ namespace local
             case acmacs::seqdb::compare::aa:
                 return ref.aa_aligned(acmacs::seqdb::get());
         }
+        AD_ERROR("unreachable code");
+        throw std::runtime_error{"unreachable code"}; // hey g++9
     };
 
 } // namespace local
