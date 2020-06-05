@@ -13,6 +13,7 @@
 #include "acmacs-base/in-json-parser.hh"
 #include "acmacs-base/to-json.hh"
 #include "acmacs-base/hash.hh"
+#include "acmacs-base/date.hh"
 #include "acmacs-virus/virus-name-normalize.hh"
 #include "acmacs-virus/virus-name-v1.hh"
 #include "acmacs-chart-2/chart-modify.hh"
@@ -532,6 +533,21 @@ std::string acmacs::seqdb::v3::SeqdbEntry::location() const
 } // acmacs::seqdb::v3::SeqdbEntry::location
 
 // ----------------------------------------------------------------------
+
+std::string_view acmacs::seqdb::v3::SeqdbEntry::date() const
+{
+    if (!dates.empty())
+        return dates.front();
+    if (name.size() > 5 && name[name.size() - 5] == '/') {
+        if (const auto year = static_cast<size_t>(static_cast<int>(date::year_from_string(name.substr(name.size() - 4)))); year > 1900 && year <= date::current_year())
+            return name.substr(name.size() - 4);
+    }
+    return std::string_view{};
+
+} // acmacs::seqdb::v3::SeqdbEntry::date
+
+// ----------------------------------------------------------------------
+
 
 void acmacs::seqdb::v3::Seqdb::find_slaves() const
 {
@@ -1330,6 +1346,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
             Counter<size_t> aa_length, nuc_length;
             for (const auto& ref : refs_) {
                 const auto date = ref.entry->date();
+                AD_DEBUG("date {}", date);
                 if (date < min_date)
                     min_date = date;
                 else if (date > max_date)
