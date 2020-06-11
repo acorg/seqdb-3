@@ -20,6 +20,7 @@
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
 #include "seqdb-3/hamming-distance.hh"
+#include "seqdb-3/log.hh"
 
 // ----------------------------------------------------------------------
 
@@ -1382,19 +1383,18 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
         auto to_export = export_collect(seqdb, options);
 
         if (options.e_most_common_length == export_options::most_common_length::yes) {
-            const acmacs::Counter counter(to_export, [](const auto& en) { return en.second.size(); });
-            ranges::for_each(to_export, [most_common_length = counter.max().first](auto& en) { en.second.resize(most_common_length, '-'); });
+            const acmacs::Counter counter(to_export, [](const auto& en) { return en.sequence.size(); });
+            const auto most_common_length = counter.max().first;
+            AD_LOG(acmacs::log::fasta, "most common length: {}", most_common_length);
+            ranges::for_each(to_export, [most_common_length](auto& en) { en.sequence.resize(most_common_length, '-'); });
         }
         else if (options.e_length > 0) {
-            ranges::for_each(to_export, [length = options.e_length](auto& en) { en.second.resize(length, '-'); });
+            AD_LOG(acmacs::log::fasta, "sequence length for exporting: {}", options.e_length);
+            ranges::for_each(to_export, [length = options.e_length](auto& en) { en.sequence.resize(length, '-'); });
         }
 
-        switch (options.e_format) {
-            case export_options::format::fasta_aa:
-            case export_options::format::fasta_nuc:
-                acmacs::file::write(filename, export_fasta(to_export, options));
-                break;
-        }
+        AD_LOG(acmacs::log::fasta, "writing {} sequences to {}", to_export.size(), filename);
+        acmacs::file::write(filename, export_fasta(to_export, options));
     }
     return *this;
 
@@ -1451,6 +1451,10 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
 {
     const auto get_seq = [&options,&seqdb](const auto& entry) -> std::string_view {
         const auto& seq = entry.seq().with_sequence(seqdb);
+        AD_LOG(acmacs::log::fasta, "{} has-seq:{}", entry.seq_id(), entry.is_master());
+        if (!entry.is_master())
+            AD_LOG(acmacs::log::fasta, "    ref:({} {})", entry.seq().master.name, entry.seq().master.hash);
+        AD_LOG(acmacs::log::fasta, "    aa:{} nuc:{}", seq.aa_aligned_length_master(), seq.nuc_aligned_length_master());
         if (options.e_format == export_options::format::fasta_aa) {
             if (options.e_aligned == export_options::aligned::yes)
                 return *seq.aa_aligned_master();
@@ -1467,7 +1471,10 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
 
     collected_t result(refs_.size()); // {seq_id, sequence}
     std::transform(std::begin(refs_), std::end(refs_), std::begin(result),
-                   [this, &options, &get_seq, &seqdb](const auto& en) -> collected_entry_t { return std::pair(make_name(seqdb, options.e_name_format, en), std::string{get_seq(en)}); });
+                   [this, &options, &get_seq, &seqdb](const auto& en) -> collected_entry_t { return {make_name(seqdb, options.e_name_format, en), std::string{get_seq(en)}}; });
+    // remove entries with empty sequences
+    result.erase(std::remove_if(std::begin(result), std::end(result), [](const auto& en) { return en.sequence.empty(); }), std::end(result));
+    AD_LOG(acmacs::log::fasta, "collected for exporting: {}", result.size());
     return result;
 
 } // acmacs::seqdb::v3::subset::export_collect
@@ -1478,18 +1485,18 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
 {
     std::string output;
     const auto output_size =
-        std::accumulate(std::begin(entries), std::end(entries), 0UL, [](size_t size, const auto& en) { return size + en.first.size() + en.second.size() + 2 + en.second.size() / 40; });
+        std::accumulate(std::begin(entries), std::end(entries), 0UL, [](size_t size, const auto& en) { return size + en.seq_id.size() + en.sequence.size() + 2 + en.sequence.size() / 40; });
     output.reserve(output_size);
     for (const auto& en : entries) {
         output.append(1, '>');
-        output.append(en.first);
+        output.append(en.seq_id);
         output.append(1, '\n');
-        if (options.e_wrap_at == 0 || options.e_wrap_at >= en.second.size()) {
-            output.append(en.second);
+        if (options.e_wrap_at == 0 || options.e_wrap_at >= en.sequence.size()) {
+            output.append(en.sequence);
             output.append(1, '\n');
         }
         else {
-            for (const auto chunk : en.second | ranges::views::chunk(options.e_wrap_at)) {
+            for (const auto chunk : en.sequence | ranges::views::chunk(options.e_wrap_at)) {
                 output.append(ranges::to<std::string>(chunk));
                 output.append(1, '\n');
             }

@@ -266,7 +266,7 @@ namespace acmacs::seqdb::inline v3
         constexpr bool empty() const { return entry == nullptr; }
 
         const SeqdbSeq& seq() const { return entry->seqs[seq_index]; }
-        const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const { return entry->seqs[seq_index].with_sequence(seqdb); }
+        const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const { return seq().with_sequence(seqdb); }
         bool is_master() const { return seq().is_master(); }
         bool is_hi_matched() const { return !seq().hi_names.empty(); }
         seq_id_t seq_id() const;
@@ -391,8 +391,13 @@ namespace acmacs::seqdb::inline v3
 
         void resize(size_t size) { refs_.resize(size); }
 
-        using collected_entry_t = std::pair<std::string, std::string>; // {seq_id, sequence}
+        struct collected_entry_t
+        {
+            std::string seq_id;
+            std::string sequence;
+        };
         using collected_t = std::vector<collected_entry_t>;
+
         collected_t export_collect(const Seqdb& seqdb, const export_options& options) const;
         std::string export_fasta(const collected_t& entries, const export_options& options);
         std::string make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const;

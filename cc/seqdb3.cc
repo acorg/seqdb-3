@@ -6,6 +6,7 @@
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-whocc-data/labs.hh"
 #include "seqdb-3/seqdb.hh"
+#include "seqdb-3/log.hh"
 
 // ----------------------------------------------------------------------
 
@@ -67,12 +68,19 @@ struct Options : public argv
     option<bool>      most_common_length{*this, "most-common-length", desc{"truncate or extend with - all sequences to make them all of the same length,\n                                       most common among original sequences"}};
     option<size_t>    length{*this, "length", dflt{0ul}, desc{"truncate or extend with - all sequences to make them all of the same length,\n                                       0 - do not truncate/extend"}};
 
+    option<str_array> verbose{*this, 'v', "verbose", desc{"comma separated list (or multiple switches) of enablers"}};
 };
 
 int main(int argc, char* const argv[])
 {
+    using namespace std::string_view_literals;
+
     try {
+        acmacs::log::register_enabler_acmacs_base();
+        acmacs::log::register_enabler("seq"sv, acmacs::log::sequences);
+        acmacs::log::register_enabler("fasta"sv, acmacs::log::fasta);
         Options opt(argc, argv);
+        acmacs::log::enable(opt.verbose);
 
         acmacs::seqdb::setup(opt.db);
         const auto& seqdb = acmacs::seqdb::get();
