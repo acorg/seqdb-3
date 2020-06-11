@@ -332,6 +332,7 @@ namespace acmacs::seqdb::inline v3
         subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
         subset& subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
         subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
+        subset& remove_empty(const Seqdb& seqdb, bool nuc);
         subset& with_hi_name(bool with_hi_name);
         subset& aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos);
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);

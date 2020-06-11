@@ -1086,6 +1086,23 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(bool
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_empty(const Seqdb& seqdb, bool nuc)
+{
+    const auto is_empty = [&seqdb, nuc](const auto& ref) {
+        const auto& seq = ref.seq_with_sequence(seqdb);
+        // AD_LOG(acmacs::log::sequences, "      master aa:{} nuc:{} orig:{}", seq.aa_aligned_length_master(), seq.nuc_aligned_length_master(), ref.seq_id());
+        return nuc ? seq.nuc_aligned_length_master() == 0 : seq.aa_aligned_length_master() == 0;
+    };
+
+    AD_LOG(acmacs::log::sequences, "removing empty ({}) from {} sequences", nuc ? "nuc" : "aa", refs_.size());
+    refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), is_empty), std::end(refs_));
+    AD_LOG(acmacs::log::sequences, "    {} sequences left", refs_.size());
+    return *this;
+
+} // acmacs::seqdb::v3::subset::remove_empty
+
+// ----------------------------------------------------------------------
+
 // acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched)
 // {
 //     if (do_remove) {
