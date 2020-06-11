@@ -1303,12 +1303,15 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
 {
     if (do_filter) {
         const auto& seqdb = acmacs::seqdb::get();
+        const auto before{refs_.size()};
         refs_.erase(std::remove_if(std::next(std::begin(refs_)), std::end(refs_),
                                    [threshold, &seqdb, base_seq = refs_.front().nuc_aligned(seqdb)](auto& en) {
                                        en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), base_seq, hamming_distance_by_shortest::yes);
                                        return en.hamming_distance >= threshold;
                                    }),
                     std::end(refs_));
+        const auto after{refs_.size()};
+        AD_LOG(acmacs::log::sequences, "{} sequences removed ({} left) which are too far from the base seq, threshold: {}", before - after, after, threshold);
     }
     return *this;
 
