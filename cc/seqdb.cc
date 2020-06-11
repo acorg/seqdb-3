@@ -1340,7 +1340,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::sort(sorting srt)
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(const Seqdb& seqdb, bool do_report)
 {
     if (do_report) {
         if (!refs_.empty()) {
@@ -1358,8 +1358,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(bool do_report
                     by_year.count(date.substr(0, 4));
                 if (!ref.seq().hi_names.empty())
                     ++with_hi_names;
-                aa_length.count(ref.seq().aa_aligned_length_master());
-                nuc_length.count(ref.seq().nuc_aligned_length_master());
+                aa_length.count(ref.seq_with_sequence(seqdb).aa_aligned_length_master());
+                nuc_length.count(ref.seq_with_sequence(seqdb).nuc_aligned_length_master());
             }
             fmt::print(stderr, "Selected sequences: {:6d}\n      HiDb matches: {:6d}\n        Date range: {} - {}\n", refs_.size(), with_hi_names, min_date, max_date);
             fmt::print(stderr, "         AA length:{}\nNucleotide lengths:{}\n", aa_length.report_sorted_max_first(" {first}:{second}"), nuc_length.report_sorted_max_first(" {first}:{second}"));
