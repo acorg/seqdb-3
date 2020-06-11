@@ -1312,6 +1312,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
                     std::end(refs_));
         const auto after{refs_.size()};
         AD_LOG(acmacs::log::sequences, "{} sequences removed ({} left) which are too far from the base seq, threshold: {}", before - after, after, threshold);
+        if ((before - after) > (before / 4))
+            AD_WARNING("too many sequences removed ({} or {:.1f}%) that are too far from the base sequence, hamming distance threshold: {}", before - after, static_cast<double>(before - after) / static_cast<double>(before) * 100.0, threshold);
     }
     return *this;
 
