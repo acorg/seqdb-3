@@ -1,5 +1,5 @@
-#include "acmacs-base/string-matcher.hh"
 #include "hidb-5/hidb.hh"
+#include "seqdb-3/match-hi-name.hh"
 #include "seqdb-3/scan-match-hidb.hh"
 #include "seqdb-3/scan-fasta.hh"
 
@@ -13,24 +13,7 @@ struct hidb_ref_t
     std::vector<lab_id_index_entry_t> lab_id_index;
 };
 
-struct score_size_t
-{
-    string_match::score_t score;
-    size_t len;
-
-    constexpr bool operator<(const score_size_t& a) const { return score < a.score; }
-};
-
-struct score_seq_found_t : public score_size_t
-{
-    size_t seq_no;
-    size_t found_no;
-
-    score_seq_found_t(const score_size_t& ss, size_t sn, size_t fn) : score_size_t{ss.score, ss.len}, seq_no{sn}, found_no{fn} {}
-    constexpr bool operator<(const score_seq_found_t& a) const { return score > a.score; }
-};
-
-using Matching = std::vector<std::vector<score_seq_found_t>>;
+using Matching = std::vector<std::vector<acmacs::seqdb::v3::score_seq_found_t>>;
 
 using seq_iter_t = std::vector<acmacs::seqdb::scan::fasta::scan_result_t>::iterator;
 
@@ -103,14 +86,14 @@ Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPLi
     for (; first != last; ++first) {
         const auto& seq = first->sequence;
         // fmt::print(stderr, "DEBUG: seq passages: {}\n", seq.passages());
-        std::vector<score_seq_found_t> matching_for_seq;
+        std::vector<acmacs::seqdb::v3::score_seq_found_t> matching_for_seq;
         size_t found_no = 0;
         for (auto f : found) {
             if (seq.reassortant() == f->reassortant()) {
                 const auto f_passage = f->passage();
                 for (const auto& s_passage : seq.passages()) {
                     if (acmacs::virus::passages_match(f_passage, s_passage))
-                        matching_for_seq.emplace_back(score_size_t{string_match::match(*s_passage, *f_passage), std::min(s_passage.size(), f_passage.size())}, seq_no, found_no);
+                        matching_for_seq.emplace_back(acmacs::seqdb::v3::score_size_t{string_match::match(*s_passage, *f_passage), std::min(s_passage.size(), f_passage.size())}, seq_no, found_no);
                 }
             }
             ++found_no;
@@ -131,7 +114,7 @@ Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPLi
 // returns if at least one seq matched
 bool match_greedy(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching)
 {
-    std::map<size_t, score_seq_found_t> antigen_to_matching; // antigen index in found to (matching index and score)
+    std::map<size_t, acmacs::seqdb::v3::score_seq_found_t> antigen_to_matching; // antigen index in found to (matching index and score)
     for (const auto& mp : matching) {
         for (const auto& sf: mp) {
             // fmt::print(stderr, "DEBUG: hidb:{} score:{} seqdb:{}\n", found[sf.found_no]->full_name(), sf.score, sf.seq_no);

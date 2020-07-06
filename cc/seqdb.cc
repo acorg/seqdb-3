@@ -383,9 +383,11 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
             result.refs_.push_back(std::move(*found_ref));
             ++matched;
         }
-        else if (antigen->passage().empty()) {
+        else {
             bool found = false;
+            AD_DEBUG("select_by_name \"{}\"", antigen->name());
             for (const auto& selected : select_by_name(antigen->name())) {
+                AD_DEBUG("    {}", selected.seq_id());
                 if (selected.seq().has_reassortant(*antigen->reassortant())) {
                     result.refs_.push_back(selected);
                     ++matched;
@@ -395,8 +397,21 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
             if (!found)
                 result.refs_.emplace_back();
         }
-        else
-            result.refs_.emplace_back();
+
+        // else if (antigen->passage().empty()) {
+        //     bool found = false;
+        //     for (const auto& selected : select_by_name(antigen->name())) {
+        //         if (selected.seq().has_reassortant(*antigen->reassortant())) {
+        //             result.refs_.push_back(selected);
+        //             ++matched;
+        //             found = true;
+        //         }
+        //     }
+        //     if (!found)
+        //         result.refs_.emplace_back();
+        // }
+        // else
+        //     result.refs_.emplace_back();
     }
     fmt::print("INFO: antigens from chart have sequences in seqdb: {}\n", matched);
 
