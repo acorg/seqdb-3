@@ -368,11 +368,12 @@ inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subs
     std::vector<string_match::score_t> score_per_seq(sequences.size(), string_match::score_t{0});
     for (size_t seq_no{0}; seq_no < sequences.size(); ++seq_no) {
         const auto& seq = sequences[seq_no].seq();
-        if (std::any_of(std::begin(seq.reassortants), std::end(seq.reassortants), [&antigen](std::string_view reass) { return antigen.reassortant() == reass; })) {
+        // AD_DEBUG("    {} -- reassortants:{} passages:{}", sequences[seq_no].seq_id(), seq.reassortants, seq.passages);
+        if ((seq.reassortants.empty() && antigen.reassortant().empty()) || std::any_of(std::begin(seq.reassortants), std::end(seq.reassortants), [&antigen](std::string_view reass) { return antigen.reassortant() == reass; })) {
             for (const auto& s_passage : seq.passages) {
                 if (acmacs::virus::passages_match(antigen.passage(), acmacs::virus::Passage{s_passage})) {
                     if (const auto score = string_match::match(s_passage, *antigen.passage()); score > score_per_seq[seq_no]) {
-                        AD_DEBUG("   {:3d} {}", score, sequences[seq_no].seq_id());
+                        // AD_DEBUG("   {:3d} {}", score, sequences[seq_no].seq_id());
                         score_per_seq[seq_no] = score;
                     }
                 }
@@ -412,43 +413,15 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
         }
         else {
             const auto sequences{select_by_name(antigen->name())};
-            AD_DEBUG("select_by_name \"{}\" sequences:{}", antigen->name(), sequences.size());
+            // AD_DEBUG("select_by_name \"{}\" \"{}\" sequences:{}", antigen->name(), antigen->full_name(), sequences.size());
             if (const auto matched = ::match(sequences, *antigen); matched.has_value()) {
-                AD_DEBUG("    {}", matched->seq_id());
+                // AD_DEBUG("    --> {}", matched->seq_id());
                 result.refs_.push_back(*matched);
                 ++num_matched;
             }
             else
                 result.refs_.emplace_back();
-
-            // bool found = false;
-
-            // for (const auto& selected : select_by_name(antigen->name())) {
-            //     AD_DEBUG("    {}", selected.seq_id());
-            //     if (selected.seq().has_reassortant(*antigen->reassortant())) {
-            //         result.refs_.push_back(selected);
-            //         ++num_matched;
-            //         found = true;
-            //     }
-            // }
-            // if (!found)
-            //     result.refs_.emplace_back();
         }
-
-        // else if (antigen->passage().empty()) {
-        //     bool found = false;
-        //     for (const auto& selected : select_by_name(antigen->name())) {
-        //         if (selected.seq().has_reassortant(*antigen->reassortant())) {
-        //             result.refs_.push_back(selected);
-        //             ++num_matched;
-        //             found = true;
-        //         }
-        //     }
-        //     if (!found)
-        //         result.refs_.emplace_back();
-        // }
-        // else
-        //     result.refs_.emplace_back();
     }
     fmt::print("INFO: antigens from chart have sequences in seqdb: {}\n", num_matched);
 
