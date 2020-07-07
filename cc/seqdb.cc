@@ -365,22 +365,23 @@ inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subs
 {
     if (sequences.empty())
         return std::nullopt;
-    std::vector<string_match::score_t> score_per_seq(sequences.size(), string_match::score_t{0});
+    std::vector<string_match::score_t> score_per_seq(sequences.size(), string_match::score_t{-1});
     for (size_t seq_no{0}; seq_no < sequences.size(); ++seq_no) {
         const auto& seq = sequences[seq_no].seq();
-        // AD_DEBUG("    {} -- reassortants:{} passages:{}", sequences[seq_no].seq_id(), seq.reassortants, seq.passages);
+
+        AD_LOG(acmacs::log::hi_name_matching, "    {} -- reassortants:{} passages:{}", sequences[seq_no].seq_id(), seq.reassortants, seq.passages);
         if ((seq.reassortants.empty() && antigen.reassortant().empty()) || std::any_of(std::begin(seq.reassortants), std::end(seq.reassortants), [&antigen](std::string_view reass) { return antigen.reassortant() == reass; })) {
             for (const auto& s_passage : seq.passages) {
                 if (acmacs::virus::passages_match(antigen.passage(), acmacs::virus::Passage{s_passage})) {
                     if (const auto score = string_match::match(s_passage, *antigen.passage()); score > score_per_seq[seq_no]) {
-                        // AD_DEBUG("   {:3d} {}", score, sequences[seq_no].seq_id());
+                        AD_LOG(acmacs::log::hi_name_matching, "      score: {}", score);
                         score_per_seq[seq_no] = score;
                     }
                 }
             }
         }
     }
-    if (const auto best_seq = std::max_element(std::begin(score_per_seq), std::end(score_per_seq)); *best_seq > 0)
+    if (const auto best_seq = std::max_element(std::begin(score_per_seq), std::end(score_per_seq)); *best_seq >= 0)
         return sequences[static_cast<size_t>(best_seq - std::begin(score_per_seq))];
     else
         return std::nullopt;
@@ -413,9 +414,9 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
         }
         else {
             const auto sequences{select_by_name(antigen->name())};
-            // AD_DEBUG("select_by_name \"{}\" \"{}\" sequences:{}", antigen->name(), antigen->full_name(), sequences.size());
+            AD_LOG(acmacs::log::hi_name_matching, "select_by_name \"{}\" \"{}\" sequences:{}", antigen->name(), antigen->full_name(), sequences.size());
             if (const auto matched = ::match(sequences, *antigen); matched.has_value()) {
-                // AD_DEBUG("    --> {}", matched->seq_id());
+                AD_LOG(acmacs::log::hi_name_matching, "  --> {}", matched->seq_id());
                 result.refs_.push_back(*matched);
                 ++num_matched;
             }

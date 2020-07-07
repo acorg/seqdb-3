@@ -76,9 +76,7 @@ int main(int argc, char* const argv[])
     using namespace std::string_view_literals;
 
     try {
-        acmacs::log::register_enabler_acmacs_base();
-        acmacs::log::register_enabler("seq"sv, acmacs::log::sequences);
-        acmacs::log::register_enabler("fasta"sv, acmacs::log::fasta);
+        acmacs::log::register_enabler_seqdb3();
         Options opt(argc, argv);
         acmacs::log::enable(opt.verbose);
 
