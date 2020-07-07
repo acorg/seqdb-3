@@ -414,16 +414,20 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
         }
         else {
             const auto name_fields = acmacs::virus::name::parse(antigen->name());
-            const acmacs::virus::Reassortant ag_reassortant{antigen->reassortant().empty() ? name_fields.reassortant : antigen->reassortant()};
-            const acmacs::virus::Passage ag_passage{antigen->passage().empty() ? name_fields.passage : antigen->passage()};
-            const auto sequences{select_by_name(name_fields.name())};
-            AD_LOG(acmacs::log::hi_name_matching, "select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->full_name(), sequences.size());
-            if (const auto matched = ::match(sequences, ag_reassortant, ag_passage); matched.has_value()) {
-                AD_LOG(acmacs::log::hi_name_matching, "  --> {}", matched->seq_id());
-                result.refs_.push_back(*matched);
-                ++num_matched;
+            if (name_fields.mutations.empty()) {
+                const acmacs::virus::Reassortant ag_reassortant{antigen->reassortant().empty() ? name_fields.reassortant : antigen->reassortant()};
+                const acmacs::virus::Passage ag_passage{antigen->passage().empty() ? name_fields.passage : antigen->passage()};
+                const auto sequences{select_by_name(name_fields.name())};
+                AD_LOG(acmacs::log::hi_name_matching, "select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->full_name(), sequences.size());
+                if (const auto matched = ::match(sequences, ag_reassortant, ag_passage); matched.has_value()) {
+                    AD_LOG(acmacs::log::hi_name_matching, "  --> {}", matched->seq_id());
+                    result.refs_.push_back(*matched);
+                    ++num_matched;
+                }
+                else
+                    result.refs_.emplace_back();
             }
-            else
+            else // contains mutation data, nothing to look in seqdb
                 result.refs_.emplace_back();
         }
     }
