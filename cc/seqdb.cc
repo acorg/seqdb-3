@@ -14,6 +14,7 @@
 #include "acmacs-base/to-json.hh"
 #include "acmacs-base/hash.hh"
 #include "acmacs-base/date.hh"
+#include "acmacs-base/string-matcher.hh"
 #include "acmacs-virus/virus-name-normalize.hh"
 #include "acmacs-virus/virus-name-v1.hh"
 #include "acmacs-chart-2/chart-modify.hh"
@@ -360,6 +361,32 @@ const acmacs::seqdb::v3::hash_index_t& acmacs::seqdb::v3::Seqdb::hash_index() co
 
 // ----------------------------------------------------------------------
 
+inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subset& sequences, const acmacs::chart::Antigen& antigen)
+{
+    if (sequences.empty())
+        return std::nullopt;
+    std::vector<string_match::score_t> score_per_seq(sequences.size(), string_match::score_t{0});
+    for (size_t seq_no{0}; seq_no < sequences.size(); ++seq_no) {
+        const auto& seq = sequences[seq_no].seq();
+        if (std::any_of(std::begin(seq.reassortants), std::end(seq.reassortants), [&antigen](std::string_view reass) { return antigen.reassortant() == reass; })) {
+            for (const auto& s_passage : seq.passages) {
+                if (acmacs::virus::passages_match(antigen.passage(), acmacs::virus::Passage{s_passage})) {
+                    if (const auto score = string_match::match(s_passage, *antigen.passage()); score > score_per_seq[seq_no]) {
+                        AD_DEBUG("   {:3d} {}", score, sequences[seq_no].seq_id());
+                        score_per_seq[seq_no] = score;
+                    }
+                }
+            }
+        }
+    }
+    if (const auto best_seq = std::max_element(std::begin(score_per_seq), std::end(score_per_seq)); *best_seq > 0)
+        return sequences[static_cast<size_t>(best_seq - std::begin(score_per_seq))];
+    else
+        return std::nullopt;
+}
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Antigens& aAntigens, std::string_view /*aChartVirusType*/) const
 {
     // check lineage?
@@ -377,25 +404,35 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
             return std::nullopt;
     };
 
-    size_t matched = 0;
+    size_t num_matched = 0;
     for (auto antigen : aAntigens) {
         if (auto found_ref = find_by_hi_name(*antigen); found_ref.has_value()) {
             result.refs_.push_back(std::move(*found_ref));
-            ++matched;
+            ++num_matched;
         }
         else {
-            bool found = false;
-            AD_DEBUG("select_by_name \"{}\"", antigen->name());
-            for (const auto& selected : select_by_name(antigen->name())) {
-                AD_DEBUG("    {}", selected.seq_id());
-                if (selected.seq().has_reassortant(*antigen->reassortant())) {
-                    result.refs_.push_back(selected);
-                    ++matched;
-                    found = true;
-                }
+            const auto sequences{select_by_name(antigen->name())};
+            AD_DEBUG("select_by_name \"{}\" sequences:{}", antigen->name(), sequences.size());
+            if (const auto matched = ::match(sequences, *antigen); matched.has_value()) {
+                AD_DEBUG("    {}", matched->seq_id());
+                result.refs_.push_back(*matched);
+                ++num_matched;
             }
-            if (!found)
+            else
                 result.refs_.emplace_back();
+
+            // bool found = false;
+
+            // for (const auto& selected : select_by_name(antigen->name())) {
+            //     AD_DEBUG("    {}", selected.seq_id());
+            //     if (selected.seq().has_reassortant(*antigen->reassortant())) {
+            //         result.refs_.push_back(selected);
+            //         ++num_matched;
+            //         found = true;
+            //     }
+            // }
+            // if (!found)
+            //     result.refs_.emplace_back();
         }
 
         // else if (antigen->passage().empty()) {
@@ -403,7 +440,7 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
         //     for (const auto& selected : select_by_name(antigen->name())) {
         //         if (selected.seq().has_reassortant(*antigen->reassortant())) {
         //             result.refs_.push_back(selected);
-        //             ++matched;
+        //             ++num_matched;
         //             found = true;
         //         }
         //     }
@@ -413,7 +450,7 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
         // else
         //     result.refs_.emplace_back();
     }
-    fmt::print("INFO: antigens from chart have sequences in seqdb: {}\n", matched);
+    fmt::print("INFO: antigens from chart have sequences in seqdb: {}\n", num_matched);
 
     return result;
 

@@ -1,9 +1,30 @@
+#include "acmacs-base/string-matcher.hh"
 #include "hidb-5/hidb.hh"
-#include "seqdb-3/match-hi-name.hh"
 #include "seqdb-3/scan-match-hidb.hh"
 #include "seqdb-3/scan-fasta.hh"
 
 // ----------------------------------------------------------------------
+
+namespace acmacs::seqdb::inline v3
+{
+    struct score_size_t
+    {
+        string_match::score_t score;
+        size_t len;
+
+        constexpr bool operator<(const score_size_t& a) const { return score < a.score; }
+    };
+
+    struct score_seq_found_t : public score_size_t
+    {
+        size_t seq_no;
+        size_t found_no;
+
+        score_seq_found_t(const score_size_t& ss, size_t sn, size_t fn) : score_size_t{ss.score, ss.len}, seq_no{sn}, found_no{fn} {}
+        constexpr bool operator<(const score_seq_found_t& a) const { return score > a.score; }
+    };
+
+} // namespace acmacs::seqdb::inline v3
 
 using lab_id_index_entry_t = std::pair<std::string_view, const hidb::bin::Antigen*>;
 
