@@ -1257,6 +1257,24 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_nuc_length(const Seqdb
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_with_front_back_deletions(const Seqdb& seqdb, bool remove, size_t length)
+{
+    if (remove) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) {
+            const auto nucs = en.nuc_aligned(seqdb);
+            if (nucs.at(pos1_t{1}) == '-')
+                return true;
+            if (length > 0 && (nucs.size() < pos0_t{length} || nucs.at(pos1_t{length}) == '-'))
+                return true;    // too short or has deletion in the last nuc
+            return false;
+        }), std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::remove_with_front_back_deletions
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::names_matching_regex(const std::vector<std::string_view>& regex_list)
 {
     if (!regex_list.empty()) {

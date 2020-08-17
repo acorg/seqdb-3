@@ -49,6 +49,7 @@ struct Options : public argv
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
+    option<bool>      remove_with_front_back_deletions{*this, "remove-with-front-back-deletions", desc{""}};
     option<bool>      keep_all_hi_matched{*this, "keep-all-hi", desc{"do NOT remove HI matched when removing duplicates (--remove-nuc-duplicates)"}};
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
     option<size_t>    minimum_aa_length{*this, "minimum-aa-length", dflt{0ul}, desc{"Select only sequences having min number of AAs in alignment."}};
@@ -161,6 +162,7 @@ int main(int argc, char* const argv[])
             .multiple_dates(opt.multiple_dates)
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)
+            .remove_with_front_back_deletions(seqdb, opt.remove_with_front_back_deletions, opt.length)
             .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
             .recent(opt.recent, opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .recent_matched(acmacs::string::split_into_size_t(*opt.recent_matched, ","), opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
