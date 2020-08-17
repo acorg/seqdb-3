@@ -1342,7 +1342,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_ba
         const auto before{refs_.size()};
         refs_.erase(std::remove_if(std::next(std::begin(refs_)), std::end(refs_),
                                    [threshold, &seqdb, base_seq = refs_.front().nuc_aligned(seqdb)](auto& en) {
-                                       en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), base_seq, hamming_distance_by_shortest::yes);
+                                       en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), base_seq, hamming_distance_by_shortest::no);
                                        return en.hamming_distance >= threshold;
                                    }),
                     std::end(refs_));
@@ -1452,7 +1452,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
         }
 
         ranges::for_each(to_export, [deletion_report_threshold=options.e_deletion_report_threshold](auto& en) {
-            const auto dels = ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; });
+            const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; }));
             const auto dels_at_the_end = en.sequence.back() == '-' || en.sequence.back() == 'X';
             if (dels_at_the_end || dels > deletion_report_threshold)
                 AD_WARNING("{}: {} deletions or unknown AAs or deletions at the end", en.seq_id, dels);
