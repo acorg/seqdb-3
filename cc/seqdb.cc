@@ -1335,6 +1335,31 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend(const std::vector<
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to(size_t threshold, std::string_view seq_id)
+{
+    if (!seq_id.empty()) {
+        const auto& seqdb = acmacs::seqdb::get();
+        const auto compare_to = seqdb.select_by_seq_id(seq_id);
+        if (compare_to.empty())
+            throw std::runtime_error{fmt::format("no sequences with seq-id \"{}\" found", seq_id)};
+        const auto before{refs_.size()};
+        refs_.erase(std::remove_if(std::next(std::begin(refs_)), std::end(refs_),
+                                   [threshold, &seqdb, comapre_to_seq = compare_to.front().nuc_aligned(seqdb)](auto& en) {
+                                       en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), comapre_to_seq, hamming_distance_by_shortest::no);
+                                       return en.hamming_distance >= threshold;
+                                   }),
+                    std::end(refs_));
+        const auto after{refs_.size()};
+        AD_LOG(acmacs::log::sequences, "{} sequences removed ({} left) which are too far from {}, threshold: {}", before - after, after, seq_id, threshold);
+        if ((before - after) > (before / 4))
+            AD_WARNING("too many sequences removed ({} or {:.1f}%) that are too far from {}, hamming distance threshold: {}", before - after, static_cast<double>(before - after) / static_cast<double>(before) * 100.0, seq_id, threshold);
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::nuc_hamming_distance_to
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_to_base(size_t threshold, bool do_filter)
 {
     if (do_filter) {
