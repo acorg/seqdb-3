@@ -103,6 +103,7 @@ namespace acmacs::seqdb::inline v3
         most_common_length e_most_common_length{most_common_length::no};
         std::string e_name_format{"{seq_id}"};
         size_t e_length{0};     // truncate/extend all sequences to this length
+        size_t e_deletion_report_threshold{4}; // if sequence has this or more deletions, report the name. Deletions at the sequence end are always reported.
 
         export_options& fasta(bool nucs)
         {
@@ -137,6 +138,11 @@ namespace acmacs::seqdb::inline v3
         export_options& name_format(std::string_view name_format)
         {
             e_name_format = name_format;
+            return *this;
+        }
+        export_options& deletion_report_threshold(size_t deletion_report_threshold)
+        {
+            e_deletion_report_threshold = deletion_report_threshold;
             return *this;
         }
     };

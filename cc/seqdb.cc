@@ -1451,6 +1451,13 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
             ranges::for_each(to_export, [length = options.e_length](auto& en) { en.sequence.resize(length, '-'); });
         }
 
+        ranges::for_each(to_export, [deletion_report_threshold=options.e_deletion_report_threshold](auto& en) {
+            const auto dels = ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; });
+            const auto dels_at_the_end = en.sequence.back() == '-' || en.sequence.back() == 'X';
+            if (dels_at_the_end || dels > deletion_report_threshold)
+                AD_WARNING("{}: {} deletions or unknown AAs or deletions at the end", en.seq_id, dels);
+        });
+
         AD_LOG(acmacs::log::fasta, "writing {} sequences to {}", to_export.size(), filename);
         acmacs::file::write(filename, export_fasta(to_export, options));
     }
