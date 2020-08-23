@@ -1293,6 +1293,21 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::names_matching_regex(const
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::exclude(const std::vector<std::string_view>& seq_ids)
+{
+    if (!seq_ids.empty()) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_),
+                                   [&seq_ids](const auto& en) {
+                                       return std::any_of(std::begin(seq_ids), std::end(seq_ids), [seq_id = en.seq_id()](const auto& si) { return si == seq_id; });
+                                   }),
+                    std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::exclude
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::dates(std::string_view start, std::string_view end)
 {
     if (!start.empty() || !end.empty())

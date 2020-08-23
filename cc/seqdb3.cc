@@ -41,6 +41,7 @@ struct Options : public argv
     option<bool>      with_hi_name{*this, "with-hi-name", desc{"matched against hidb"}};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
     option<str_array> prepend{*this, "prepend", desc{"prepend with seq by seq-id, multiple possible, always included"}};
+    option<str_array> exclude{*this, "exclude-seq-id", desc{"exclude by seq-id"}};
     option<str>       base_seq_id{*this, "base-seq-id", desc{"single base sequence (outgroup), always included"}};
     option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
@@ -162,6 +163,7 @@ int main(int argc, char* const argv[])
             .multiple_dates(opt.multiple_dates)
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)
+            .exclude(opt.exclude)
             .remove_with_front_back_deletions(seqdb, opt.remove_with_front_back_deletions, opt.length)
             .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
             .recent(opt.recent, opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)

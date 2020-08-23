@@ -347,6 +347,7 @@ namespace acmacs::seqdb::inline v3
         subset& min_nuc_length(const Seqdb& seqdb, size_t length);
         subset& names_matching_regex(const std::vector<std::string_view>& regex_list);
         subset& names_matching_regex(std::string_view re) { return names_matching_regex(std::vector<std::string_view>{re}); }
+        subset& exclude(const std::vector<std::string_view>& seq_ids);
         subset& keep_master_only();
         subset& prepend(std::string_view seq_id, const Seqdb& seqdb);
         subset& prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb);
