@@ -187,8 +187,9 @@ int main(int argc, char* const argv[])
                                   .aligned(opt.not_aligned ? acmacs::seqdb::export_options::aligned::no : acmacs::seqdb::export_options::aligned::yes)
                                   .most_common_length(opt.most_common_length ? acmacs::seqdb::export_options::most_common_length::yes : acmacs::seqdb::export_options::most_common_length::no)
                                   .length(opt.length)
-                                  .name_format(opt.name_format))         // acmacs::seqdb::v3::subset::make_name
-            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */) // acmacs::seqdb::v3::subset::make_name
+                                  .name_format(opt.name_format)
+                                  .deletion_report_threshold(acmacs::uppercase{*opt.subtype})) // acmacs::seqdb::v3::subset::make_name
+            .print(seqdb, opt.name_format, opt.print /* || opt.fasta */)                       // acmacs::seqdb::v3::subset::make_name
             .report_hamming_distance(opt.report_hamming_distance && !opt.base_seq_id->empty());
 
         return 0;

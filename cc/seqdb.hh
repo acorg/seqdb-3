@@ -145,6 +145,12 @@ namespace acmacs::seqdb::inline v3
             e_deletion_report_threshold = deletion_report_threshold;
             return *this;
         }
+        export_options& deletion_report_threshold(std::string_view subtype)
+        {
+            if (subtype == "B" && e_deletion_report_threshold < 9) // do not report 3-del mutatants
+                e_deletion_report_threshold = 9;
+            return *this;
+        }
     };
 
     // ----------------------------------------------------------------------
