@@ -57,6 +57,7 @@ std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_t::p
 {
     std::vector<pos0_t> positions;
     for (size_t pos{0}; pos < counters.size(); ++pos) {
+        // AD_DEBUG("pos:{:3d} {:2d} {}", pos + 1, counters[pos].size(), counters[pos].report_sorted_max_first());
         if (counters[pos].size() > 1)
             positions.push_back(pos0_t{pos});
     }
@@ -148,13 +149,17 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent
 
 std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report() const
 {
-    std::vector<pos0_t> positions;
+    subset_to_compare_t::counters_t merged_counters(subsets.front().counters.size());
     for (const auto& ssc : subsets) {
-        const auto spos = ssc.positions_to_report();
-        positions.insert(std::end(positions), std::begin(spos), std::end(spos));
+        for (size_t pos{0}; pos < merged_counters.size(); ++pos)
+            merged_counters[pos] = merge_CounterCharSome(merged_counters[pos], ssc.counters[pos]);
     }
-    std::sort(std::begin(positions), std::end(positions));
-    positions.erase(std::unique(std::begin(positions), std::end(positions)), std::end(positions));
+
+    std::vector<pos0_t> positions;
+    for (size_t pos{0}; pos < merged_counters.size(); ++pos) {
+        if (merged_counters[pos].size() > 1)
+            positions.push_back(pos0_t{pos});
+    }
     return positions;
 
 } // acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report

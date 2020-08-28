@@ -11,12 +11,12 @@ namespace acmacs::seqdb::inline v3
 
     struct subset_to_compare_t
     {
+        using counter_t = acmacs::CounterCharSome<' ', '['>;
+        using counters_t = std::vector<counter_t>;
+
         std::string name;
         acmacs::seqdb::subset subset;
-        std::vector<acmacs::CounterCharSome<' ', '['>> counters;
-        // std::vector<acmacs::CounterCharSome<0, 256>> counters;
-
-        using counter_t = typename std::decay_t<decltype(counters.front())>;
+        counters_t counters;
 
         subset_to_compare_t(std::string_view a_name) : name{a_name} {}
         subset_to_compare_t(std::string_view a_name, acmacs::seqdb::subset&& a_subset) : name{a_name}, subset{std::move(a_subset)} {}
