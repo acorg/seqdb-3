@@ -22,6 +22,8 @@ SEQDB_SOURCES =          \
   scan-fasta.cc          \
   ncbi.cc                \
   scan-match-hidb.cc     \
+  seqdb-subset.cc        \
+  seqdb-hamming.cc       \
   create.cc              \
   compare.cc             \
   scan-lineages.cc       \

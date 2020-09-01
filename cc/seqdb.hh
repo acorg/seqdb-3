@@ -358,6 +358,7 @@ namespace acmacs::seqdb::inline v3
         subset& prepend(std::string_view seq_id, const Seqdb& seqdb);
         subset& prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb);
         // subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
+        subset& nuc_hamming_distance_mean();
         subset& nuc_hamming_distance_to(size_t threshold, std::string_view seq_id);
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);
@@ -368,7 +369,11 @@ namespace acmacs::seqdb::inline v3
         subset& report_hamming_distance(bool do_report);
 
         subset& append(const subset& another);
-        subset& append(const ref& seq) { refs_.push_back(seq); return *this; }
+        subset& append(const ref& seq)
+        {
+            refs_.push_back(seq);
+            return *this;
+        }
 
         // returns new subset, this subset is not modified
         enum class matched_only { no, yes };
@@ -420,6 +425,10 @@ namespace acmacs::seqdb::inline v3
 
         friend class Seqdb;
     };
+
+    // ----------------------------------------------------------------------
+
+    void remove_nuc_duplicates(subset::refs_t& refs, bool keep_hi_matched = false);
 
 } // namespace acmacs::seqdb::inlinev3
 

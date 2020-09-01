@@ -43,18 +43,19 @@ struct Options : public argv
     option<str_array> prepend{*this, "prepend", desc{"prepend with seq by seq-id, multiple possible, always included"}};
     option<str_array> exclude{*this, "exclude-seq-id", desc{"exclude by seq-id"}};
     option<str>       base_seq_id{*this, "base-seq-id", desc{"single base sequence (outgroup), always included"}};
-    option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
     option<str>       name_format{*this, 'f', "name-format", desc{"{{seq_id}} {{full_name}} {{hi_name_or_full_name}} {{hi_names}} {{hi_name}} {{lineage}} {{name}}\n                                       {{date}} {{dates}} {{lab_id}} {{passage}} {{clades}} {{lab}} {{country}} {{continent}} {{group_no}}\n                                       {{hamming_distance}} {{nuc_length}} {{aa_length}} {{gisaid_accession_numbers}} {{ncbi_accession_numbers}}"}};
-    option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
-    option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
     option<bool>      remove_with_front_back_deletions{*this, "remove-with-front-back-deletions", desc{""}};
     option<bool>      keep_all_hi_matched{*this, "keep-all-hi", desc{"do NOT remove HI matched when removing duplicates (--remove-nuc-duplicates)"}};
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
     option<size_t>    minimum_aa_length{*this, "minimum-aa-length", dflt{0ul}, desc{"Select only sequences having min number of AAs in alignment."}};
     option<size_t>    minimum_nuc_length{*this, "minimum-nuc-length", dflt{0ul}, desc{"Select only sequences having min number of nucs in alignment."}};
+
+    option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
+    option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
+    option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
 
     // print
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
@@ -147,6 +148,7 @@ int main(int argc, char* const argv[])
         }
 
         init()
+            .remove_nuc_duplicates(opt.remove_nuc_duplicates, opt.keep_all_hi_matched)
             .subtype(acmacs::uppercase{*opt.subtype})
             .lineage(acmacs::uppercase{*opt.lineage})
             .lab(acmacs::whocc::lab_name_normalize(*opt.lab))
@@ -165,13 +167,13 @@ int main(int argc, char* const argv[])
             .names_matching_regex(opt.name_regex)
             .exclude(opt.exclude)
             .remove_with_front_back_deletions(seqdb, opt.remove_with_front_back_deletions, opt.length)
+            .nuc_hamming_distance_mean()
             .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
             .recent(opt.recent, opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .recent_matched(acmacs::string::split_into_size_t(*opt.recent_matched, ","), opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .random(opt.random)
             .group_by_hamming_distance(seqdb, opt.group_by_hamming_distance, opt.output_size)
             .subset_by_hamming_distance_random(seqdb, opt.subset_by_hamming_distance_random, opt.output_size)
-            .remove_nuc_duplicates(opt.remove_nuc_duplicates, opt.keep_all_hi_matched)
             .remove_empty(seqdb, opt.nucs)
             .sort(sorting_order(opt.sort_by))
             .prepend(opt.prepend, seqdb)
