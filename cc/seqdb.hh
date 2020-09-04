@@ -358,7 +358,7 @@ namespace acmacs::seqdb::inline v3
         subset& prepend(std::string_view seq_id, const Seqdb& seqdb);
         subset& prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb);
         // subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
-        subset& nuc_hamming_distance_mean();
+        subset& nuc_hamming_distance_mean(size_t threshold, size_t size_threshold = 1000);
         subset& nuc_hamming_distance_to(size_t threshold, std::string_view seq_id);
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);

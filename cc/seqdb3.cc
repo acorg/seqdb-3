@@ -53,7 +53,8 @@ struct Options : public argv
     option<size_t>    minimum_aa_length{*this, "minimum-aa-length", dflt{0ul}, desc{"Select only sequences having min number of AAs in alignment."}};
     option<size_t>    minimum_nuc_length{*this, "minimum-nuc-length", dflt{0ul}, desc{"Select only sequences having min number of nucs in alignment."}};
 
-    option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
+    option<size_t>    nuc_hamming_distance_mean_threshold{*this, "nuc-hamming-distance-mean-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the sequence found by subset::nuc_hamming_distance_mean using 1000 most recent sequences."}};
+    // option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
 
@@ -167,8 +168,8 @@ int main(int argc, char* const argv[])
             .names_matching_regex(opt.name_regex)
             .exclude(opt.exclude)
             .remove_with_front_back_deletions(seqdb, opt.remove_with_front_back_deletions, opt.length)
-            .nuc_hamming_distance_mean()
-            .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
+            .nuc_hamming_distance_mean(opt.nuc_hamming_distance_mean_threshold, 1000)
+                // .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
             .recent(opt.recent, opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .recent_matched(acmacs::string::split_into_size_t(*opt.recent_matched, ","), opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .random(opt.random)
@@ -178,8 +179,6 @@ int main(int argc, char* const argv[])
             .sort(sorting_order(opt.sort_by))
             .prepend(opt.prepend, seqdb)
             .prepend(opt.base_seq_id, seqdb)
-            // .prepend_single_matching(opt.base_seq_regex, seqdb)
-            //.nuc_hamming_distance_to_base(opt.nuc_hamming_distance_threshold, !!opt.base_seq_id) --> see above .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
             .report_stat(seqdb, !opt.no_stat) // static_cast<bool>(opt.fasta))
             .report_aa_at(seqdb, aa_at_pos_report)
             .export_sequences(opt.fasta, seqdb,

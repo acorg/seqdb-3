@@ -6,79 +6,47 @@
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_mean()
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_mean(size_t threshold, size_t size_threshold)
 {
-    return *this;
-
     struct Entry
     {
         sequence_aligned_ref_t nucs;
         size_t hamming_distance_sum{0};
-        // size_t ref_index{static_cast<size_t>(-1)};
+        size_t ref_index{static_cast<size_t>(-1)};
+        std::string_view date;
 
-        void operator=(const ref& ref)
+        void assign(size_t index, const ref& ref)
         {
             nucs = ref.seq().nuc_aligned_master();
+            date = ref.entry->date();
             hamming_distance_sum = 0;
+            ref_index = index;
         }
     };
 
     std::vector<Entry> entries(refs_.size());
-    entries.erase(std::copy_if(std::begin(refs_), std::end(refs_), entries.begin(), [](const auto& ref) { return ref.is_master(); }), entries.end());
+    for (size_t index{0}; index < refs_.size(); ++index)
+        entries[index].assign(index, refs_[index]);
+    entries.erase(std::remove_if(std::begin(entries), std::end(entries), [](const auto& en) { return en.nucs.empty(); }), entries.end());
+    std::sort(entries.begin(), entries.end(), [](const auto& e1, const auto& e2) { return e1.date > e2.date; }); // most recent first
+    if (entries.size() > size_threshold)                                                                         // keep few most recent before comparing
+        entries.erase(std::next(entries.begin(), static_cast<ssize_t>(size_threshold)), entries.end());
 
+    size_t total{0};
     for (size_t i1{0}; i1 < entries.size(); ++i1) {
         for (size_t i2{i1 + 1}; i2 < entries.size(); ++i2) {
             const auto hd{hamming_distance(entries[i1].nucs, entries[i2].nucs, hamming_distance_by_shortest::no)};
             entries[i1].hamming_distance_sum += hd;
             entries[i2].hamming_distance_sum += hd;
+            ++total;
         }
     }
 
-    std::for_each(entries.begin(), entries.end(), [size = entries.size() - 1](auto& en) { en.hamming_distance_sum /= size; });
-    std::sort(entries.begin(), entries.end(), [](const auto& e1, const auto& e2) { return e1.hamming_distance_sum > e2.hamming_distance_sum; });
+    const auto base_ref_index = std::min_element(entries.begin(), entries.end(), [](const auto& e1, const auto& e2) { return e1.hamming_distance_sum < e2.hamming_distance_sum; })->ref_index;
+    const auto base_seq_id = refs_[base_ref_index].seq_id();
+    AD_INFO("base sequence to exclude by hamming distance {}", base_seq_id);
 
-    size_t prev_hd{static_cast<size_t>(-1)}, sz{0};
-    for (const auto& entry : entries) {
-        if (prev_hd != entry.hamming_distance_sum) {
-            if (sz)
-                fmt::print("{:8d}  {:6d}   +{}\n", prev_hd, sz, (prev_hd - entry.hamming_distance_sum));
-            sz = 1;
-            prev_hd = entry.hamming_distance_sum;
-        }
-        else
-            ++sz;
-    }
-    if (sz > 0)
-        fmt::print("{:8d}  {:6d}\n", prev_hd, sz);
-
-    return *this;
-
-    // const auto& seqdb = acmacs::seqdb::get();
-    // std::vector<size_t> hamming_distance_sum(refs_.size());
-    // for (size_t i1{0}; i1 < refs_.size(); ++i1) {
-    //     const auto nuc1 = refs_[i1].nuc_aligned(seqdb);
-    //     for (size_t i2{i1 + 1}; i2 < refs_.size(); ++i2) {
-    //         const auto hd{hamming_distance(nuc1, refs_[i2].nuc_aligned(seqdb), hamming_distance_by_shortest::no)};
-    //         hamming_distance_sum[i1] += hd;
-    //         hamming_distance_sum[i2] += hd;
-    //     }
-    // }
-
-    // std::sort(std::begin(hamming_distance_sum), std::end(hamming_distance_sum));
-
-    // size_t prev{static_cast<size_t>(-1)}, sz{0};
-    // for (const auto hd : hamming_distance_sum) {
-    //     if (hd != prev && sz > 0) {
-    //         fmt::print("{:8d}  {:6d}\n", prev, sz);
-    //         sz = 0;
-    //         prev = hd;
-    //     }
-    //     else
-    //         ++sz;
-    // }
-    // if (sz > 0)
-    //     fmt::print("{:8d}  {:6d}\n", prev, sz);
-    // return *this;
+    return nuc_hamming_distance_to(threshold, base_seq_id);
 
 } // acmacs::seqdb::v3::subset::nuc_hamming_distance_mean
 
