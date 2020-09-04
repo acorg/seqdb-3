@@ -252,9 +252,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
 
 void acmacs::seqdb::v3::remove_nuc_duplicates(subset::refs_t& refs, bool keep_hi_matched)
 {
+    if (keep_hi_matched) {
         // master sequences and hi matched (if requested) in the [std::begin(refs), to_remove_candidates_start] range
         const auto to_remove_canditates_start =
-            std::partition(std::begin(refs), std::end(refs), [keep_hi_matched](const auto& ref) { return ref.is_master() || (keep_hi_matched && ref.is_hi_matched()); });
+            std::partition(std::begin(refs), std::end(refs), [](const auto& ref) { return ref.is_master() || ref.is_hi_matched(); });
         // move slave seq from [to_remove_canditates_start, std::end(refs)] that reference to
         // a sequence in [std::begin(refs), to_remove_candidates_start]
         // to the [to_remove_start, std::end(refs)] range
@@ -263,6 +264,10 @@ void acmacs::seqdb::v3::remove_nuc_duplicates(subset::refs_t& refs, bool keep_hi
         });
 
         refs.erase(to_remove_start, std::end(refs));
+    }
+    else {
+        refs.erase(std::remove_if(std::begin(refs), std::end(refs), [](const auto& ref) { return !ref.is_master(); }), std::end(refs));
+    }
 
 } // acmacs::seqdb::v3::remove_nuc_duplicates
 
