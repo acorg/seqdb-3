@@ -230,6 +230,7 @@ namespace local::B
         // };
 
         auto& deletions = sequence.deletions();
+        // AD_DEBUG("{} {}", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
         constexpr acmacs::seqdb::pos1_t b_vic_del_mutants_pos{162}; // Must be 162 according to Sarah and CDC
 
         //---------- VICTORIA ----------
@@ -284,11 +285,12 @@ namespace local::B
                 warn("yamagata");
         }
         else if (is_yamagata_shifted(sequence)) {
+            // AD_DEBUG("{} {}", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
             if (sequence.lineage().empty())
                 sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
             else if (sequence.lineage() != acmacs::virus::lineage_t{"YAMAGATA"})
                 warn("yamagata-shifted");
-            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{acmacs::seqdb::pos1_t{162}, 1}};
+            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{acmacs::seqdb::pos1_t{163}, 1}};
         }
         else if (N_deletions_at(deletions, 2, acmacs::seqdb::pos1_t{163}) && sequence.year() <= 2013) {
             if (sequence.lineage().empty())
@@ -304,16 +306,16 @@ namespace local::B
             // deletion detection was invalid, most probably due to 162X. B/ALICANTE/19_0649/20171219
             // fmt::print(stderr, "DEBUG: {} 160{} 161{} 162{} 163{}\n", acmacs::seqdb::scan::format(deletions), sequence.aa_at_pos(acmacs::seqdb::pos1_t{160}), sequence.aa_at_pos(acmacs::seqdb::pos1_t{161}), sequence.aa_at_pos(acmacs::seqdb::pos1_t{162}), sequence.aa_at_pos(acmacs::seqdb::pos1_t{163}));
             sequence.lineage(acmacs::virus::lineage_t{"YAMAGATA"});
-            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{acmacs::seqdb::pos1_t{162}, 1}};
+            deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{acmacs::seqdb::pos1_t{163}, 1}};
         }
         else if (is_semi_ignored(sequence)) {
-            fmt::print(stderr, "INFO: {} {}\n", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
+            AD_INFO("{} {}", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
         }
         else if (is_ignored(sequence)) {
             // do not issue warning
         }
         else {
-            fmt::print(stderr, "DEBUG: 1-at-163:{} no-between-164-500:{}\n", N_deletions_at(deletions, 1, acmacs::seqdb::pos1_t{163}), no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{164}, acmacs::seqdb::pos1_t{500}));
+            AD_DEBUG("1-at-163:{} no-between-164-500:{}", N_deletions_at(deletions, 1, acmacs::seqdb::pos1_t{163}), no_deletions_after_before(deletions, acmacs::seqdb::pos1_t{164}, acmacs::seqdb::pos1_t{500}));
             warn("unknown", "ERROR");
         }
 
