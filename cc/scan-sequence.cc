@@ -220,6 +220,9 @@ std::string acmacs::seqdb::v3::scan::sequence_t::full_name() const
 
 void acmacs::seqdb::v3::scan::sequence_t::add_lab_id(const acmacs::uppercase& lab, const acmacs::uppercase& lab_id)
 {
+    if (lab.empty() && lab_id.empty())
+        return;
+
     if (auto found = lab_ids_.find(lab); found == lab_ids_.end())
         lab_ids_.emplace(lab, std::set<acmacs::uppercase>{lab_id});
     else
