@@ -593,6 +593,61 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat(const Seqdb& s
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_stat_month_region(bool do_report)
+{
+    if (do_report) {
+        if (!refs_.empty()) {
+
+            using namespace std::string_view_literals;
+            constexpr static const std::array continents{"AFRICA"sv, "NORTH-AMERICA"sv, "CENTRAL-AMERICA"sv, "SOUTH-AMERICA"sv, "ASIA"sv, "AUSTRALIA-OCEANIA"sv, "MIDDLE-EAST"sv, "EUROPE"sv, "RUSSIA"sv, "UNKNOWN"sv};
+            struct MonthEntry
+            {
+                size_t total{0};
+                std::array<size_t, continents.size()> per_region{0};
+            };
+
+            std::map<std::string, MonthEntry> stat;
+            for (const auto& ref : refs_) {
+                std::string date{ref.entry->date()};
+                if (date.size() > 7)
+                    date.resize(7);
+                else if (date.size() == 4)
+                    date += "-??";
+                auto& en = stat[date];
+                ++en.total;
+                if (const auto continent = std::find(std::begin(continents), std::end(continents), ref.entry->continent); continent != std::end(continents)) {
+                    ++en.per_region[static_cast<size_t>(continent - std::begin(continents))];
+                }
+                else {
+                    if (!ref.entry->continent.empty())
+                        AD_WARNING("Continent name not found: \"{}\"", ref.entry->continent);
+                    ++en.per_region.back();
+                }
+            }
+
+            fmt::print("             Africa   N.America C.America S.America   Asia     Oceania  Mid.East   Europe    Russia   Unknown    TOTAL\n");
+            for (const auto& [date, data] : stat) {
+                fmt::print("{}  ", date);
+                for (size_t ind{0}; ind < data.per_region.size(); ++ind) {
+                    if (data.per_region[ind])
+                        fmt::print("  {:6d}  ", data.per_region[ind]);
+                    else
+                        fmt::print("          ");
+                }
+                fmt::print("  {:6d}\n", data.total);
+            }
+        }
+        else {
+            fmt::print(stderr, "No sequences selected\n");
+        }
+    }
+
+    return *this;
+
+} // acmacs::seqdb::v3::subset::report_stat_month_region
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_aa_at(const Seqdb& seqdb, const pos1_list_t& pos1_list)
 {
     if (!pos1_list.empty() && !refs_.empty()) {

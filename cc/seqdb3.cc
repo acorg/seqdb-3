@@ -63,6 +63,7 @@ struct Options : public argv
     option<bool>      report_hamming_distance{*this, "report-hamming", desc{"Report hamming distance from base for all strains."}};
     option<str>       report_aa_at{*this, "report-aa-at", desc{"comma separated list: 142,144."}};
     option<bool>      no_stat{*this, "no-stat"};
+    option<bool>      stat_month_region{*this, "stat-month-region"};
 
     // export
     option<str>       fasta{*this, "fasta", desc{"export to fasta, - for stdout"}};
@@ -179,7 +180,8 @@ int main(int argc, char* const argv[])
             .sort(sorting_order(opt.sort_by))
             .prepend(opt.prepend, seqdb)
             .prepend(opt.base_seq_id, seqdb)
-            .report_stat(seqdb, !opt.no_stat) // static_cast<bool>(opt.fasta))
+            .report_stat(seqdb, !opt.no_stat && !opt.stat_month_region) // static_cast<bool>(opt.fasta))
+            .report_stat_month_region(opt.stat_month_region)
             .report_aa_at(seqdb, aa_at_pos_report)
             .export_sequences(opt.fasta, seqdb,
                               acmacs::seqdb::export_options{}
