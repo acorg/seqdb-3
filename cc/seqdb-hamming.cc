@@ -8,7 +8,7 @@
 
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::nuc_hamming_distance_mean(size_t threshold, size_t size_threshold)
 {
-    if (threshold > 0 && size_threshold > 0) {
+    if (threshold > 0 && size_threshold > 0 && !refs_.empty()) {
         struct Entry
         {
             sequence_aligned_ref_t nucs;
