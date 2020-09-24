@@ -2,14 +2,14 @@
 
 #include "acmacs-base/filesystem.hh"
 #include "acmacs-base/acmacsd.hh"
-#include "acmacs-base/settings.hh"
+#include "acmacs-base/settings-v2.hh"
 #include "seqdb-3/scan-lineages.hh"
 #include "seqdb-3/scan-fasta.hh"
 #include "seqdb-3/aa-at-pos.hh"
 
 // ----------------------------------------------------------------------
 
-class CladeDefinitions : public acmacs::settings::Settings
+class CladeDefinitions : public acmacs::settings::v2::Settings
 {
   public:
     CladeDefinitions()
@@ -18,7 +18,7 @@ class CladeDefinitions : public acmacs::settings::Settings
         using namespace std::string_view_literals;
 
         if (const auto filename = fmt::format("{}/share/conf/clades.json", acmacs::acmacsd_root()); fs::exists(filename))
-            acmacs::settings::Settings::load(filename);
+            acmacs::settings::v2::Settings::load(filename);
         else
             throw std::runtime_error{fmt::format("WARNING: cannot load \"{}\": file not found\n", filename)};
 
@@ -40,7 +40,7 @@ class CladeDefinitions : public acmacs::settings::Settings
             add(current_virus_type_, getenv_or("name"sv, ""sv), std::move(aa), std::move(nuc));
         }
         else
-            return acmacs::settings::Settings::apply_built_in(name);
+            return acmacs::settings::v2::Settings::apply_built_in(name);
         return true;
     }
 
