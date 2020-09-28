@@ -68,7 +68,7 @@ class CladeDefinitions : public acmacs::settings::v3::Data
             }
         }
         else
-            fmt::print(stderr, "WARNING: no clade definitions for {} seq: {}\n", virus_type, sequence.name());
+            AD_WARNING("no clade definitions for {} seq: {}", virus_type, sequence.name());
     }
 
   private:
