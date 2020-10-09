@@ -1,13 +1,13 @@
 #pragma once
 
-#include "acmacs-virus/log.hh"
+#include "acmacs-chart-2/log.hh"
 
 // ----------------------------------------------------------------------
 
 namespace acmacs::log
 {
     enum {
-        sequences = 18,
+        sequences = 12,
         fasta,
         hi_name_matching
     };
@@ -15,7 +15,7 @@ namespace acmacs::log
     inline void register_enabler_seqdb3()
     {
         using namespace std::string_view_literals;
-        register_enabler_acmacs_virus();
+        register_enabler_acmacs_chart();
         register_enabler("seq"sv, sequences);
         register_enabler("fasta"sv, fasta);
         register_enabler("matching"sv, hi_name_matching);
