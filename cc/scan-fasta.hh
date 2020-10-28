@@ -3,7 +3,7 @@
 #include <optional>
 #include <vector>
 
-#include "acmacs-base/debug.hh"
+#include "acmacs-base/log.hh"
 #include "acmacs-virus/virus-name-normalize.hh"
 #include "seqdb-3/scan-sequence.hh"
 

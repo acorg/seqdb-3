@@ -81,7 +81,6 @@ int main(int argc, char* const argv[])
     using namespace std::string_view_literals;
 
     try {
-        acmacs::log::register_enabler_seqdb3();
         Options opt(argc, argv);
         acmacs::log::enable(opt.verbose);
 

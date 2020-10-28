@@ -2,7 +2,7 @@
 
 #include <map>
 
-#include "acmacs-base/debug.hh"
+#include "acmacs-base/log.hh"
 #include "seqdb-3/scan-fasta.hh"
 
 namespace acmacs::seqdb

@@ -2,7 +2,7 @@
 
 #include <mutex>
 
-#include "acmacs-base/debug.hh"
+#include "acmacs-base/log.hh"
 #include "acmacs-base/string-join.hh"
 #include "acmacs-base/uppercase.hh"
 #include "acmacs-base/flat-map.hh"
