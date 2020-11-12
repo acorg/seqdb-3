@@ -484,7 +484,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend(std::string_view s
     if (!seq_id.empty()) {
         auto candidates = seqdb.select_by_seq_id(seq_id);
         if (candidates.empty())
-            throw std::runtime_error{fmt::format("no sequences with seq-id \"{}\" found", seq_id)};
+            throw std::runtime_error{fmt::format("no sequences with seq-id \"{}\" found (seqdb::v3::subset::prepend)", seq_id)};
         refs_.erase(std::remove(std::begin(refs_), std::end(refs_), candidates.front()), std::end(refs_)); // remove it, if selected earlier
         refs_.insert(std::begin(refs_), candidates.front());
     }
