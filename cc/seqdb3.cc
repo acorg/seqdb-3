@@ -197,7 +197,7 @@ int main(int argc, char* const argv[])
         return 0;
     }
     catch (std::exception& err) {
-        fmt::print(stderr, "ERROR: {}\n", err);
+        AD_ERROR("{}", err);
         return 1;
     }
 }
