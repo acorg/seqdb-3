@@ -475,11 +475,11 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart, verbose verb) const
 {
-    auto antigens = chart.antigens_modify();
-    acmacs::enumerate(match(*antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
+    auto& antigens = chart.antigens_modify();
+    acmacs::enumerate(match(antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
         if (ref) {
             const auto& seq = ref.seq().with_sequence(*this);
-            auto& antigen = antigens->at(ag_no);
+            auto& antigen = antigens.at(ag_no);
             if (!seq.clades.empty()) {
                 for (const auto& clade : seq.clades)
                     antigen.add_clade(std::string{clade});

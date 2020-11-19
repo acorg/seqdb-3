@@ -29,10 +29,10 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::setup(opt.db);
         const auto& seqdb = acmacs::seqdb::get();
         acmacs::chart::ChartModify chart{acmacs::chart::import_from_file(opt.source_chart)};
-        auto antigens = chart.antigens_modify();
-        const auto subset = seqdb.match(*antigens);
-        for (const auto ag_no : acmacs::range(antigens->size())) {
-            auto& antigen = antigens->at(ag_no);
+        auto& antigens = chart.antigens_modify();
+        const auto subset = seqdb.match(antigens);
+        for (const auto ag_no : acmacs::range(antigens.size())) {
+            auto& antigen = antigens.at(ag_no);
             const auto& ref = subset[ag_no];
             const auto sequenced = !ref.empty();
             if (opt.verbose) {
