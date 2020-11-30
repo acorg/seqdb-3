@@ -400,7 +400,7 @@ acmacs::messages::messages_t acmacs::seqdb::v3::scan::fasta::normalize_name(acma
             source.fasta.name = fix_ncbi_name(source.fasta.name, messages, dbg);
             break;
         case scan_name_adjustments::none:
-            // AD_DEBUG_IF(dbg, "source.fasta.name: \"{}\"", source.fasta.name);
+            // AD_DEBUG_IF(dbg == debug::yes, "source.fasta.name: \"{}\"", source.fasta.name);
             break;
     }
     if (prnt_names == print_names::yes)
