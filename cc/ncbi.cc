@@ -360,7 +360,7 @@ void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& dat_resu
                                                     !(datf.year == fnaf.year), !(datf.reassortant == fnaf.reassortant), !(datf.extra == fnaf.extra))};
 
     // AD_DEBUG("++  {:70s}    {:70s} @@ {}:{}", dat_result.name_fields.full_name(), fna_result.name_fields.full_name(), fna_pos.filename, fna_pos.line_no);
-    switch (acmacs::bits::from_bool(dat_result.name_fields.good(), fna_result.name_fields.good(), dat_result.name_fields.not_so_good(), fna_result.name_fields.not_so_good())) {
+    switch (acmacs::bits::from_bool(dat_result.name_fields.good(), fna_result.name_fields.good(), dat_result.name_fields.good_but_no_country(), fna_result.name_fields.good_but_no_country())) {
         case 0: // bot are bad
             // use longest?
             if (dat_fna_diff != dat_fna_same)
