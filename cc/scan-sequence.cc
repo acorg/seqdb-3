@@ -110,8 +110,8 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format() const
     const auto nuc = nuc_aligned();
     pos0_t pos{0};
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", nuc.substr(*pos, *(en.pos * 3UL - pos)), "", en.num * 3);
-        pos = en.pos * 3UL;
+        fmt::format_to(out, "{}{:->{}s}", nuc.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
+        pos = en.pos.aa_to_nuc();
     }
     fmt::format_to(out, "{}", nuc.substr(*pos));
     return fmt::to_string(out);
@@ -130,8 +130,8 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned() const
     }
     pos0_t pos{0};
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", nucv.substr(*pos, *(en.pos * 3UL - pos)), "", en.num * 3);
-        pos = en.pos * 3UL;
+        fmt::format_to(out, "{}{:->{}s}", nucv.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
+        pos = en.pos.aa_to_nuc();
     }
     fmt::format_to(out, "{}", nucv.substr(*pos));
     return fmt::to_string(out);

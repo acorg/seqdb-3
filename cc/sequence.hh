@@ -21,8 +21,10 @@ namespace acmacs::seqdb::inline v3
     {
         using named_size_t<struct seqdb_pos0_tag_t>::named_size_t;
         constexpr pos0_t(pos1_t pos1) : named_size_t<struct seqdb_pos0_tag_t>{*pos1 - 1} {}
+        constexpr pos0_t& operator=(const pos0_t&) = default;
         constexpr pos0_t& operator=(pos1_t pos1) { return operator=(pos0_t{*pos1 - 1}); }
         constexpr pos0_t nuc_to_aa() const { return pos0_t{get() / 3}; }
+        constexpr pos0_t aa_to_nuc() const { return pos0_t{get() * 3}; }
         constexpr size_t nuc_offset() const { return get() % 3; }
     };
 
