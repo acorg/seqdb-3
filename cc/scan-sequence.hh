@@ -1,6 +1,8 @@
 #pragma once
 
 #include <tuple>
+#include <map>
+#include <set>
 
 #include "acmacs-base/date.hh"
 #include "acmacs-base/string.hh"

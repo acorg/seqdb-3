@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <mutex>
 
 #include "acmacs-base/log.hh"

@@ -1,3 +1,5 @@
+#include <set>
+
 #include "acmacs-base/argv.hh"
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/string.hh"
