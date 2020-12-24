@@ -61,9 +61,10 @@ LDLIBS = \
 
 install: install-headers $(TARGETS)
 	$(call install_lib,$(SEQDB_LIB))
-	$(call symbolic_link_wildcard,$(DIST)/seqdb*,$(AD_BIN))
-	$(call make_dir,$(AD_TEMPLATES)/seqdb-3)
-	$(call symbolic_link_wildcard,$(abspath templates)/*,$(AD_TEMPLATES)/seqdb-3)
+	$(call install_all,$(AD_PACKAGE_NAME))
+	# $(call symbolic_link_wildcard,$(DIST)/seqdb*,$(AD_BIN))
+	# $(call make_dir,$(AD_TEMPLATES)/seqdb-3)
+	# $(call symbolic_link_wildcard,$(abspath templates)/*,$(AD_TEMPLATES)/seqdb-3)
 
 test: install
 	test/test
@@ -75,7 +76,7 @@ $(SEQDB_LIB): $(patsubst %.cc,$(BUILD)/%.o,$(SEQDB_SOURCES)) | $(DIST) install-h
 	$(call echo_shared_lib,$@)
 	$(call make_shared_lib,$(SEQDB_LIB_NAME),$(SEQDB_LIB_MAJOR),$(SEQDB_LIB_MINOR)) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-$(DIST)/%: $(BUILD)/%.o | $(SEQDB_LIB)
+$(DIST)/%: $(BUILD)/%.o | $(SEQDB_LIB) install-headers
 	$(call echo_link_exe,$@)
 	$(CXX) $(LDFLAGS) -o $@ $^ $(SEQDB_LIB) $(LDLIBS) $(AD_RPATH)
 
