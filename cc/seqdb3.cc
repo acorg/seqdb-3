@@ -45,7 +45,7 @@ struct Options : public argv
     option<str>       base_seq_id{*this, "base-seq-id", desc{"single base sequence (outgroup), always included"}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
-    option<str>       name_format{*this, 'f', "name-format", desc{"{{seq_id}} {{full_name}} {{hi_name_or_full_name}} {{hi_names}} {{hi_name}} {{lineage}} {{name}}\n                                       {{date}} {{dates}} {{lab_id}} {{passage}} {{clades}} {{lab}} {{country}} {{continent}} {{group_no}}\n                                       {{hamming_distance}} {{nuc_length}} {{aa_length}} {{gisaid_accession_numbers}} {{ncbi_accession_numbers}}"}};
+    option<str>       name_format{*this, 'f', "name-format", desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {hi_name} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} {continent} {group_no}\n                                       {hamming_distance} {nuc_length} {aa_length} {gisaid_accession_numbers} {ncbi_accession_numbers}\n                              default: \"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {seq_id}"}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
     option<bool>      remove_with_front_back_deletions{*this, "remove-with-front-back-deletions", desc{""}};
     option<bool>      keep_all_hi_matched{*this, "keep-all-hi", desc{"do NOT remove HI matched when removing duplicates (--remove-nuc-duplicates)"}};
