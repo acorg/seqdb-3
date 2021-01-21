@@ -47,6 +47,7 @@ static void find_by_name(hidb::AntigenIndexList& found, const hidb_ref_t& hidb_r
 static Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found);
 static void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq);
 // static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
+static void update_seqdb(const hi_to_seq_t& hi_to_seq);
 
 // ----------------------------------------------------------------------
 
@@ -68,7 +69,16 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
         en_first = en_last;
     }
 
-    // update seqdb entries
+    update_seqdb(hi_to_seq);
+
+    AD_INFO("INFO: matched against hidb: {}", hi_to_seq.size());
+
+} // acmacs::seqdb::v3::scan::match_hidb
+
+// ----------------------------------------------------------------------
+
+void update_seqdb(const hi_to_seq_t& hi_to_seq)
+{
     const auto update = [](const auto& hi, acmacs::seqdb::v3::scan::sequence_t& seq) {
         auto antigen = hi.first->antigens->at(hi.second);
         const auto name = antigen->full_name();
@@ -93,20 +103,7 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
             }
         }
     }
-
-    AD_INFO("INFO: matched against hidb: {}", hi_to_seq.size());
-
-    // AD_DEBUG("hi_to_seq {}", hi_to_seq.size());
-    // for (const auto& [ag, sequences] : hi_to_seq) {
-    //     if (sequences.size() > 1) {
-    //         auto antigen = ag.first->antigens->at(ag.second);
-    //         AD_DEBUG("    {} passage: \"{}\" ({})", antigen->full_name(), antigen->passage(), sequences.size());
-    //         for (const auto* seq : sequences)
-    //             AD_DEBUG("        {} passage:\"{}\"", seq->full_name(), seq->passage());
-    //     }
-    // }
-
-} // acmacs::seqdb::v3::scan::match_hidb
+}
 
 // ----------------------------------------------------------------------
 
