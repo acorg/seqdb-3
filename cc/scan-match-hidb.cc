@@ -53,7 +53,7 @@ static bool match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, 
 void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequences)
 {
     AD_INFO("INFO: matching against hidb");
-        // sequences must be sorted by name!
+    // sequences must be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
     for (const std::string_view subtype : {"B", "H1", "H3"}) {
         auto hidb_antigens = hidb::get(acmacs::virus::type_subtype_t{subtype}, report_time::no).antigens();
@@ -62,8 +62,8 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
 
     hi_to_seq_t hi_to_seq;
     size_t matched = 0;
-    for (auto en_first = sequences.begin(); en_first != sequences.end(); ) {
-        const auto en_last = std::find_if(std::next(en_first), sequences.end(), [name=en_first->sequence.name()](const auto& en) { return en.sequence.name() != name; });
+    for (auto en_first = sequences.begin(); en_first != sequences.end();) {
+        const auto en_last = std::find_if(std::next(en_first), sequences.end(), [name = en_first->sequence.name()](const auto& en) { return en.sequence.name() != name; });
         if (const auto hb = en_first->sequence.type_subtype().h_or_b(); hb == "B" || hb == "H1" || hb == "H3") {
             if (match(hidbs.find(hb)->second, en_first, en_last, hb, hi_to_seq))
                 ++matched;
@@ -73,8 +73,13 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
     AD_INFO("INFO: matched against hidb: {}", matched);
 
     AD_DEBUG("hi_to_seq {}", hi_to_seq.size());
-    for (const auto& [ag, seq] : hi_to_seq) {
-        AD_DEBUG("    {} -> {}", ag.first->antigens->at(ag.second)->full_name(), seq.size());
+    if (hi_to_seq.size() > 1) {
+        for (const auto& [ag, sequences] : hi_to_seq) {
+            auto antigen = ag.first->antigens->at(ag.second);
+            AD_DEBUG("    {} passage: \"{}\" ({})", antigen->full_name(), antigen->passage(), sequences.size());
+            for (const auto* seq : sequences)
+                AD_DEBUG("        {} passage:\"{}\"", seq->full_name(), seq->passage());
+        }
     }
 
 } // acmacs::seqdb::v3::scan::match_hidb
