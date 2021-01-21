@@ -41,11 +41,11 @@ using seq_iter_t = std::vector<acmacs::seqdb::scan::fasta::scan_result_t>::itera
 using seq_ptr_list_t = std::vector<acmacs::seqdb::scan::sequence_t*>;
 using hi_to_seq_t = std::map<std::pair<const hidb_ref_t*, hidb::AntigenIndex>, seq_ptr_list_t>;
 
-static bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::string_view subtype, hi_to_seq_t& hi_to_seq);
+static void match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::string_view subtype, hi_to_seq_t& hi_to_seq);
 static void find_by_lab_id(hidb::AntigenIndexList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static void find_by_name(hidb::AntigenIndexList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found);
-static bool match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq);
+static void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq);
 // static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
 
 // ----------------------------------------------------------------------
@@ -61,32 +61,56 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
     }
 
     hi_to_seq_t hi_to_seq;
-    size_t matched = 0;
     for (auto en_first = sequences.begin(); en_first != sequences.end();) {
         const auto en_last = std::find_if(std::next(en_first), sequences.end(), [name = en_first->sequence.name()](const auto& en) { return en.sequence.name() != name; });
-        if (const auto hb = en_first->sequence.type_subtype().h_or_b(); hb == "B" || hb == "H1" || hb == "H3") {
-            if (match(hidbs.find(hb)->second, en_first, en_last, hb, hi_to_seq))
-                ++matched;
-        }
+        if (const auto hb = en_first->sequence.type_subtype().h_or_b(); hb == "B" || hb == "H1" || hb == "H3")
+            match(hidbs.find(hb)->second, en_first, en_last, hb, hi_to_seq);
         en_first = en_last;
     }
-    AD_INFO("INFO: matched against hidb: {}", matched);
 
-    AD_DEBUG("hi_to_seq {}", hi_to_seq.size());
-    if (hi_to_seq.size() > 1) {
-        for (const auto& [ag, sequences] : hi_to_seq) {
+    // update seqdb entries
+    const auto update = [](const auto& hi, acmacs::seqdb::v3::scan::sequence_t& seq) {
+        auto antigen = hi.first->antigens->at(hi.second);
+        const auto name = antigen->full_name();
+        seq.add_hi_name(name);
+        // // AD_DEBUG("    add {} -> {}", name, sequence.full_name()); // std::next(first, static_cast<ssize_t>(en.second.seq_no))->fasta.name);
+        if (const size_t subtype_size = name.find('/'); subtype_size > 1 && subtype_size <= 8)
+            seq.update_subtype(acmacs::virus::type_subtype_t{name.substr(0, subtype_size)});
+        if (const auto& date = antigen->date(); !date.empty())
+            seq.add_date(*date);
+    };
+
+    for (auto& [ag, sequences] : hi_to_seq) {
+        if (sequences.size() == 1) {
+            update(ag, *sequences[0]);
+        }
+        else {
             auto antigen = ag.first->antigens->at(ag.second);
             AD_DEBUG("    {} passage: \"{}\" ({})", antigen->full_name(), antigen->passage(), sequences.size());
-            for (const auto* seq : sequences)
+            for (auto* seq : sequences) {
+                update(ag, *seq);
                 AD_DEBUG("        {} passage:\"{}\"", seq->full_name(), seq->passage());
+            }
         }
     }
+
+    AD_INFO("INFO: matched against hidb: {}", hi_to_seq.size());
+
+    // AD_DEBUG("hi_to_seq {}", hi_to_seq.size());
+    // for (const auto& [ag, sequences] : hi_to_seq) {
+    //     if (sequences.size() > 1) {
+    //         auto antigen = ag.first->antigens->at(ag.second);
+    //         AD_DEBUG("    {} passage: \"{}\" ({})", antigen->full_name(), antigen->passage(), sequences.size());
+    //         for (const auto* seq : sequences)
+    //             AD_DEBUG("        {} passage:\"{}\"", seq->full_name(), seq->passage());
+    //     }
+    // }
 
 } // acmacs::seqdb::v3::scan::match_hidb
 
 // ----------------------------------------------------------------------
 
-bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::string_view subtype, hi_to_seq_t& hi_to_seq)
+void match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::string_view subtype, hi_to_seq_t& hi_to_seq)
 {
     hidb::AntigenIndexList found_hidb_antigens;
     find_by_lab_id(found_hidb_antigens, hidb_ref, first, last);
@@ -94,7 +118,6 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
     std::sort(found_hidb_antigens.begin(), found_hidb_antigens.end());
     found_hidb_antigens.erase(std::unique(found_hidb_antigens.begin(), found_hidb_antigens.end()), found_hidb_antigens.end());
 
-    bool matched = false;
     if (!found_hidb_antigens.empty()) {
         const hidb::AntigenPList antigens = hidb_ref.antigens->list(found_hidb_antigens);
         const auto& seq = first->sequence;
@@ -106,10 +129,9 @@ bool match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
             first->sequence.add_date(*antigen->date());
 
         const auto matching = make_matching(first, last, antigens); // for each seq list of matching [[score, min passage len], found_no] - sorted by score desc
-        matched = match_greedy(first, found_hidb_antigens, antigens, matching, hidb_ref, hi_to_seq);
+        match_greedy(first, found_hidb_antigens, antigens, matching, hidb_ref, hi_to_seq);
         // matched = match_normal(first, found, matching);
     }
-    return matched;
 
 } // match
 
@@ -148,7 +170,7 @@ Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPLi
 // greedy matching: add all hi-names having matching reassortant and passage type (egg/cell) regardless of score
 // if antigen is in multiple matching entries, use the one with the highest score
 // returns if at least one seq matched
-bool match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq)
+void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq)
 {
     std::map<size_t, acmacs::seqdb::v3::score_seq_found_t> antigen_to_matching; // antigen index in found to (matching index and score)
     for (const auto& mp : matching) {
@@ -162,22 +184,10 @@ bool match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const h
     }
 
     // AD_DEBUG("match_greedy");
-    bool matched = false;
     for (const auto& en : antigen_to_matching) {
         auto& sequence = std::next(first, static_cast<ssize_t>(en.second.seq_no))->sequence;
         hi_to_seq.try_emplace(std::make_pair(&hidb_ref, found[en.first]), seq_ptr_list_t{}).first->second.push_back(&sequence);
-
-        // move to another place
-        const auto name = antigens[en.first]->full_name();
-        sequence.add_hi_name(name);
-        AD_DEBUG("    add {} -> {}", name, sequence.full_name()); // std::next(first, static_cast<ssize_t>(en.second.seq_no))->fasta.name);
-        if (const size_t subtype_size = name.find('/'); subtype_size > 1 && subtype_size <= 8)
-            sequence.update_subtype(acmacs::virus::type_subtype_t{name.substr(0, subtype_size)});
-        if (const auto& date = antigens[en.first]->date(); !date.empty())
-            first->sequence.add_date(*date);
-        matched = true;
     }
-    return matched;
 
 } // match_greedy
 
