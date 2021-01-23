@@ -30,6 +30,7 @@ using lab_id_index_entry_t = std::pair<std::string_view, const hidb::bin::Antige
 
 struct hidb_ref_t
 {
+    const hidb::HiDb& hidb;
     std::shared_ptr<hidb::Antigens> antigens;
     std::vector<lab_id_index_entry_t> lab_id_index;
 };
@@ -47,7 +48,7 @@ static void find_by_name(hidb::AntigenIndexList& found, const hidb_ref_t& hidb_r
 static Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found);
 static void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq);
 // static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
-static void update_seqdb(const hi_to_seq_t& hi_to_seq);
+static void update_seqdb(hi_to_seq_t& hi_to_seq);
 
 // ----------------------------------------------------------------------
 
@@ -57,8 +58,9 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
     // sequences must be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
     for (const std::string_view subtype : {"B", "H1", "H3"}) {
-        auto hidb_antigens = hidb::get(acmacs::virus::type_subtype_t{subtype}, report_time::no).antigens();
-        hidbs.emplace(std::string{subtype}, hidb_ref_t{hidb_antigens, hidb_antigens->sorted_by_labid()});
+        const auto& hidb = hidb::get(acmacs::virus::type_subtype_t{subtype}, report_time::no);
+        auto hidb_antigens = hidb.antigens();
+        hidbs.emplace(std::string{subtype}, hidb_ref_t{hidb, hidb_antigens, hidb_antigens->sorted_by_labid()});
     }
 
     hi_to_seq_t hi_to_seq;
@@ -77,7 +79,7 @@ void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequ
 
 // ----------------------------------------------------------------------
 
-void update_seqdb(const hi_to_seq_t& hi_to_seq)
+void update_seqdb(hi_to_seq_t& hi_to_seq)
 {
     const auto update = [](const auto& hi, acmacs::seqdb::v3::scan::sequence_t& seq) {
         auto antigen = hi.first->antigens->at(hi.second);
@@ -90,17 +92,30 @@ void update_seqdb(const hi_to_seq_t& hi_to_seq)
             seq.add_date(*date);
     };
 
+    // if a hi-name can be used with multiple sequences, choose just
+    // one sequence, the one with closest passage and preferably with
+    // the same lab.
     for (auto& [ag, sequences] : hi_to_seq) {
         if (sequences.size() == 1) {
             update(ag, *sequences[0]);
         }
         else {
             auto antigen = ag.first->antigens->at(ag.second);
-            AD_DEBUG("    {} passage: \"{}\" ({})", antigen->full_name(), antigen->passage(), sequences.size());
-            for (auto* seq : sequences) {
-                update(ag, *seq);
-                AD_DEBUG("        {} passage:\"{}\"", seq->full_name(), seq->passage());
-            }
+            const acmacs::uppercase hi_lab{ag.first->hidb.lab(*antigen)};
+            // AD_DEBUG("    hidb {} lab: {} passage: \"{}\" ({})", antigen->full_name(), hi_lab, antigen->passage(), sequences.size());
+            std::sort(std::begin(sequences), std::end(sequences), [&antigen, &hi_lab](auto* s1, auto* s2) {
+                auto score1 = acmacs::virus::passage_compare(s1->passage(), antigen->passage()) * 10 + (s1->lab_in({hi_lab}) ? 0 : 1);
+                auto score2 = acmacs::virus::passage_compare(s2->passage(), antigen->passage()) * 10 + (s2->lab_in({hi_lab}) ? 0 : 1);
+                return score1 < score2;
+            });
+            update(ag, *sequences.front());
+            // for (auto* seq : sequences) {
+            //     update(ag, *seq);
+            //     std::string seq_lab;
+            //     if (!seq->lab_ids().empty())
+            //         seq_lab = seq->lab_ids().begin()->first;
+            //     AD_DEBUG("        seqdb {} lab: {} passage:\"{}\"", seq->full_name(), seq_lab, seq->passage());
+            // }
         }
     }
 }
