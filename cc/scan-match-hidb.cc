@@ -46,7 +46,7 @@ static void match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last,
 static void find_by_lab_id(hidb::AntigenIndexList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static void find_by_name(hidb::AntigenIndexList& found, const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last);
 static Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPList& found);
-static void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq);
+static void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq);
 // static bool match_normal(seq_iter_t first, const hidb::AntigenPList& found, const Matching& matching);
 static void update_seqdb(hi_to_seq_t& hi_to_seq);
 
@@ -141,7 +141,7 @@ void match(const hidb_ref_t& hidb_ref, seq_iter_t first, seq_iter_t last, std::s
             first->sequence.add_date(*antigen->date());
 
         const auto matching = make_matching(first, last, antigens); // for each seq list of matching [[score, min passage len], found_no] - sorted by score desc
-        match_greedy(first, found_hidb_antigens, antigens, matching, hidb_ref, hi_to_seq);
+        match_greedy(first, found_hidb_antigens, matching, hidb_ref, hi_to_seq);
         // matched = match_normal(first, found, matching);
     }
 
@@ -182,7 +182,7 @@ Matching make_matching(seq_iter_t first, seq_iter_t last, const hidb::AntigenPLi
 // greedy matching: add all hi-names having matching reassortant and passage type (egg/cell) regardless of score
 // if antigen is in multiple matching entries, use the one with the highest score
 // returns if at least one seq matched
-void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const hidb::AntigenPList& antigens, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq)
+void match_greedy(seq_iter_t first, const hidb::AntigenIndexList& found, const Matching& matching, const hidb_ref_t& hidb_ref, hi_to_seq_t& hi_to_seq)
 {
     std::map<size_t, acmacs::seqdb::v3::score_seq_found_t> antigen_to_matching; // antigen index in found to (matching index and score)
     for (const auto& mp : matching) {
