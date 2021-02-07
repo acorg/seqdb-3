@@ -20,7 +20,7 @@ struct Options : public argv
     // select
     option<str_array> seq_id{*this, "seq-id", desc{"initially filter by seq-id, all matching"}};
     option<str>       seq_id_from{*this, "seq-id-from", desc{"read list of seq ids from a file (one per line) and initially select them all"}};
-    option<str>       name{*this, 'n', "name", desc{"initially filter by name (name only, full string equality)"}};
+    option<str_array> name{*this, 'n', "name", desc{"initially filter by name (name only, full string equality, multiple -n possible)"}};
     option<str>       names_from{*this, "names-from", desc{"read names from a file (one per line)\n                                       and initially select them all (name only, full string equality)"}};
     option<str>       accession_numbers_from{*this, "accession-numbers-from", desc{"read accession numbers (gisaid and/or ncbi) names from a file (one per line)\n                                       and initially select them all (full string equality)"}};
     option<str>       subtype{*this, "flu", desc{"B, A(H1N1), H1, A(H3N2), H3"}};
@@ -92,7 +92,7 @@ int main(int argc, char* const argv[])
                 return seqdb.select_by_seq_id(*opt.seq_id);
             else if (opt.seq_id_from)
                 return seqdb.select_by_seq_id(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.seq_id_from)), "\n", acmacs::string::Split::StripRemoveEmpty));
-            else if (opt.name)
+            else if (!opt.name->empty())
                 return seqdb.select_by_name(*opt.name);
             else if (opt.names_from)
                 return seqdb.select_by_name(acmacs::string::split(static_cast<std::string>(acmacs::file::read(opt.names_from)), "\n", acmacs::string::Split::StripRemoveEmpty));
