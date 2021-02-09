@@ -37,7 +37,6 @@ struct Options : public argv
     option<str>       nuc_at_pos{*this, "nuc-at-pos", desc{"comma separated list: 618C"}};
     option<size_t>    recent{*this, "recent", dflt{0UL}};
     option<str>       recent_matched{*this, "recent-matched", desc{"num1,num2 - select num1 most recent,\n                                       then add num2 older which are also matched against hidb"}};
-    option<size_t>    random{*this, "random", dflt{0UL}};
     option<bool>      with_hi_name{*this, "with-hi-name", desc{"matched against hidb"}};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
     option<str_array> prepend{*this, "prepend", desc{"prepend with seq by seq-id, multiple possible, always included"}};
@@ -52,6 +51,10 @@ struct Options : public argv
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
     option<size_t>    minimum_aa_length{*this, "minimum-aa-length", dflt{0ul}, desc{"Select only sequences having min number of AAs in alignment."}};
     option<size_t>    minimum_nuc_length{*this, "minimum-nuc-length", dflt{0ul}, desc{"Select only sequences having min number of nucs in alignment."}};
+
+    // subset
+    option<size_t>    random{*this, "random", dflt{0UL}, desc{"subset at random and keep the specified number of sequences"}};
+    // option<double>    subset_every_month{*this, "subset-every-month", dflt{-1.0}, desc{"subset at random each month, keep the specified fraction of sequences"}};
 
     option<size_t>    nuc_hamming_distance_mean_threshold{*this, "nuc-hamming-distance-mean-threshold", dflt{0ul}, desc{"Select only sequences having hamming distance to the sequence found by subset::nuc_hamming_distance_mean using 1000 most recent sequences."}};
     // option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
@@ -173,6 +176,7 @@ int main(int argc, char* const argv[])
             .recent(opt.recent, opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .recent_matched(acmacs::string::split_into_size_t(*opt.recent_matched, ","), opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)
             .random(opt.random)
+            // .subset_every_month(opt.subset_every_month)
             .group_by_hamming_distance(seqdb, opt.group_by_hamming_distance, opt.output_size)
             .subset_by_hamming_distance_random(seqdb, opt.subset_by_hamming_distance_random, opt.output_size)
             .remove_empty(seqdb, opt.nucs)

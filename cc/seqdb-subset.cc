@@ -1,5 +1,6 @@
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/counter.hh"
+#include "acmacs-base/range-v3.hh"
 #include "acmacs-chart-2/point-index-list.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/log.hh"
@@ -247,6 +248,29 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::random(size_t random)
     return *this;
 
 } // acmacs::seqdb::v3::subset::random
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_every_month(double /*fraction*/)
+{
+    AD_ERROR("subset::subset_every_month not implemented");
+    return *this;
+
+    // if (fraction > 1.0 || (fraction < 0.0 && !float_equal(fraction, -1.0)))
+    //     AD_WARNING("unrecognized subset_every_month fraction value: {} (not subsetting)", fraction);
+    // if (fraction >= 0.0 && fraction <= 1.0) {
+    //     sort_by_date_oldest_first();
+    //     ref_indexes to_keep = range_from_0_to(size()) | ranges::to_vector;
+    //     std::mt19937 generator{std::random_device()()};
+    //     size_t ind_start{0};
+    //     std::string_view year_month = refs_[to_keep[ind_start]].entry->date().substr(0, 7);
+    //     for (const size_t ind : range_from_to(1ul, size())) {
+    //     // std::uniform_int_distribution<size_t> distribution(0, refs_.size() - 1);
+    //     }
+    // }
+    // return *this;
+
+} // acmacs::seqdb::v3::subset::subset_every_month
 
 // ----------------------------------------------------------------------
 

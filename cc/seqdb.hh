@@ -342,6 +342,7 @@ namespace acmacs::seqdb::inline v3
         subset& recent(size_t recent, master_only master);
         subset& recent_matched(const std::vector<size_t>& recent_matched, master_only master);
         subset& random(size_t random);
+        subset& subset_every_month(double fraction);
         subset& group_by_hamming_distance(const Seqdb& seqdb, size_t dist_threshold, size_t output_size);  // Eu's algorithm 2019-07-23
         subset& subset_by_hamming_distance_random(const Seqdb& seqdb, bool do_subset, size_t output_size); // davipatti algorithm 2019-07-23
         subset& remove_nuc_duplicates(bool do_remove, bool keep_hi_matched);
