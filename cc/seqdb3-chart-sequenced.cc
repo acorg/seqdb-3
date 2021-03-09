@@ -52,7 +52,7 @@ int main(int argc, char* const argv[])
                 std::string matching_sera;
                 if (const auto serum_indexes = sera->find_by_name(antigen->name()); !serum_indexes->empty())
                     matching_sera = fmt::format("    SR:{}", serum_indexes);
-                fmt::print("{} {}{}\n", ag_no, antigen->full_name(), matching_sera);
+                fmt::print("{} {}{}\n", ag_no, antigen->format("{name_full}"), matching_sera);
                 bool this_reassortant_match = false;
                 for (const auto& entry : subset) {
                     char match_symbol = ' ';

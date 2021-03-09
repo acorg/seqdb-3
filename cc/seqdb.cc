@@ -396,9 +396,9 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
 
     auto find_by_hi_name = [this](const auto& antigen) -> std::optional<ref> {
         const auto& hi_name_ind = hi_name_index();
-        if (const auto* found_ref1 = hi_name_ind.find(antigen.full_name()); found_ref1)
+        if (const auto* found_ref1 = hi_name_ind.find(antigen.format("{name_full}")); found_ref1)
             return *found_ref1;
-        else if (const auto* found_ref2 = hi_name_ind.find(antigen.full_name_for_seqdb_matching()); found_ref2)
+        else if (const auto* found_ref2 = hi_name_ind.find(antigen.format("{name}{ }{reassortant}{ }{passage}{ }{annotations}")); found_ref2)
             return *found_ref2;
         else
             return std::nullopt;
@@ -416,7 +416,7 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
                 const acmacs::virus::Reassortant ag_reassortant{antigen->reassortant().empty() ? name_fields.reassortant : antigen->reassortant()};
                 const acmacs::virus::Passage ag_passage{antigen->passage().empty() ? name_fields.passage : antigen->passage()};
                 const auto sequences{select_by_name(name_fields.name())};
-                AD_LOG(acmacs::log::hi_name_matching, "select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->full_name(), sequences.size());
+                AD_LOG(acmacs::log::hi_name_matching, "select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->format("{name_full}"), sequences.size());
                 if (const auto matched = ::match(sequences, ag_reassortant, ag_passage); matched.has_value()) {
                     AD_LOG(acmacs::log::hi_name_matching, "  --> {}", matched->seq_id());
                     result.refs_.push_back(*matched);
@@ -488,7 +488,7 @@ void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart, ver
                 antigen.add_clade("SEQUENCED");
             }
             if (verb == verbose::yes)
-                fmt::print(stderr, "DEBUG: Seqdb::add_clades AG {:4d} {} -- {}\n", ag_no, antigen.full_name(), antigen.clades());
+                fmt::print(stderr, "DEBUG: Seqdb::add_clades AG {:4d} {} -- {}\n", ag_no, antigen.format("{name_full}"), antigen.clades());
         }
     });
 
@@ -539,7 +539,7 @@ std::string acmacs::seqdb::v3::Seqdb::sequences_of_chart_as_fasta(const acmacs::
     std::string fasta;
     acmacs::enumerate(match(*antigens, chart.info()->virus_type()), [&](auto ag_no, const auto& ref) {
         if (ref)
-            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->full_name(), ref.nuc_aligned(*this));
+            fasta += fmt::format(">{}\n{}\n", antigens->at(ag_no)->format("{name_full}"), ref.nuc_aligned(*this));
     });
     return fasta;
 

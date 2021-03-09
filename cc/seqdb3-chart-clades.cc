@@ -34,7 +34,7 @@ int main(int argc, char* const argv[])
 
         const auto print = [&](bool is_ag, auto ag_no, auto antigen, const auto& clades) {
             if (!opt.indexes_only && !opt.chart_remove_args) {
-                fmt::print("{} {:4d} {}{}  ::", is_ag ? "AG" : "SR", ag_no, antigen->full_name(), (is_ag && layout && !layout->point_has_coordinates(ag_no)) ? " <not-shown-on-map>" : "");
+                fmt::print("{} {:4d} {}{}  ::", is_ag ? "AG" : "SR", ag_no, antigen->format("{name_full}"), (is_ag && layout && !layout->point_has_coordinates(ag_no)) ? " <not-shown-on-map>" : "");
                 for (const auto& clade : clades) {
                     // if (opt.gly || (clade != "GLY" && clade != "NO-GLY"))
                     fmt::print(" {}", clade);

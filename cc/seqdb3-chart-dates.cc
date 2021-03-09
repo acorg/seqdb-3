@@ -36,7 +36,7 @@ int main(int argc, char* const argv[])
             const auto& ref = subset[ag_no];
             const auto sequenced = !ref.empty();
             if (opt.verbose) {
-                fmt::print("AG {:4d} {} [{}]", ag_no, antigen.full_name(), antigen.date());
+                fmt::print("AG {:4d} {} [{}]", ag_no, antigen.format("{name_full}"), antigen.date());
                 if (sequenced)
                     fmt::print("  {} [{}]\n", ref.seq_id(), ref.entry->dates);
                 else
@@ -47,7 +47,7 @@ int main(int argc, char* const argv[])
                     antigen.date(ref.entry->date());
                 }
                 else if (!ref.entry->has_date(antigen.date())) {
-                    fmt::print(stderr, "WARNING: AG {} {} has different dates: table: {} seqdb: {}\n", ag_no, antigen.full_name(), antigen.date(), ref.entry->dates);
+                    fmt::print(stderr, "WARNING: AG {} {} has different dates: table: {} seqdb: {}\n", ag_no, antigen.format("{name_full}"), antigen.date(), ref.entry->dates);
                 }
             }
         }
