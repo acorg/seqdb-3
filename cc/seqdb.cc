@@ -364,6 +364,7 @@ inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subs
     if (sequences.empty())
         return std::nullopt;
     std::vector<string_match::score_t> score_per_seq(sequences.size(), string_match::score_t{-1});
+    AD_DEBUG("logging enabled: {}: {}", acmacs::log::hi_name_matching, acmacs::log::is_enabled(acmacs::log::hi_name_matching));
     for (size_t seq_no{0}; seq_no < sequences.size(); ++seq_no) {
         const auto& seq = sequences[seq_no].seq();
 
@@ -473,7 +474,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart, verbose verb) const
+void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart, verbose verb) const
 {
     auto& antigens = chart.antigens_modify();
     acmacs::enumerate(match(antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
@@ -487,12 +488,21 @@ void acmacs::seqdb::v3::Seqdb::add_clades(acmacs::chart::ChartModify& chart, ver
             else {
                 antigen.add_clade("SEQUENCED");
             }
-            if (verb == verbose::yes)
-                fmt::print(stderr, "DEBUG: Seqdb::add_clades AG {:4d} {} -- {}\n", ag_no, antigen.format("{name_full}"), antigen.clades());
+            if (const auto& lineage = ref.entry->lineage; !lineage.empty()) {
+                if (const auto ag_lineage = antigen.lineage(); ag_lineage == acmacs::chart::BLineage::Unknown)
+                    antigen.lineage(lineage);
+                else if (ag_lineage != lineage) {
+                    AD_WARNING("{} lineage difference, seqdb: {}, antigen lineage in chart updated",
+                               acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name} {lineage}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), lineage);
+                    antigen.lineage(lineage);
+                }
+            }
+            AD_DEBUG(verb == verbose::yes, "Seqdb::populate {} <-- {}",
+                     acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
         }
     });
 
-} // acmacs::seqdb::v3::Seqdb::add_clades
+} // acmacs::seqdb::v3::Seqdb::populate
 
 // ----------------------------------------------------------------------
 

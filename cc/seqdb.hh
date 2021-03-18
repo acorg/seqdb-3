@@ -56,7 +56,7 @@ namespace acmacs::seqdb::inline v3
         enum class clades_for_name_inclusive { no /* only common clades for matching sequences */, yes /* all possible clades */ };
         clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
 
-        void add_clades(acmacs::chart::ChartModify& chart, verbose verb = verbose::no) const;
+        void populate(acmacs::chart::ChartModify& chart, verbose verb = verbose::no) const;
 
         // returns subset where each entry corresponds to the entry in seq_ids
         subset find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const;
