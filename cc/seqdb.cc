@@ -364,21 +364,29 @@ inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subs
     if (sequences.empty())
         return std::nullopt;
     std::vector<string_match::score_t> score_per_seq(sequences.size(), string_match::score_t{-1});
-    AD_DEBUG("logging enabled: {}: {}", acmacs::log::hi_name_matching, acmacs::log::is_enabled(acmacs::log::hi_name_matching));
     for (size_t seq_no{0}; seq_no < sequences.size(); ++seq_no) {
         const auto& seq = sequences[seq_no].seq();
 
-        AD_LOG(acmacs::log::hi_name_matching, "      {} -- reassortants:{} passages:{}", sequences[seq_no].seq_id(), seq.reassortants, seq.passages);
-        if ((seq.reassortants.empty() && ag_reassortant.empty()) || std::any_of(std::begin(seq.reassortants), std::end(seq.reassortants), [&ag_reassortant](std::string_view reass) { return ag_reassortant == reass; })) {
-            for (const auto& s_passage : seq.passages) {
-                if (acmacs::virus::passages_match(ag_passage, acmacs::virus::Passage{s_passage})) {
-                    if (const auto score = string_match::match(s_passage, *ag_passage); score > score_per_seq[seq_no]) {
-                        AD_LOG(acmacs::log::hi_name_matching, "      score: {}", score);
-                        score_per_seq[seq_no] = score;
+        AD_LOG(acmacs::log::hi_name_matching, "{} R:{} P:{}", sequences[seq_no].seq_id(), seq.reassortants, seq.passages);
+        AD_LOG_INDENT;
+        if ((seq.reassortants.empty() && ag_reassortant.empty()) ||
+            std::any_of(std::begin(seq.reassortants), std::end(seq.reassortants), [&ag_reassortant](std::string_view reass) { return ag_reassortant == reass; })) {
+            if (!seq.passages.empty()) {
+                for (const auto& s_passage : seq.passages) {
+                    if (acmacs::virus::passages_match(ag_passage, acmacs::virus::Passage{s_passage})) {
+                        const auto score = string_match::match(s_passage, *ag_passage);
+                        score_per_seq[seq_no] = std::max(score_per_seq[seq_no], score);
+                        AD_LOG(acmacs::log::hi_name_matching, "score: {} P:{}", score, s_passage);
                     }
                 }
             }
+            else {
+                score_per_seq[seq_no] = ag_passage.empty() ? 2 : 1;
+                AD_LOG(acmacs::log::hi_name_matching, "score: {} seq has no passage", score_per_seq[seq_no]);
+            }
         }
+        else
+            AD_LOG(acmacs::log::hi_name_matching, "reassortant mismatch");
     }
     if (const auto best_seq = std::max_element(std::begin(score_per_seq), std::end(score_per_seq)); *best_seq >= 0)
         return sequences[static_cast<size_t>(best_seq - std::begin(score_per_seq))];
@@ -417,9 +425,10 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
                 const acmacs::virus::Reassortant ag_reassortant{antigen->reassortant().empty() ? name_fields.reassortant : antigen->reassortant()};
                 const acmacs::virus::Passage ag_passage{antigen->passage().empty() ? name_fields.passage : antigen->passage()};
                 const auto sequences{select_by_name(name_fields.name())};
-                AD_LOG(acmacs::log::hi_name_matching, "select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->format("{name_full}"), sequences.size());
+                AD_LOG(acmacs::log::hi_name_matching, "match select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->format("{name_full}"), sequences.size());
+                AD_LOG_INDENT;
                 if (const auto matched = ::match(sequences, ag_reassortant, ag_passage); matched.has_value()) {
-                    AD_LOG(acmacs::log::hi_name_matching, "  --> {}", matched->seq_id());
+                    AD_LOG(acmacs::log::hi_name_matching, "--> {}", matched->seq_id());
                     result.refs_.push_back(*matched);
                     ++num_matched;
                 }
@@ -474,7 +483,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart, verbose verb) const
+void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
 {
     auto& antigens = chart.antigens_modify();
     acmacs::enumerate(match(antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
@@ -497,7 +506,7 @@ void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart, verbo
                     antigen.lineage(lineage);
                 }
             }
-            AD_DEBUG(verb == verbose::yes, "Seqdb::populate {} <-- {}",
+            AD_LOG(acmacs::log::hi_name_matching, "Seqdb::populate {} <-- {}",
                      acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
         }
     });
