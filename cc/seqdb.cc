@@ -16,7 +16,6 @@
 #include "acmacs-base/string-matcher.hh"
 #include "acmacs-virus/virus-name-normalize.hh"
 #include "acmacs-virus/virus-name-v1.hh"
-#include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/seqdb-parse.hh"
 #include "seqdb-3/log.hh"
@@ -396,7 +395,7 @@ inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subs
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Antigens& aAntigens, std::string_view /*aChartVirusType*/) const
+template <typename AgSr> acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const AgSr& antigens_sera, std::string_view /*aChartVirusType*/) const
 {
     // check lineage?
     // check virus type
@@ -414,7 +413,7 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
     };
 
     size_t num_matched = 0;
-    for (auto antigen : aAntigens) {
+    for (auto antigen : antigens_sera) {
         if (auto found_ref = find_by_hi_name(*antigen); found_ref.has_value()) {
             result.refs_.push_back(std::move(*found_ref));
             ++num_matched;
@@ -444,6 +443,11 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::A
     return result;
 
 } // acmacs::seqdb::v3::Seqdb::match
+
+template acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Antigens&, std::string_view) const;
+template acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::AntigensModify&, std::string_view) const;
+template acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::Sera&, std::string_view) const;
+template acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::match(const acmacs::chart::SeraModify&, std::string_view) const;
 
 // ----------------------------------------------------------------------
 
@@ -485,31 +489,63 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
 {
-    auto& antigens = chart.antigens_modify();
-    acmacs::enumerate(match(antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
-        if (ref) {
-            const auto& seq = ref.seq().with_sequence(*this);
-            auto& antigen = antigens.at(ag_no);
-            if (!seq.clades.empty()) {
-                for (const auto& clade : seq.clades)
-                    antigen.add_clade(std::string{clade});
-            }
-            else {
-                antigen.add_clade("SEQUENCED");
-            }
-            if (const auto& lineage = ref.entry->lineage; !lineage.empty()) {
-                if (const auto ag_lineage = antigen.lineage(); ag_lineage == acmacs::chart::BLineage::Unknown)
-                    antigen.lineage(lineage);
-                else if (ag_lineage != lineage) {
-                    AD_WARNING("{} lineage difference, seqdb: {}, antigen lineage in chart updated",
-                               acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name} {lineage}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), lineage);
-                    antigen.lineage(lineage);
+    const auto populate_ag_sr = [this, &chart]<typename AgSr>(AgSr& antigens_sera) {
+        acmacs::enumerate(match(antigens_sera, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto no, const auto& ref) {
+            if (ref) {
+                const auto& seq = ref.seq().with_sequence(*this);
+                auto& antigen_serum = antigens_sera.at(no);
+                if constexpr (std::is_base_of_v<acmacs::chart::Antigens, AgSr>) {
+                    if (!seq.clades.empty()) {
+                        for (const auto& clade : seq.clades)
+                            antigen_serum.add_clade(std::string{clade});
+                    }
+                    else {
+                        antigen_serum.add_clade("SEQUENCED");
+                    }
                 }
+                if (const auto& lineage = ref.entry->lineage; !lineage.empty()) {
+                    if (const auto ag_lineage = antigen_serum.lineage(); ag_lineage == acmacs::chart::BLineage::Unknown)
+                        antigen_serum.lineage(lineage);
+                    else if (ag_lineage != lineage) {
+                        AD_WARNING("{} lineage difference, seqdb: {}, antigen_serum lineage in chart updated",
+                                   acmacs::chart::format_antigen_serum<AgSr>("{ag_sr} {no0:{num_digits}d} {full_name} {lineage}", chart, no, acmacs::chart::collapse_spaces_t::yes), lineage);
+                        antigen_serum.lineage(lineage);
+                    }
+                }
+                AD_LOG(acmacs::log::hi_name_matching, "Seqdb::populate {} <-- {}",
+                       acmacs::chart::format_antigen_serum<AgSr>("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
             }
-            AD_LOG(acmacs::log::hi_name_matching, "Seqdb::populate {} <-- {}",
-                     acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
-        }
-    });
+        });
+    };
+
+    populate_ag_sr(chart.antigens_modify());
+    populate_ag_sr(chart.sera_modify());
+
+    // auto& antigens = chart.antigens_modify();
+    // acmacs::enumerate(match(antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
+    //     if (ref) {
+    //         const auto& seq = ref.seq().with_sequence(*this);
+    //         auto& antigen = antigens.at(ag_no);
+    //         if (!seq.clades.empty()) {
+    //             for (const auto& clade : seq.clades)
+    //                 antigen.add_clade(std::string{clade});
+    //         }
+    //         else {
+    //             antigen.add_clade("SEQUENCED");
+    //         }
+    //         if (const auto& lineage = ref.entry->lineage; !lineage.empty()) {
+    //             if (const auto ag_lineage = antigen.lineage(); ag_lineage == acmacs::chart::BLineage::Unknown)
+    //                 antigen.lineage(lineage);
+    //             else if (ag_lineage != lineage) {
+    //                 AD_WARNING("{} lineage difference, seqdb: {}, antigen lineage in chart updated",
+    //                            acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name} {lineage}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), lineage);
+    //                 antigen.lineage(lineage);
+    //             }
+    //         }
+    //         AD_LOG(acmacs::log::hi_name_matching, "Seqdb::populate {} <-- {}",
+    //                acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
+    //     }
+    // });
 
 } // acmacs::seqdb::v3::Seqdb::populate
 

@@ -7,12 +7,11 @@
 #include "acmacs-base/string-join.hh"
 #include "acmacs-base/uppercase.hh"
 #include "acmacs-base/flat-map.hh"
+#include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/aa-at-pos.hh"
 #include "seqdb-3/seq-id.hh"
 
 // ----------------------------------------------------------------------
-
-namespace acmacs::chart { class Antigens; class Chart; class ChartModify; class PointIndexList; }
 
 namespace acmacs::seqdb::inline v3
 {
@@ -46,7 +45,7 @@ namespace acmacs::seqdb::inline v3
         const hash_index_t& hash_index() const;
 
         // returned subset contains elements for each antigen, i.e. it may contain empty ref's
-        subset match(const acmacs::chart::Antigens& aAntigens, std::string_view aChartVirusType = {}) const;
+        template <typename AgSr> subset match(const AgSr& antigens_sera, std::string_view aChartVirusType = {}) const;
 
         using aas_indexes_t = std::map<std::string, std::vector<size_t>>;
         aas_indexes_t aa_at_pos1_for_antigens(const acmacs::chart::Antigens& aAntigens, const std::vector<size_t>& aPositions1) const;
@@ -89,6 +88,11 @@ namespace acmacs::seqdb::inline v3
 
     void setup(std::string_view filename);
     inline const Seqdb& get() { return Seqdb::get(); }
+
+    extern template subset Seqdb::match(const acmacs::chart::Antigens&, std::string_view) const;
+    extern template subset Seqdb::match(const acmacs::chart::AntigensModify&, std::string_view) const;
+    extern template subset Seqdb::match(const acmacs::chart::Sera&, std::string_view) const;
+    extern template subset Seqdb::match(const acmacs::chart::SeraModify&, std::string_view) const;
 
     // ----------------------------------------------------------------------
 
