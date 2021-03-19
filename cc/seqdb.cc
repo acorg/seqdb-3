@@ -494,14 +494,12 @@ void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
             if (ref) {
                 const auto& seq = ref.seq().with_sequence(*this);
                 auto& antigen_serum = antigens_sera.at(no);
-                if constexpr (std::is_base_of_v<acmacs::chart::Antigens, AgSr>) {
-                    if (!seq.clades.empty()) {
-                        for (const auto& clade : seq.clades)
-                            antigen_serum.add_clade(std::string{clade});
-                    }
-                    else {
-                        antigen_serum.add_clade("SEQUENCED");
-                    }
+                if (!seq.clades.empty()) {
+                    for (const auto& clade : seq.clades)
+                        antigen_serum.add_clade(std::string{clade});
+                }
+                else {
+                    antigen_serum.add_clade("SEQUENCED");
                 }
                 if (const auto& lineage = ref.entry->lineage; !lineage.empty()) {
                     if (const auto ag_lineage = antigen_serum.lineage(); ag_lineage == acmacs::chart::BLineage::Unknown)
@@ -520,32 +518,6 @@ void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
 
     populate_ag_sr(chart.antigens_modify());
     populate_ag_sr(chart.sera_modify());
-
-    // auto& antigens = chart.antigens_modify();
-    // acmacs::enumerate(match(antigens, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto ag_no, const auto& ref) {
-    //     if (ref) {
-    //         const auto& seq = ref.seq().with_sequence(*this);
-    //         auto& antigen = antigens.at(ag_no);
-    //         if (!seq.clades.empty()) {
-    //             for (const auto& clade : seq.clades)
-    //                 antigen.add_clade(std::string{clade});
-    //         }
-    //         else {
-    //             antigen.add_clade("SEQUENCED");
-    //         }
-    //         if (const auto& lineage = ref.entry->lineage; !lineage.empty()) {
-    //             if (const auto ag_lineage = antigen.lineage(); ag_lineage == acmacs::chart::BLineage::Unknown)
-    //                 antigen.lineage(lineage);
-    //             else if (ag_lineage != lineage) {
-    //                 AD_WARNING("{} lineage difference, seqdb: {}, antigen lineage in chart updated",
-    //                            acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name} {lineage}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), lineage);
-    //                 antigen.lineage(lineage);
-    //             }
-    //         }
-    //         AD_LOG(acmacs::log::hi_name_matching, "Seqdb::populate {} <-- {}",
-    //                acmacs::chart::format_antigen("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, ag_no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
-    //     }
-    // });
 
 } // acmacs::seqdb::v3::Seqdb::populate
 
