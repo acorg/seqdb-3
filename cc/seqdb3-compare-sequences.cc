@@ -31,13 +31,16 @@ int main(int argc, char* const argv[])
         const auto nuc_aa{opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa};
         acmacs::seqdb::v3::subsets_to_compare_t subsets_to_compare{nuc_aa};
 
-        acmacs::seqdb::subset* subset{nullptr};
+        acmacs::seqdb::subset* comparing_subset{nullptr};
         for (const auto& seq_id : *opt.seq_ids) {
             if (seq_id.size() >= 3 && seq_id.substr(0, 3) == ":T:") {
-                subset = &subsets_to_compare.subsets.emplace_back(seq_id.substr(3)).subset;
+                comparing_subset = &subsets_to_compare.subsets.emplace_back(seq_id.substr(3)).subset;
             }
-            else if (subset) {
-                subset->append(seqdb.select_by_seq_id(seq_id));
+            else if (comparing_subset) {
+                if (const auto selected = seqdb.select_by_seq_id(seq_id); !selected.empty())
+                    comparing_subset->append(selected);
+                else
+                    AD_WARNING("No sequences found by seq_id: {}", seq_id);
             }
             else
                 throw std::runtime_error{fmt::format("The first argument must be title (e.g. :T:name), found: \"{}\"", seq_id)};

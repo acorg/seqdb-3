@@ -149,10 +149,16 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent
 
 std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report() const
 {
-    subset_to_compare_t::counters_t merged_counters(subsets.front().counters.size());
+    subset_to_compare_t::counters_t merged_counters; // (subsets.front().counters.size());
     for (const auto& ssc : subsets) {
-        for (size_t pos{0}; pos < merged_counters.size(); ++pos)
-            merged_counters[pos] = merge_CounterCharSome(merged_counters[pos], ssc.counters[pos]);
+        if (!ssc.subset.empty()) {
+            if (merged_counters.size() < ssc.counters.size())
+                merged_counters.resize(ssc.counters.size());
+            for (size_t pos{0}; pos < ssc.counters.size(); ++pos)
+                merged_counters[pos] = merge_CounterCharSome(merged_counters[pos], ssc.counters[pos]);
+        }
+        else
+            AD_WARNING("subset empty: {}", ssc.name);
     }
 
     std::vector<pos0_t> positions;
