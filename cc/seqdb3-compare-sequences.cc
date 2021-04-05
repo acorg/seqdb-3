@@ -37,10 +37,12 @@ int main(int argc, char* const argv[])
                 comparing_subset = &subsets_to_compare.subsets.emplace_back(seq_id.substr(3)).subset;
             }
             else if (comparing_subset) {
-                if (const auto selected = seqdb.select_by_seq_id(seq_id); !selected.empty())
-                    comparing_subset->append(selected);
+                if (const auto selected_by_seq_id = seqdb.select_by_seq_id(seq_id); !selected_by_seq_id.empty())
+                    comparing_subset->append(selected_by_seq_id);
+                else if (const auto selected_by_name = seqdb.select_by_name(seq_id); !selected_by_name.empty())
+                    comparing_subset->append(selected_by_name);
                 else
-                    AD_WARNING("No sequences found by seq_id: {}", seq_id);
+                    AD_WARNING("No sequences found: {}", seq_id);
             }
             else
                 throw std::runtime_error{fmt::format("The first argument must be title (e.g. :T:name), found: \"{}\"", seq_id)};
