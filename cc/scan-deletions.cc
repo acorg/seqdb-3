@@ -95,8 +95,10 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
 {
     acmacs::debug dbg = acmacs::debug::no;
     // fmt::print(stderr, "{}\n", to_align.full_name());
-    // if (to_align.full_name() == "A(H3N2)/PIAUI/4751/2011")
+    // if (const auto fn = to_align.full_name(); fn == "B/YAMAGATA/16/1988" || fn == "B/AICHI/1/1984" || fn == "B/NEW YORK/4/1994") {
+    //     AD_DEBUG("Insertions deletions for \"{}\"", fn);
     //     dbg = acmacs::debug::yes;
+    // }
 
     try {
         to_align.deletions() = deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), dbg);
@@ -105,7 +107,7 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
         const auto h_or_b = master.type_subtype().h_or_b();
         const bool h1_h3_b = h_or_b == "H1" || h_or_b == "H3" || h_or_b == "B";
         if (h1_h3_b)
-            fmt::print(stderr, "WARNING: deletions_insertions NOT VERIFIED --------------------\n{}\n{}\n{}\n", master.full_name(), to_align.full_name(), err.what());
+            AD_WARNING("deletions_insertions NOT VERIFIED --------------------\n{}\n{}\n{}", master.full_name(), to_align.full_name(), err.what());
         try {
             deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), h1_h3_b ? acmacs::debug::yes : acmacs::debug::no);
         }
@@ -161,12 +163,10 @@ namespace local
                 }
                 if (common_start == last1)
                     common_start = f1;
-                if (dbg == acmacs::debug::yes)
-                    fmt::print(stderr, "common:{} common_start:{}\n", f1 - first1, common_start - first1);
+                AD_PRINT(dbg, ">>>> common:{} common_start:{}\n", f1 - first1, common_start - first1);
             }
             else {
-                // if (dbg == acmacs::debug::yes)
-                //     fmt::print(stderr, "NOTcommon:{}\n", f1 - first1);
+                // AD_PRINT(dbg, "NOTcommon:{}\n", f1 - first1);
                 update_last_common_end();
                 // if (static_cast<size_t>(f1 - last_common_end) > not_common_threshold)
                 //     break; // too many different, stop searching
@@ -176,8 +176,7 @@ namespace local
         }
         update_last_common_end();
 
-        if (dbg == acmacs::debug::yes)
-            fmt::print(stderr, "find_head end last_common_end:{} common_at_last_common_end:{}\n", last_common_end - first1, common_at_last_common_end);
+        AD_PRINT(dbg, ">>>> find_head end last_common_end:{} common_at_last_common_end:{}\n", last_common_end - first1, common_at_last_common_end);
         if (const auto head = static_cast<size_t>(last_common_end - first1); common_at_last_common_end * 3 > head)
             return {head, common_at_last_common_end};
         else
@@ -206,13 +205,13 @@ namespace local
         find_head_t head;
     };
 
-    inline deletions_insertions_at_start_t deletions_insertions_at_start(std::string_view master, std::string_view to_align)
+    inline deletions_insertions_at_start_t deletions_insertions_at_start(std::string_view master, std::string_view to_align, acmacs::debug dbg)
     {
         deletions_insertions_at_start_t result;
         for (size_t dels = 1; dels < max_deletions_insertions; ++dels) {
             if (dels < master.size()) {
                 result.head = find_common_head(master.substr(dels), to_align, acmacs::debug::no);
-                // fmt::print(stderr, "dels:{} {}\n{}\n{}\n", dels, format(result.head), master.substr(dels), to_align);
+                AD_PRINT(dbg, ">>>> dels:{} {}\n{}\n{}\n", dels, format(result.head), master.substr(dels), to_align);
                 if (result.head.head > common_threshold) {
                     result.deletions = dels;
                     break;
@@ -250,15 +249,12 @@ namespace local
 
 acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletions_insertions(std::string_view master, std::string_view to_align, acmacs::debug dbg)
 {
-    if (dbg == acmacs::debug::yes)
-        fmt::print(stderr, "initial:\n{}\n{}\n\n", master, to_align);
-
+    AD_PRINT(dbg, ">>>> initial:\n{}\n{}", master, to_align);
     deletions_insertions_t deletions;
     const auto initial_head = local::find_common_head(master, to_align, acmacs::debug::no /* dbg */);
     size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
     std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
-    if (dbg == acmacs::debug::yes)
-        fmt::print(stderr, "initial {} number_of_common:{}\n", local::format(initial_head), local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)));
+    AD_PRINT(dbg, ">>>> {} number_of_common:{}\n{}\n{}\n", local::format(initial_head), local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)), master.substr(0, initial_head.head), to_align.substr(0, initial_head.head));
 
     const auto update_both = [](size_t dels, size_t head, std::string_view& s1, std::string_view& s2, size_t& offset1, size_t& offset2) {
         s1.remove_prefix(head + dels);
@@ -269,11 +265,9 @@ acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletio
 
     size_t common = initial_head.common;
     while (!master_tail.empty() && !to_align_tail.empty()) {
-        if (dbg == acmacs::debug::yes)
-            fmt::print(stderr, "m-offset:{} a-offset:{} common:{}\n{}\n{}\n", master_offset, to_align_offset, common, master_tail, to_align_tail);
-        const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail);
-        if (dbg == acmacs::debug::yes)
-            fmt::print(stderr, "dels:{} ins:{} {} number_of_common:{}\n", tail_deletions.deletions, tail_deletions.insertions, local::format(tail_deletions.head), local::number_of_common(master_tail.substr(tail_deletions.deletions, tail_deletions.head.head), to_align_tail.substr(tail_deletions.insertions, tail_deletions.head.head)));
+        AD_PRINT(dbg, ">>>> m-offset:{} a-offset:{} common:{}\n{}\n{}\n", master_offset, to_align_offset, common, master_tail, to_align_tail);
+        const auto tail_deletions = local::deletions_insertions_at_start(master_tail, to_align_tail, acmacs::debug::no /* dbg */);
+        AD_PRINT(dbg, ">>>> dels:{} ins:{} {} number_of_common:{}\n", tail_deletions.deletions, tail_deletions.insertions, local::format(tail_deletions.head), local::number_of_common(master_tail.substr(tail_deletions.deletions, tail_deletions.head.head), to_align_tail.substr(tail_deletions.insertions, tail_deletions.head.head)));
         if (tail_deletions.head.head == 0) { // < local::common_threshold) {
             common += local::number_of_common(master_tail, to_align_tail); // to avoid common diff warning below in case tail contains common aas
             break; // tails are different, insertions/deletions do not help
@@ -303,6 +297,7 @@ acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletio
                                               acmacs::seqdb::v3::scan::format_aa(deletions.insertions, master, '.'), acmacs::seqdb::v3::scan::format_aa(deletions.deletions, to_align, '.')));
     }
 
+    AD_PRINT(dbg, "\n");
     return deletions;
 
 } // acmacs::seqdb::v3::scan::deletions_insertions

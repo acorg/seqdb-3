@@ -8,6 +8,7 @@
 #include "acmacs-base/string.hh"
 #include "acmacs-base/string-strip.hh"
 #include "acmacs-base/string-from-chars.hh"
+#include "acmacs-base/fmt.hh"
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/types.hh"
 #include "seqdb-3/sequence.hh"
@@ -314,6 +315,20 @@ namespace acmacs::seqdb
 
     } // namespace v3
 } // namespace acmacs::seqdb
+
+// ----------------------------------------------------------------------
+
+template <> struct fmt::formatter<acmacs::seqdb::v3::scan::deletions_insertions_t> : fmt::formatter<acmacs::fmt_helper::default_formatter> {
+    template <typename FormatCtx> auto format(const acmacs::seqdb::v3::scan::deletions_insertions_t& value, FormatCtx& ctx)
+    {
+        for (const auto& del : value.deletions)
+            format_to(ctx.out(), " DEL-{}-{}", del.pos, del.num);
+        for (const auto& ins : value.insertions)
+            format_to(ctx.out(), " INS-{}-{}", ins.pos, ins.num);
+        return ctx.out();
+    }
+};
+
 
 // ----------------------------------------------------------------------
 /// Local Variables:
