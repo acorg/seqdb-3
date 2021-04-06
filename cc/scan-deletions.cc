@@ -95,8 +95,8 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
 {
     acmacs::debug dbg = acmacs::debug::no;
     // fmt::print(stderr, "{}\n", to_align.full_name());
-    // if (const auto fn = to_align.full_name(); fn == "B/YAMAGATA/16/1988" || fn == "B/AICHI/1/1984" || fn == "B/NEW YORK/4/1994") {
-    //     AD_DEBUG("Insertions deletions for \"{}\"", fn);
+    // if (const auto name = to_align.name(); name == acmacs::virus::name_t{"B/SANTA CATARINA/140/2019"}) {
+    //     AD_DEBUG("Insertions deletions for \"{}\"", name);
     //     dbg = acmacs::debug::yes;
     // }
 
@@ -107,9 +107,9 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
         const auto h_or_b = master.type_subtype().h_or_b();
         const bool h1_h3_b = h_or_b == "H1" || h_or_b == "H3" || h_or_b == "B";
         if (h1_h3_b)
-            AD_WARNING("deletions_insertions NOT VERIFIED --------------------\n{}\n{}\n{}", master.full_name(), to_align.full_name(), err.what());
+            AD_WARNING("deletions_insertions NOT VERIFIED  master: \"{}\"   to-align: \"{}\"  err: {}", master.name(), to_align.name(), err.what());
         try {
-            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), h1_h3_b ? acmacs::debug::yes : acmacs::debug::no);
+            deletions_insertions(master.aa_aligned(), to_align.aa_aligned(), acmacs::debug::no); // h1_h3_b ? acmacs::debug::yes : acmacs::debug::no);
         }
         catch (local::not_verified&) {
         }
@@ -251,7 +251,7 @@ acmacs::seqdb::v3::scan::deletions_insertions_t acmacs::seqdb::v3::scan::deletio
 {
     AD_PRINT(dbg, ">>>> initial:\n{}\n{}", master, to_align);
     deletions_insertions_t deletions;
-    const auto initial_head = local::find_common_head(master, to_align, acmacs::debug::no /* dbg */);
+    const auto initial_head = local::find_common_head(master, to_align, dbg);
     size_t master_offset = initial_head.head, to_align_offset = initial_head.head;
     std::string_view master_tail = master.substr(master_offset), to_align_tail = to_align.substr(to_align_offset);
     AD_PRINT(dbg, ">>>> {} number_of_common:{}\n{}\n{}\n", local::format(initial_head), local::number_of_common(master.substr(0, initial_head.head), to_align.substr(0, initial_head.head)), master.substr(0, initial_head.head), to_align.substr(0, initial_head.head));
