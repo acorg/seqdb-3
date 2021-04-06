@@ -88,7 +88,7 @@ namespace local
 {
     namespace B
     {
-        static void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref);
+        static void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref, const acmacs::virus::lineage_t& fasta_lineage);
     } // namespace B
 
     namespace H1
@@ -116,12 +116,9 @@ void acmacs::seqdb::v3::scan::detect_lineages_clades(std::vector<fasta::scan_res
             const auto subtype = entry.sequence.type_subtype().h_or_b();
             const auto fasta_ref = fmt::format("{}:{}: note:  {}", entry.fasta.filename, entry.fasta.line_no, entry.fasta.entry_name);
             if (subtype == "B") {
-                local::B::lineage(entry.sequence, fasta_ref);
+                local::B::lineage(entry.sequence, fasta_ref, entry.fasta.lineage);
                 if (!entry.sequence.lineage().empty()) // no clade definitions without lineage
                     clade_definitions.add_clades(entry.sequence, fmt::format("{}{}", subtype, entry.sequence.lineage()));
-                if (entry.sequence.lineage() != entry.fasta.lineage && entry.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"} && !entry.fasta.lineage.empty())
-                    AD_WARNING("scan::detect_lineages_clades: B lineage mistmatch upon detection: {} vs. from fasta {}", entry.sequence.lineage(), entry.fasta.lineage);
-                // fmt::print(stderr, "DEBUG: B lineage detection {} {}: detected: {}\n", entry.fasta.name, entry.fasta.lineage, entry.sequence.lineage());
             }
             else if (subtype == "H1") {
                 local::H1::deletions(entry.sequence, fasta_ref);
@@ -245,78 +242,69 @@ namespace local::B
     //     VICTORIA del2017: 162, 163
     //     VICTORIA tripledel2017: 162, 163, 164 by convention
 
-    void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref)
+    void lineage(acmacs::seqdb::v3::scan::sequence_t& sequence, std::string_view fasta_ref, const acmacs::virus::lineage_t& fasta_lineage)
     {
-        // const auto warn = [&](const char* infix, const char* prefix = "WARNING") {
-        //     fmt::print(stderr, "{}: {} lineage {} and {} deletions {} {}\n{}\n{}\n", prefix, sequence.year(), *sequence.lineage(), infix, sequence.full_name(),
-        //                acmacs::seqdb::scan::format(sequence.deletions()), fasta_ref, sequence.aa_format());
-        // };
-
-        // const auto rep = [&]() {
-        //     fmt::print(stderr, "{}\n{}\n{}\n", sequence.full_name(), sequence.aa_format(), sequence.nuc_format());
-        // };
-
         auto& deletions = sequence.deletions();
-        const auto date { sequence.date_simulated() };
+        const auto date{sequence.date_simulated()};
 
         // AD_DEBUG("{} {}", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
 
-
-        //---------- Before Vic/Yam split ----------
-
-        if (date < "1987") {
-            if (!sequence.lineage().empty()) {
-                AD_WARNING("before-1987 but has lineage {}, lineage reset", *sequence.lineage());
-                sequence.lineage(acmacs::virus::lineage_t{});
-            }
-        }
+        // if (sequence.name() == acmacs::virus::name_t{"B/BEIJING/15/1984"})
+        //     AD_DEBUG("{} {} {}", sequence.name(), sequence.aa_aligned_substr(159, 14), deletions);
 
         //---------- Special deletions ----------
 
-        if (const auto VP_159_6 = sequence.aa_aligned_substr(159, 6); N_deletions_at(deletions, 2, b_vic_del_mutants_pos) && (VP_159_6 == "VPRDNK" || VP_159_6 == "VPKDNK")) {
-            // AD_DEBUG("byam2 VPRDNKTATN {} {}", sequence.aa_aligned(), sequence.name());
-            // VP-RD-NKTATN
-            replace_front_deletions(deletions, v_pos_num_t{{pos1_t{162}, 1}, {pos1_t{165}, 1}});
+        bool special_deletions = false;
+        if (N_deletions_at(deletions, 2, pos1_t{162}, pos1_t{164})) {
+            const auto at162{sequence.aa_at_pos_without_deletions(pos1_t{162})}, at163{sequence.aa_at_pos_without_deletions(pos1_t{163})};
+            if ((at162 == 'R' || at162 == 'K') && at163 == 'D') { // https://jvi.asm.org/content/jvi/73/9/7343.full.pdf page 7346
+                // VPR-D-NKTATN  VPK-D-NKTATN
+                replace_front_deletions(deletions, v_pos_num_t{{pos1_t{163}, 1}, {pos1_t{164}, 1}});
+                special_deletions = true;
+            }
+            else if (at162 == 'K' && at163 == 'N') {
+                // VPK--NNKTATN
+                replace_front_deletions(deletions, v_pos_num_t{{pos1_t{163}, 2}});
+                special_deletions = true;
+            }
+            else if (at162 == 'R' && (at163 == 'E' || at163 == 'N')) {
+                // VPRE--NNKTATN VPRN--
+                replace_front_deletions(deletions, v_pos_num_t{{pos1_t{164}, 2}});
+                special_deletions = true;
+            }
+            else if ((at162 == 'N' || at162 == 'X') && at163 == 'K') {
+                // VP-N-KNKTATNPLTI
+                // VP-X-KNKTATNPLTI
+                replace_front_deletions(deletions, v_pos_num_t{{pos1_t{162}, 1}, {pos1_t{163}, 1}});
+                special_deletions = true;
+            }
+            else if (at162 == 'D' || at162 == 'G') { // VPDK -> VP--DK, VPDD -> VP--DD vic 2del
+                // 2del
+            }
+            else {
+                AD_DEBUG("del-spec {} {} {}", sequence.aa_aligned_substr(159, 14), deletions, sequence.name());
+            }
         }
-        else if (N_deletions_at(deletions, 2, b_vic_del_mutants_pos) && sequence.aa_aligned_substr(159, 9) != "VPDKNKTAT" && date < "2018") {
-            AD_DEBUG("bvic2d {} {} {} {}", date, sequence.aa_aligned_substr(159, 14), sequence.name(), sequence.aa_aligned());
+        else if (N_deletions_at(deletions, 1, pos1_t{159}, pos1_t{162}) && sequence.aa_aligned_substr(159, 4) == "VPRD") {
+            // B/BEIJING/258/1993, B/NEW YORK/1044/2001, mistake in deletion detection, it's YAMAGATA
+            replace_front_deletions(deletions, v_pos_num_t{{pos1_t{163}, 1}});
         }
-        else if (N_deletions_at(deletions, 2, pos1_t{163}) && sequence.aa_aligned_substr(159, 9) != "VPKDNK") {
-            // VPK-D-NK
-            replace_front_deletions(deletions, v_pos_num_t{{pos1_t{163}, 1}, {pos1_t{165}, 1}});
-        }
-        else if (N_deletions_at(deletions, 2, pos1_t{162}) && sequence.aa_aligned_substr(160, 2) != "PD") {
-            // VP-R-NNKTAT, not Vic-2del!
-            replace_front_deletions(deletions, v_pos_num_t{{pos1_t{162}, 1}, {pos1_t{164}, 1}});
-        }
-        // else if (!N_deletions_at(deletions, 1, pos1_t{163}) && sequence.aa_aligned_substr(168, 3) != "ATN") {
-        //     AD_DEBUG("bdel {} {} {}", sequence.aa_aligned_substr(159, 14), sequence.aa_aligned(), sequence.name());
-        // }
 
         //---------- VICTORIA ----------
 
-        if (no_deletions_after_before(deletions, pos1_t{1}, pos1_t{500})) { // may have deletions after 500
-            set_lineage(sequence, acmacs::virus::VICTORIA, fasta_ref, "no");
+        if (no_deletions_after_before(deletions, pos1_t{10}, pos1_t{500})) { // may have deletions before 10 (e.g at the beginning due to trancation) and after 500
+            set_lineage(sequence, acmacs::virus::lineage::VICTORIA, fasta_ref, "no");
         }
-        else if (N_deletions_at(deletions, 2, pos1_t{164}) && sequence.aa_aligned_substr(159, 3) != "VPD") {
-            // leave as is, not victoria
-        }
-        else if (N_deletions_at(deletions, 2, pos1_t{159}, pos1_t{164})) {
-            // VICTORIA (double) del 2017
-            // according to David Burke 2019-07-16 14:27, also see https://jvi.asm.org/content/jvi/73/9/7343.full.pdf
-            // B/GUATEMALA/581/2017      VPN--KNKTAT
-            // B/COLORADO/6/2017_MDCK1   VPD--KNKTAT
-            if (sequence.aa_aligned_substr(160, 2) != "PD")
-                AD_DEBUG("bvic2del forced {} {} {} {}", date.substr(0, 4), sequence.aa_aligned_substr(159, 20), sequence.name(), deletions); //, sequence.aa_aligned());
-            deletions.deletions.front().pos = b_vic_del_mutants_pos;
-            set_lineage(sequence, acmacs::virus::VICTORIA, fasta_ref, "victoria del2017");
+        else if (N_deletions_at(deletions, 2, pos1_t{162})) {
+            // VICTORIA 2del 2017
+            set_lineage(sequence, acmacs::virus::lineage::VICTORIA, fasta_ref, "victoria del2017");
         }
         else if (N_deletions_at(deletions, 3, pos1_t{162}, pos1_t{164})) {
             // VICTORIA triple del 2017
             // according to David Burke 2019-07-16 14:27
             // VPK---NKTAT
             deletions.deletions.front().pos = b_vic_del_mutants_pos;
-            set_lineage(sequence, acmacs::virus::VICTORIA, fasta_ref, "victoria tripledel2017");
+            set_lineage(sequence, acmacs::virus::lineage::VICTORIA, fasta_ref, "victoria tripledel2017");
         }
         else if (N_deletions_at(deletions, 6, pos1_t{164})) {
             // VICTORIA sixdel2019 (only from Japan as of 2019-07-19)
@@ -324,32 +312,32 @@ namespace local::B
             // unusual. Based on the geometry of the loop, I would
             // tend to align the N with C-terminal side: B/KANAGAWA/AC1867/2019 VPK------NTNP
             deletions.deletions.front().pos = b_vic_del_mutants_pos;
-            set_lineage(sequence, acmacs::virus::VICTORIA, fasta_ref, "victoria sixdel2019 (pos shifted)");
+            set_lineage(sequence, acmacs::virus::lineage::VICTORIA, fasta_ref, "victoria sixdel2019 (pos shifted)");
         }
 
         //---------- YAMAGATA ----------
 
-        else if (N_deletions_at(deletions, 1, pos1_t{163}) && no_deletions_after_before(deletions, pos1_t{164}, pos1_t{500})) {
-            set_lineage(sequence, acmacs::virus::YAMAGATA, fasta_ref, "yamagata");
+        else if (N_deletions_at(deletions, 1, pos1_t{163})) { // B/YAMAGATA/16/1988 has also del-164-1: VPR-D-NKTA
+            set_lineage(sequence, acmacs::virus::lineage::YAMAGATA, fasta_ref, "yamagata");
         }
         else if (is_yamagata_shifted(sequence)) {
             // AD_DEBUG("{} {}", sequence.full_name(), acmacs::seqdb::scan::format(deletions));
-            set_lineage(sequence, acmacs::virus::YAMAGATA, fasta_ref, "yamagata-shifted");
+            set_lineage(sequence, acmacs::virus::lineage::YAMAGATA, fasta_ref, "yamagata-shifted");
             deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{pos1_t{163}, 1}};
         }
         else if (N_deletions_at(deletions, 2, pos1_t{163}) && sequence.year() <= 2013) {
-            set_lineage(sequence, acmacs::virus::YAMAGATA, fasta_ref, "yamagata");
+            set_lineage(sequence, acmacs::virus::lineage::YAMAGATA, fasta_ref, "yamagata");
         }
         else if (N_deletions_at(deletions, 2, pos1_t{169})) {
             // 12 sequences from TAIWAN 2010 have deletions 169:2
             // sequence.lineage(acmacs::virus::lineage_t{});
         }
-        else if (N_deletions_at(deletions, 1, pos1_t{160}) && no_deletions_after_before(deletions, pos1_t{161}, pos1_t{500}) &&
-                 sequence.aa_at_pos(pos1_t{161}) == 'E' && sequence.aa_at_pos(pos1_t{163}) == 'K') {
+        else if (N_deletions_at(deletions, 1, pos1_t{160}) && no_deletions_after_before(deletions, pos1_t{161}, pos1_t{500}) && sequence.aa_at_pos(pos1_t{161}) == 'E' &&
+                 sequence.aa_at_pos(pos1_t{163}) == 'K') {
             // deletion detection was invalid, most probably due to 162X. B/ALICANTE/19_0649/20171219
             // fmt::print(stderr, "DEBUG: {} 160{} 161{} 162{} 163{}\n", acmacs::seqdb::scan::format(deletions), sequence.aa_at_pos(pos1_t{160}),
             // sequence.aa_at_pos(pos1_t{161}), sequence.aa_at_pos(pos1_t{162}), sequence.aa_at_pos(pos1_t{163}));
-            set_lineage(sequence, acmacs::virus::YAMAGATA, fasta_ref, "yamagata");
+            set_lineage(sequence, acmacs::virus::lineage::YAMAGATA, fasta_ref, "yamagata");
             deletions.deletions = std::vector<acmacs::seqdb::scan::deletions_insertions_t::pos_num_t>{{pos1_t{163}, 1}};
         }
         else if (is_semi_ignored(sequence)) {
@@ -358,10 +346,18 @@ namespace local::B
         else if (is_ignored(sequence)) {
             // do not issue warning
         }
-        else {
-            AD_DEBUG("1-at-163:{} no-between-164-500:{}", N_deletions_at(deletions, 1, pos1_t{163}), no_deletions_after_before(deletions, pos1_t{164}, pos1_t{500}));
-            AD_ERROR("{} lineage {} and UNKNOWN deletions {} {}\n{}\n{}\n", sequence.year(), *sequence.lineage(), sequence.full_name(), acmacs::seqdb::scan::format(sequence.deletions()), fasta_ref, sequence.aa_format());
+        else if (!special_deletions) {
+            // AD_DEBUG("1-at-163:{} no-between-164-500:{}", N_deletions_at(deletions, 1, pos1_t{163}), no_deletions_after_before(deletions, pos1_t{164}, pos1_t{500}));
+            AD_WARNING("not-special {} {} {} {}", sequence.aa_aligned_substr(159, 14), deletions, sequence.name(), fasta_ref); // sequence.aa_format());
         }
+
+        if (sequence.lineage() != fasta_lineage && fasta_lineage != acmacs::virus::lineage::UNKNOWN && !fasta_lineage.empty())
+            AD_WARNING("B-lineage fas:{} seq:{} {} {} {}", fasta_lineage[0], sequence.lineage().empty() ? ' ' : sequence.lineage()[0], sequence.aa_aligned_substr(159, 14), deletions, sequence.name());
+
+        // if (sequence.name() == acmacs::virus::name_t{"B/BEIJING/15/1984"})
+        //     AD_DEBUG("{} {} {}", sequence.name(), sequence.aa_aligned_substr(159, 14), deletions);
+        // if (sequence.aa_aligned_substr(159, 4) == "VPRD" && sequence.lineage() != acmacs::virus::lineage::YAMAGATA)
+        //     AD_WARNING("VPRD: {} {} fas:{:8s} seq:{:8s} {}", sequence.aa_aligned_substr(159, 14), deletions, fasta_lineage, sequence.lineage(), sequence.name());
 
     } // lineage
 

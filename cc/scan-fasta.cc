@@ -332,7 +332,7 @@ std::optional<acmacs::seqdb::v3::scan::fasta::scan_result_t> acmacs::seqdb::v3::
     if (fields.size() > 6)
         result.fasta.lineage = acmacs::virus::lineage_t{parse_lineage(acmacs::string::strip(fields[6]), filename, line_no)};
 
-    if (!result.fasta.lineage.empty() && result.fasta.lineage != acmacs::virus::lineage_t{"UNKNOWN"})
+    if (!result.fasta.lineage.empty() && result.fasta.lineage != acmacs::virus::lineage::UNKNOWN)
         result.sequence.lineage(result.fasta.lineage);
 
     return result;

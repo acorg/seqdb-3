@@ -154,8 +154,10 @@ namespace acmacs::seqdb
                         return aa_[*pos_with_deletions + *shift_aa_];
                 }
 
+                char aa_at_pos_without_deletions(pos0_t pos0) const { return aa_[*pos0 + *shift_aa_]; }
+
                 // pos is 1 based
-                char aa_at_pos(acmacs::seqdb::pos1_t pos) const { return aa_at_pos(pos0_t{*pos - 1}); }
+                // char aa_at_pos(acmacs::seqdb::pos1_t pos) const { return aa_at_pos(pos0_t{*pos - 1}); }
 
                 // pos is 0 based
                 // returns '-' if deleted
