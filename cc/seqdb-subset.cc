@@ -724,7 +724,8 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
 
 std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const
 {
-    return fmt::format(name_format,
+    const auto nf = ::string::replace(::string::replace(name_format, "\\t", "\t"), "\\n", "\n");
+    return fmt::format(nf,
                        fmt::arg("seq_id", entry.seq_id()),
                        fmt::arg("full_name", entry.full_name()),
                        fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
