@@ -369,6 +369,7 @@ namespace acmacs::seqdb::inline v3
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);
         subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
+        subset& export_json_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
         subset& print(const Seqdb& seqdb, std::string_view name_format, bool do_print = true);
         subset& report_stat(const Seqdb& seqdb, bool do_report = true);
         subset& report_stat_month_region(bool do_report = true);
@@ -428,6 +429,7 @@ namespace acmacs::seqdb::inline v3
 
         collected_t export_collect(const Seqdb& seqdb, const export_options& options) const;
         std::string export_fasta(const collected_t& entries, const export_options& options);
+        std::string export_json(const collected_t& entries, const export_options& options);
         std::string make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const;
 
         friend class Seqdb;

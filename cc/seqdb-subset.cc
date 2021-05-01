@@ -1,6 +1,7 @@
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/range-v3.hh"
+#include "acmacs-base/to-json.hh"
 #include "acmacs-chart-2/point-index-list.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/log.hh"
@@ -706,7 +707,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
             ranges::for_each(to_export, [length = options.e_length](auto& en) { en.sequence.resize(length, '-'); });
         }
 
-        ranges::for_each(to_export, [deletion_report_threshold=options.e_deletion_report_threshold](auto& en) {
+        ranges::for_each(to_export, [deletion_report_threshold = options.e_deletion_report_threshold](auto& en) {
             const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; }));
             const auto dels_at_the_end = en.sequence.back() == '-' || en.sequence.back() == 'X';
             if (dels_at_the_end || dels > deletion_report_threshold)
@@ -719,6 +720,31 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
     return *this;
 
 } // acmacs::seqdb::v3::subset::export_sequences
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_json_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options)
+{
+    if (!filename.empty()) {
+        auto to_export = export_collect(seqdb, options);
+
+        if (options.e_most_common_length == export_options::most_common_length::yes) {
+            const acmacs::Counter counter(to_export, [](const auto& en) { return en.sequence.size(); });
+            const auto most_common_length = counter.max().first;
+            AD_LOG(acmacs::log::fasta, "most common length: {}", most_common_length);
+            ranges::for_each(to_export, [most_common_length](auto& en) { en.sequence.resize(most_common_length, '-'); });
+        }
+        else if (options.e_length > 0) {
+            AD_LOG(acmacs::log::fasta, "sequence length for exporting: {}", options.e_length);
+            ranges::for_each(to_export, [length = options.e_length](auto& en) { en.sequence.resize(length, '-'); });
+        }
+
+        AD_LOG(acmacs::log::fasta, "writing {} sequences to {}", to_export.size(), filename);
+        acmacs::file::write(filename, export_json(to_export, options));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::export_json_sequences
 
 // ----------------------------------------------------------------------
 
@@ -812,6 +838,21 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
     return output;
 
 } // acmacs::seqdb::v3::subset::export_fasta
+
+// ----------------------------------------------------------------------
+
+std::string acmacs::seqdb::v3::subset::export_json(const collected_t& entries, const export_options& options)
+{
+    to_json::array arr;
+    for (const auto& en : entries) {
+        arr << to_json::object{
+            to_json::key_val{"N", en.seq_id},
+            to_json::key_val{"S", en.sequence},
+        };
+    }
+    return fmt::format("{}\n", arr);
+
+} // acmacs::seqdb::v3::subset::export_json
 
 // ----------------------------------------------------------------------
 
