@@ -44,14 +44,10 @@ static void merge_dat_fna_names(acmacs::seqdb::v3::scan::fasta::scan_result_t& d
 
 acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::scan_ncbi(const std::string_view directory, const scan_options_t& options)
 {
-    Timeit timeit("scan_ncbi: ");
-    Timeit timeit_na_dat("scan_ncbi (read na.dat): ");
+    Timeit timeit_scan_ncbi("scan_ncbi: ");
 
-    scan_results_t results = read_influenza_na_dat(directory, options);
-    timeit_na_dat.report();
-    Timeit timeit_fna("scan_ncbi (read fna): ");
-    read_influenza_fna(results, directory, options);
-    timeit_fna.report();
+    scan_results_t results = timeit("scan_ncbi (read na.dat)", [&]() { return read_influenza_na_dat(directory, options); });
+    timeit("scan_ncbi (read fna)", [&]() { read_influenza_fna(results, directory, options); });
 
     // remove entries with empty sequences
     results.results.erase(std::remove_if(std::begin(results.results), std::end(results.results), [](const auto& en) { return en.sequence.nuc().empty(); }), std::end(results.results));

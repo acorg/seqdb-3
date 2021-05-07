@@ -149,6 +149,7 @@ namespace acmacs::seqdb
                     std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) { return designation(e1.sequence) < designation(e2.sequence); });
                 }
 
+                void remove_without_names(std::vector<fasta::scan_result_t>& sequences);
                 void merge_duplicates(std::vector<fasta::scan_result_t>& sequences);
 
                 struct min_max_dates_t

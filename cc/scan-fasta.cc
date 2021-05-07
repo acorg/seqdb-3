@@ -131,6 +131,16 @@ acmacs::seqdb::v3::scan::fasta::scan_results_t acmacs::seqdb::v3::scan::fasta::s
 
 // ----------------------------------------------------------------------
 
+void acmacs::seqdb::v3::scan::fasta::remove_without_names(std::vector<fasta::scan_result_t>& sequences)
+{
+    const auto new_end = std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& seq) { return seq.name_fields.reassortant_only(); });
+    AD_INFO("sequences without names and with just reassortant (removed): {}", std::end(sequences) - new_end);
+    sequences.erase(new_end, std::end(sequences));
+
+} // acmacs::seqdb::v3::scan::fasta::remove_without_names
+
+// ----------------------------------------------------------------------
+
 void acmacs::seqdb::v3::scan::fasta::merge_duplicates(std::vector<fasta::scan_result_t>& sequences)
 {
     sort_by_name(sequences);

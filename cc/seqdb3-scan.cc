@@ -87,7 +87,8 @@ int main(int argc, char* const argv[])
         auto& all_sequences = scan_results.results;
         if (all_sequences.empty())
             throw std::runtime_error("no sequences read (no files nor --ncbi in the command line?)");
-        fmt::print(stderr, "INFO: Total sequences upon scanning fasta: {:7d}\n", all_sequences.size());
+        AD_INFO("Total sequences upon scanning fasta: {:7d}", all_sequences.size());
+        acmacs::seqdb::scan::fasta::remove_without_names(all_sequences);
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
         acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::translate_align(all_sequences);
@@ -102,7 +103,7 @@ int main(int argc, char* const argv[])
         if (!opt.output_seqdb->empty())
             acmacs::seqdb::create(opt.output_seqdb, all_sequences, opt.whocc_only ? acmacs::seqdb::create_dbs::whocc_only : acmacs::seqdb::create_dbs::all);
 
-        fmt::print(stderr, "INFO: Total sequences upon translating:    {:7d}  aligned: {}\n", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::scan::fasta::is_aligned));
+        AD_INFO("Total sequences upon translating:    {:7d}  aligned: {}", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::scan::fasta::is_aligned));
         fmt::print(stderr, "\n");
 
         if (!opt.print_counter_for->empty()) {
@@ -132,9 +133,9 @@ int main(int argc, char* const argv[])
                 counter_not_aligned_h.count(sc.fasta.type_subtype.h_or_b());
             }
             if (counter_not_aligned_h.total())
-                fmt::print(stderr, "WARNING: NOT ALIGNED\n{}\n", counter_not_aligned_h.report_sorted_max_first());
+                AD_WARNING("NOT ALIGNED\n{}", counter_not_aligned_h.report_sorted_max_first());
             else
-                fmt::print(stderr, "INFO: all aligned\n");
+                AD_INFO("all aligned");
         }
 
         if (!opt.print_aa_for->empty()) {
@@ -173,7 +174,7 @@ int main(int argc, char* const argv[])
         return 0;
     }
     catch (std::exception& err) {
-        fmt::print(stderr, "ERROR: {}\n", err);
+        AD_ERROR("{}", err);
         return 1;
     }
 }
