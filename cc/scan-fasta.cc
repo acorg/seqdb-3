@@ -622,6 +622,7 @@ void acmacs::seqdb::v3::scan::fasta::fix_gisaid_name(scan_result_t& source, acma
     }
     if (dbg == debug::yes && name_orig != source.fasta.name)
         AD_DEBUG("\"{}\" -> \"{}\"", name_orig, source.fasta.name);
+    // AD_DEBUG(name_orig.find("reassortant") != std::string::npos, "fix_gisaid_name \"{}\" <- {}", source.fasta.name, source.name_fields);
 
 } // acmacs::seqdb::v3::scan::fasta::fix_gisaid_name
 
