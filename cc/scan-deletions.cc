@@ -19,12 +19,17 @@ namespace local
 
 #include "acmacs-base/global-constructors-push.hh"
     static const std::array master_sequences_for_insertions = {
-        std::pair{std::string{"B"},  acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::name_t{"B/BRISBANE/60/2008 VICTORIA (master_sequences_for_insertions)"}, "DRICTGITSSNSPHVVKTATQGEVNVTGVIPLTTTPTKSHFANLKGTETRGKLCPKCLNCTDLDVALGRPKCTGKIPSARVSILHEVRPVTSGCFPIMHDRTKIRQLPNLLRGYEHIRLSTHNVINAENAPGGPYKIGTSGSCPNITNGNGFFATMAWAVPKNDKNKTATNPLTIEVPYICTEGEDQITVWGFHSDNETQMAKLYGDSKPQKFTSSANGVTTHYVSQIGGFPNQTEDGGLPQSGRIVVDYMVQKSGKTGTITYQRGILLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLKLANGTKYRPPAKLLKERGFFGAIAGFLEGGWEGMIAGWHGYTSHGAHGVAVAADLKSTQEAINKITKNLNSLSELEVKNLQRLSGAMDELHNEILELDEKVDDLRADTISSQIELAVLLSNEGIINSEDEHLLALERKLKKMLGPSAVEIGNGCFETKHKCNQTCLDRIAAGTFDAGEFSLPTFDSLNITAASLNDDGLDNHTILLYYSTAASSLAVTLMIAIFVVYMVSRDNVSCSICL")},
-        std::pair{std::string{"H1"}, acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::name_t{"A(H1N1)/CALIFORNIA/7/2009 (master_sequences_for_insertions)"},   "DTLCIGYHANNSTDTVDTVLEKNVTVTHSVNLLEDKHNGKLCKLRGVAPLHLGKCNIAGWILGNPECESLSTASSWSYIVETPSSDNGTCYPGDFIDYEELREQLSSVSSFERFEIFPKTSSWPNHDSNKGVTAACPHAGAKSFYKNLIWLVKKGNSYPKLSKSYINDKGKEVLVLWGIHHPSTSADQQSLYQNADAYVFVGSSRYSKKFKPEIAIRPKVRDQEGRMNYYWTLVEPGDKITFEATGNLVVPRYAFAMERNAGSGIIISDTPVHDCNTTCQTPKGAINTSLPFQNIHPITIGKCPKYVKSTKLRLATGLRNIPSIQSRGLFGAIAGFIEGGWTGMVDGWYGYHHQNEQGSGYAADLKSTQNAIDEITNKVNSVIEKMNTQFTAVGKEFNHLEKRIENLNKKVDDGFLDIWTYNAELLVLLENERTLDYHDSNVKNLYEKVRSQLKNNAKEIGNGCFEFYHKCDNTCMESVKNGTYDYPKYSEEAKLNREEIDGVKLESTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI")},
-        std::pair{std::string{"H3"}, acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::name_t{"A(H3N2)/HONG_KONG/1/1968_h1EAB4576 (master_sequences_for_insertions)"},   "QDLPGNDNSTATLCLGHHAVPNGTLVKTITDDQIEVTNATELVQSSSTGKICNNPHRILDGIDCTLIDALLGDPHCDVFQNETWDLFVERSKAFSNCYPYDVPDYASLRSLVASSGTLEFITEGFTWTGVTQNGGSNACKRGPGSGFFSRLNWLTKSGSTYPVLNVTMPNNDNFDKLYIWGVHHPSTNQEQTSLYVQASGRVTVSTRRSQQTIIPNIGSRPWVRGLSSRISIYWTIVKPGDVLVINSNGNLIAPRGYFKMRTGKSSIMRSDAPIDTCISECITPNGSIPNDKPFQNVNKITYGACPKYVKQNTLKLATGMRNVPEKQTRGLFGAIAGFIENGWEGMIDGWYGFRHQNSEGTGQAADLKSTQAAIDQINGKLNRVIEKTNEKFHQIEKEFSEVEGRIQDLEKYVEDTKIDLWSYNAELLVALENQHTIDLTDSEMNKLFEKTRRQLRENAEDMGNGCFKIYHKCDNACIESIRNGTYDHDVYRDEALNNRFQIKGVELKSGYKDWILWISFAISCFLLCVVLLGFIMWACQRGNIRCNICI")},
+        std::pair{std::string{"B"},  acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::name_t{"B/BRISBANE/60/2008 VICTORIA (master_sequences_for_insertions)"},        "DRICTGITSSNSPHVVKTATQGEVNVTGVIPLTTTPTKSHFANLKGTETRGKLCPKCLNCTDLDVALGRPKCTGKIPSARVSILHEVRPVTSGCFPIMHDRTKIRQLPNLLRGYEHIRLSTHNVINAENAPGGPYKIGTSGSCPNITNGNGFFATMAWAVPKNDKNKTATNPLTIEVPYICTEGEDQITVWGFHSDNETQMAKLYGDSKPQKFTSSANGVTTHYVSQIGGFPNQTEDGGLPQSGRIVVDYMVQKSGKTGTITYQRGILLPQKVWCASGRSKVIKGSLPLIGEADCLHEKYGGLNKSKPYYTGEHAKAIGNCPIWVKTPLKLANGTKYRPPAKLLKERGFFGAIAGFLEGGWEGMIAGWHGYTSHGAHGVAVAADLKSTQEAINKITKNLNSLSELEVKNLQRLSGAMDELHNEILELDEKVDDLRADTISSQIELAVLLSNEGIINSEDEHLLALERKLKKMLGPSAVEIGNGCFETKHKCNQTCLDRIAAGTFDAGEFSLPTFDSLNITAASLNDDGLDNHTILLYYSTAASSLAVTLMIAIFVVYMVSRDNVSCSICL")},
+        std::pair{std::string{"H1"}, acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::name_t{"A(H1N1)/CALIFORNIA/7/2009 (master_sequences_for_insertions)"},          "DTLCIGYHANNSTDTVDTVLEKNVTVTHSVNLLEDKHNGKLCKLRGVAPLHLGKCNIAGWILGNPECESLSTASSWSYIVETPSSDNGTCYPGDFIDYEELREQLSSVSSFERFEIFPKTSSWPNHDSNKGVTAACPHAGAKSFYKNLIWLVKKGNSYPKLSKSYINDKGKEVLVLWGIHHPSTSADQQSLYQNADAYVFVGSSRYSKKFKPEIAIRPKVRDQEGRMNYYWTLVEPGDKITFEATGNLVVPRYAFAMERNAGSGIIISDTPVHDCNTTCQTPKGAINTSLPFQNIHPITIGKCPKYVKSTKLRLATGLRNIPSIQSRGLFGAIAGFIEGGWTGMVDGWYGYHHQNEQGSGYAADLKSTQNAIDEITNKVNSVIEKMNTQFTAVGKEFNHLEKRIENLNKKVDDGFLDIWTYNAELLVLLENERTLDYHDSNVKNLYEKVRSQLKNNAKEIGNGCFEFYHKCDNTCMESVKNGTYDYPKYSEEAKLNREEIDGVKLESTRIYQILAIYSTVASSLVLVVSLGAISFWMCSNGSLQCRICI")},
+        std::pair{std::string{"H3"}, acmacs::seqdb::scan::sequence_t::from_aligned_aa(acmacs::virus::name_t{"A(H3N2)/HONG_KONG/1/1968_h1EAB4576 (master_sequences_for_insertions)"}, "QDLPGNDNSTATLCLGHHAVPNGTLVKTITDDQIEVTNATELVQSSSTGKICNNPHRILDGIDCTLIDALLGDPHCDVFQNETWDLFVERSKAFSNCYPYDVPDYASLRSLVASSGTLEFITEGFTWTGVTQNGGSNACKRGPGSGFFSRLNWLTKSGSTYPVLNVTMPNNDNFDKLYIWGVHHPSTNQEQTSLYVQASGRVTVSTRRSQQTIIPNIGSRPWVRGLSSRISIYWTIVKPGDVLVINSNGNLIAPRGYFKMRTGKSSIMRSDAPIDTCISECITPNGSIPNDKPFQNVNKITYGACPKYVKQNTLKLATGMRNVPEKQTRGLFGAIAGFIENGWEGMIDGWYGFRHQNSEGTGQAADLKSTQAAIDQINGKLNRVIEKTNEKFHQIEKEFSEVEGRIQDLEKYVEDTKIDLWSYNAELLVALENQHTIDLTDSEMNKLFEKTRRQLRENAEDMGNGCFKIYHKCDNACIESIRNGTYDHDVYRDEALNNRFQIKGVELKSGYKDWILWISFAISCFLLCVVLLGFIMWACQRGNIRCNICI")},
     };
 #include "acmacs-base/diagnostics-pop.hh"
 
+    inline bool is_whocc_subtype(const acmacs::virus::type_subtype_t& subtype)
+    {
+        const auto hn = subtype.hn_or_b();
+        return hn == "B" || hn == "H3N2" || hn == "H1N1";
+    }
 }
 
 // ----------------------------------------------------------------------
@@ -95,19 +100,15 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
 void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, sequence_t& to_align)
 {
     const acmacs::debug dbg = acmacs::debug::no;
-    AD_DEBUG(dbg, "master: {}  to-align: {}", master.name(), to_align.name());
-    // fmt::print(stderr, "{}\n", to_align.full_name());
-    // if (const auto name = to_align.name(); name == acmacs::virus::name_t{"B/SANTA CATARINA/140/2019"}) {
-    //     AD_DEBUG("Insertions deletions for \"{}\"", name);
-    //     dbg = acmacs::debug::yes;
-    // }
+    // const acmacs::debug dbg = local::is_whocc_subtype(to_align.type_subtype()) ? acmacs::debug::yes : acmacs::debug::no;
+    // AD_DEBUG(dbg, "master: {}  to-align: {}", master.name(), to_align.name());
 
     const auto master_aa_aligned = master.aa_aligned(), to_align_aa_aligned = to_align.aa_aligned();
     try {
         to_align.deletions() = deletions_insertions(master_aa_aligned, to_align_aa_aligned, dbg);
     }
     catch (local::not_verified& err) {
-        if (const auto h_or_b = master.type_subtype().h_or_b(); h_or_b == "H1" || h_or_b == "H3" || h_or_b == "B") {
+        if (local::is_whocc_subtype(to_align.type_subtype())) {
             AD_WARNING("deletions_insertions NOT VERIFIED  master: \"{}\"   to-align: \"{}\"  err: {}", master.name(), to_align.name(), err.what());
             // try {
             //     deletions_insertions(master_aa_aligned, to_align_aa_aligned, acmacs::debug::yes);
@@ -116,10 +117,11 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
             // }
         }
     }
-    if (master_aa_aligned[0] != to_align_aa_aligned[0] && to_align_aa_aligned[0] != 'X') {
+    if (master_aa_aligned[0] != to_align_aa_aligned[0] && to_align_aa_aligned[0] != 'X' && local::is_whocc_subtype(to_align.type_subtype())) {
         // garbage in front or alignement failure
         to_align.set_not_aligned();
-        AD_DEBUG(dbg, "NOT aligned");
+        AD_DEBUG(to_align.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"} ? acmacs::debug::yes : acmacs::debug::no, "{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
+        // AD_DEBUG("{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
     }
     AD_DEBUG(dbg, "deletions: {}", to_align.deletions());
     AD_PRINT(dbg, "\n");

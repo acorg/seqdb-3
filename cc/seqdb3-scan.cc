@@ -130,7 +130,7 @@ int main(int argc, char* const argv[])
             acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
             for (const auto& sc : all_sequences | ranges::views::filter(acmacs::seqdb::scan::fasta::is_translated) | ranges::views::filter(acmacs::seqdb::scan::fasta::isnot_aligned)) {
                 counter_not_aligned.count(*sc.fasta.type_subtype);
-                counter_not_aligned_h.count(sc.fasta.type_subtype.h_or_b());
+                counter_not_aligned_h.count(sc.fasta.type_subtype.hn_or_b());
             }
             if (counter_not_aligned_h.total())
                 AD_WARNING("NOT ALIGNED\n{}", counter_not_aligned_h.report_sorted_max_first());
