@@ -211,6 +211,7 @@ namespace acmacs::seqdb
                 bool translated() const { return !aa_.empty(); }
 
                 void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt);
+                void set_not_aligned() { shift_aa_ = not_aligned; shift_nuc_ = not_aligned; }
 
                 void add_date(const std::string& date);
                 void add_date(const date::year_month_day& a_date) { add_date(format_date(a_date)); }
@@ -327,6 +328,8 @@ template <> struct fmt::formatter<acmacs::seqdb::v3::scan::deletions_insertions_
             format_to(ctx.out(), " DEL-{}-{}", del.pos, del.num);
         for (const auto& ins : value.insertions)
             format_to(ctx.out(), " INS-{}-{}", ins.pos, ins.num);
+        if (value.deletions.empty() && value.insertions.empty())
+            format_to(ctx.out(), "<none>");
         return ctx.out();
     }
 };
