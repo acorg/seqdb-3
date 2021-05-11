@@ -15,7 +15,7 @@ struct filter_base
 
 struct filter_all_aligned : public filter_base
 {
-    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override { return seq.aligned(); }
+    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override { return seq.good(); }
 };
 
 struct filter_h1_h3_b_aligned : public filter_all_aligned

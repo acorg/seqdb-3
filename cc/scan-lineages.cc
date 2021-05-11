@@ -190,10 +190,10 @@ namespace local::B
     inline bool is_yamagata_shifted(const acmacs::seqdb::v3::scan::sequence_t& sequence)
     {
         const auto& deletions = sequence.deletions().deletions;
-        return ((deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{158} && deletions.front().num == 1 && sequence.aa_aligned_substr(155, 6) == "MAWVIP") ||
-                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{161} && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 2) == "VP") ||
-                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{160} && deletions.front().num == 1 && sequence.aa_aligned_substr(157, 3) == "WAV") ||
-                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{163} && deletions.front().num == 1 && sequence.aa_aligned_substr(159, 3) == "VPK")) &&
+        return ((deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{158} && deletions.front().num == 1 && sequence.aa_aligned_without_deletions_substr(155, 6) == "MAWVIP") ||
+                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{161} && deletions.front().num == 1 && sequence.aa_aligned_without_deletions_substr(159, 2) == "VP") ||
+                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{160} && deletions.front().num == 1 && sequence.aa_aligned_without_deletions_substr(157, 3) == "WAV") ||
+                (deletions.size() == 1 && deletions.front().pos == acmacs::seqdb::pos0_t{163} && deletions.front().num == 1 && sequence.aa_aligned_without_deletions_substr(159, 3) == "VPK")) &&
                sequence.deletions().insertions.empty();
     }
 
@@ -282,10 +282,10 @@ namespace local::B
                 // 2del
             }
             else {
-                AD_DEBUG("del-spec {} {} {}", sequence.aa_aligned_substr(159, 14), deletions, sequence.name());
+                AD_DEBUG("del-spec {} {} {}", sequence.aa_aligned_without_deletions_substr(159, 14), deletions, sequence.name());
             }
         }
-        else if (N_deletions_at(deletions, 1, pos1_t{159}, pos1_t{162}) && sequence.aa_aligned_substr(159, 4) == "VPRD") {
+        else if (N_deletions_at(deletions, 1, pos1_t{159}, pos1_t{162}) && sequence.aa_aligned_without_deletions_substr(159, 4) == "VPRD") {
             // B/BEIJING/258/1993, B/NEW YORK/1044/2001, mistake in deletion detection, it's YAMAGATA
             replace_front_deletions(deletions, v_pos_num_t{{pos1_t{163}, 1}});
         }
@@ -348,11 +348,11 @@ namespace local::B
         }
         else if (!special_deletions) {
             // AD_DEBUG("1-at-163:{} no-between-164-500:{}", N_deletions_at(deletions, 1, pos1_t{163}), no_deletions_after_before(deletions, pos1_t{164}, pos1_t{500}));
-            AD_WARNING("not-special {} {} {} {}", sequence.aa_aligned_substr(159, 14), deletions, sequence.name(), fasta_ref); // sequence.aa_format());
+            AD_WARNING("not-special {} {} {} {}", sequence.aa_aligned_without_deletions_substr(159, 14), deletions, sequence.name(), fasta_ref); // sequence.aa_format());
         }
 
         if (sequence.lineage() != fasta_lineage && fasta_lineage != acmacs::virus::lineage::UNKNOWN && !fasta_lineage.empty())
-            AD_WARNING("B-lineage fas:{} seq:{} {} {} {}", fasta_lineage[0], sequence.lineage().empty() ? ' ' : sequence.lineage()[0], sequence.aa_aligned_substr(159, 14), deletions, sequence.name());
+            AD_WARNING("B-lineage fas:{} seq:{} {} {} {}", fasta_lineage[0], sequence.lineage().empty() ? ' ' : sequence.lineage()[0], sequence.aa_aligned_without_deletions_substr(159, 14), deletions, sequence.name());
 
         // if (sequence.name() == acmacs::virus::name_t{"B/BEIJING/15/1984"})
         //     AD_DEBUG("{} {} {}", sequence.name(), sequence.aa_aligned_substr(159, 14), deletions);

@@ -15,6 +15,14 @@ namespace local
 
     using subtype_master_t = std::map<std::string, const acmacs::seqdb::scan::sequence_t*, std::less<>>;
 
+    inline const acmacs::seqdb::scan::sequence_t* find_master(std::string_view subtype, const subtype_master_t& masters)
+    {
+        if (const auto it = masters.find(subtype); it != masters.end())
+            return it->second;
+        else
+            return nullptr;
+    }
+
     subtype_master_t masters_per_subtype(const std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t>& sequences);
 
 #include "acmacs-base/global-constructors-push.hh"
@@ -42,9 +50,15 @@ void acmacs::seqdb::v3::scan::detect_insertions_deletions(std::vector<fasta::sca
 // #pragma omp parallel for default(shared) schedule(static) // , 100)
     for (auto sc_p = sequence_data.begin(); sc_p != sequence_data.end(); ++sc_p) {
         if (!sc_p->reference && sc_p->sequence.aligned()) { //  && sc_p->sequence.type_subtype() == acmacs::virus::type_subtype_t{"B"}) {
-            if (const auto* master = masters.find(sc_p->sequence.type_subtype().h_or_b())->second; master != &sc_p->sequence)
+            if (const auto* master = local::find_master(sc_p->sequence.type_subtype().h_or_b(), masters); master && master != &sc_p->sequence) {
+                // AD_DEBUG("dels {}", sc_p->sequence.name());
                 deletions_insertions(*master, sc_p->sequence);
+            }
+            else
+                AD_WARNING(local::is_whocc_subtype(sc_p->sequence.type_subtype()), "no master for {}", sc_p->sequence.name());
         }
+        // else
+        //     AD_DEBUG("not aligned? {}", sc_p->sequence.name());
     }
 
 } // detect_insertions_deletions
@@ -54,11 +68,12 @@ void acmacs::seqdb::v3::scan::detect_insertions_deletions(std::vector<fasta::sca
 local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seqdb::v3::scan::fasta::scan_result_t>& sequences)
 {
     std::map<std::string, acmacs::Counter<size_t>> aligned_lengths;
-    for (const auto& sc : sequences | ranges::views::filter(acmacs::seqdb::v3::scan::fasta::is_aligned))
+    for (const auto& sc : sequences | ranges::views::filter(acmacs::seqdb::v3::scan::fasta::is_good))
         aligned_lengths.try_emplace(std::string(sc.sequence.type_subtype().h_or_b())).first->second.count(sc.sequence.aa_aligned_length());
 
     subtype_master_t masters;
     for (const auto& [subtype, counter] : aligned_lengths) {
+        // AD_DEBUG("masters_per_subtype {} ({})", subtype, counter.total());
         const acmacs::seqdb::v3::scan::sequence_t* master = nullptr;
         if (const auto found = std::find_if(std::begin(master_sequences_for_insertions), std::end(master_sequences_for_insertions), [subtype=subtype](const auto& en) { return en.first == subtype; }); found != std::end(master_sequences_for_insertions)) {
             master = &found->second;
@@ -71,7 +86,7 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
                     master_length = vt.first;
             }
             size_t num_X = 0;
-            for (const auto& sc : sequences | ranges::views::filter(acmacs::seqdb::v3::scan::fasta::is_aligned)) {
+            for (const auto& sc : sequences | ranges::views::filter(acmacs::seqdb::v3::scan::fasta::is_good)) {
                 if (sc.sequence.type_subtype().h_or_b() == subtype && sc.sequence.aa_aligned_length() == master_length) {
                     if (master == nullptr) {
                         master = &sc.sequence;
@@ -87,8 +102,9 @@ local::subtype_master_t local::masters_per_subtype(const std::vector<acmacs::seq
             }
         }
         if (master == nullptr)
-            throw std::runtime_error("internal in acmacs::seqdb::v3::scan::masters_per_subtype");
+            throw std::runtime_error(AD_FORMAT("internal (no master for {}) in acmacs::seqdb::v3::scan::masters_per_subtype", subtype));
         masters.emplace(subtype, master);
+        // AD_DEBUG("master_per_subtype {}: {} aas:{}", subtype, master->name(), master->aa_aligned_length());
     }
 
     return masters;
@@ -101,9 +117,9 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
 {
     const acmacs::debug dbg = acmacs::debug::no;
     // const acmacs::debug dbg = local::is_whocc_subtype(to_align.type_subtype()) ? acmacs::debug::yes : acmacs::debug::no;
-    // AD_DEBUG(dbg, "master: {}  to-align: {}", master.name(), to_align.name());
+    // AD_DEBUG("master: {}  to-align: {}", master.name(), to_align.name());
 
-    const auto master_aa_aligned = master.aa_aligned(), to_align_aa_aligned = to_align.aa_aligned();
+    auto master_aa_aligned = master.aa_aligned(), to_align_aa_aligned = to_align.aa_aligned();
     try {
         to_align.deletions() = deletions_insertions(master_aa_aligned, to_align_aa_aligned, dbg);
     }
@@ -117,11 +133,22 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
             // }
         }
     }
-    if (master_aa_aligned[0] != to_align_aa_aligned[0] && to_align_aa_aligned[0] != 'X' && local::is_whocc_subtype(to_align.type_subtype())) {
-        // garbage in front or alignement failure
-        to_align.set_not_aligned();
-        AD_DEBUG(to_align.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"} ? acmacs::debug::yes : acmacs::debug::no, "{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
-        // AD_DEBUG("{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
+    if (local::is_whocc_subtype(to_align.type_subtype())) {
+        if (master_aa_aligned[0] != to_align_aa_aligned[0] && to_align_aa_aligned[0] != 'X') {
+            to_align.add_issue(sequence_t::issue::garbage_at_the_beginning);
+            // AD_DEBUG(to_align.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"} ? acmacs::debug::yes : acmacs::debug::no, "{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
+            // AD_DEBUG("{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
+        }
+        if (master.aa_aligned_length() > to_align.aa_aligned_length()) {
+            to_align.add_issue(sequence_t::issue::too_short);
+            // AD_DEBUG("too_short {} {} < {}\n{}\n{}", to_align.name(), to_align.aa_aligned_length(), master.aa_aligned_length(), master.aa_format(), to_align.aa_format());
+        }
+        else if (const auto master_last_pos = pos0_t{master.aa_aligned_length() - 1}, master_prelast_pos = pos0_t{master.aa_aligned_length() - 2};
+                 master.aa_at_pos(master_last_pos) != to_align.aa_at_pos(master_last_pos) || master.aa_at_pos(master_prelast_pos) != to_align.aa_at_pos(master_prelast_pos)) {
+            AD_DEBUG("garbage_at_the_end {} {} {} {} {} {}\n{}\n{}", to_align.name(), to_align.deletions(), master_last_pos, to_align.aa_aligned_length(), master.aa_at_pos(master_last_pos),
+                     to_align.aa_at_pos(master_last_pos), master.aa_format(), to_align.aa_format());
+            to_align.add_issue(sequence_t::issue::garbage_at_the_end);
+        }
     }
     AD_DEBUG(dbg, "deletions: {}", to_align.deletions());
     AD_PRINT(dbg, "\n");

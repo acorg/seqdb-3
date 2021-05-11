@@ -3,6 +3,7 @@
 #include <tuple>
 #include <map>
 #include <set>
+#include <bitset>
 
 #include "acmacs-base/date.hh"
 #include "acmacs-base/string.hh"
@@ -56,6 +57,11 @@ namespace acmacs::seqdb
                     return {pos_deleted, pos0_t{(*adjusted_pos_aa * 3) + pos.nuc_offset()}};
                 }
 
+                size_t number_of_deleted_positions() const
+                {
+                    return std::accumulate(std::begin(deletions), std::end(deletions), 0ul, [](size_t sum, const auto& del) { return sum + del.num; });
+                }
+
             }; // struct deletions_insertions_t
 
             std::string format_aa(const std::vector<deletions_insertions_t::pos_num_t>& pos_num, std::string_view sequence, char deletion_symbol = '-');
@@ -78,11 +84,22 @@ namespace acmacs::seqdb
             class sequence_t
             {
               public:
-                sequence_t() = default;
-                static sequence_t from_aligned_aa(const acmacs::virus::name_t& name, std::string_view source);
-
                 using shift_t = named_size_t<struct shift_t_tag>;
                 constexpr static const shift_t not_aligned{99999};
+
+                enum class issue {
+                    not_aligned,
+                    has_insertions, // not detected, unused
+                    too_short,
+                    garbage_at_the_beginning,
+                    garbage_at_the_end,
+
+                    _last
+                };
+                using issues_t = std::bitset<static_cast<size_t>(issue::_last)>;
+
+                sequence_t() = default;
+                static sequence_t from_aligned_aa(const acmacs::virus::name_t& name, std::string_view source);
 
                 void import(std::string_view source);
                 void translate();
@@ -137,9 +154,9 @@ namespace acmacs::seqdb
                     return aa;
                 }
 
-                auto aa_aligned_length() const { return aa_.size() - *shift_aa_; }
+                auto aa_aligned_length() const { return aa_.size() - *shift_aa_ + deletions_.number_of_deleted_positions(); }
 
-                std::string_view aa_aligned_substr(size_t pos, size_t num) const { return std::string_view(aa_.data() + *shift_aa_ + pos, num); }
+                std::string_view aa_aligned_without_deletions_substr(size_t pos, size_t num) const { return std::string_view(aa_.data() + *shift_aa_ + pos, num); }
 
                 // pos is 0 based
                 // returns '-' if deleted
@@ -207,11 +224,9 @@ namespace acmacs::seqdb
                 std::string_view continent() const { return continent_; }
                 constexpr const auto& hi_names() const { return hi_names_; }
 
-                constexpr bool aligned() const { return shift_aa_ != not_aligned; }
                 bool translated() const { return !aa_.empty(); }
 
                 void set_shift(int shift_aa, std::optional<acmacs::virus::type_subtype_t> type_subtype = std::nullopt);
-                void set_not_aligned() { shift_aa_ = not_aligned; shift_nuc_ = not_aligned; }
 
                 void add_date(const std::string& date);
                 void add_date(const date::year_month_day& a_date) { add_date(format_date(a_date)); }
@@ -273,8 +288,16 @@ namespace acmacs::seqdb
 
                 void merge_from(const sequence_t& source);
 
+                bool good() const { return issues_.none(); }
+                void add_issue(issue iss) { issues_.set(static_cast<size_t>(iss)); }
+                void remove_issue(issue iss) { issues_.reset(static_cast<size_t>(iss)); }
+                void remove_issue_not_aligned() { remove_issue(issue::not_aligned); }
+                constexpr bool has_issue(issue iss) const { return issues_[static_cast<size_t>(iss)]; }
+                constexpr bool aligned() const { return !has_issue(issue::not_aligned); }
+
               private:
                 acmacs::virus::name_t name_;
+                issues_t issues_{static_cast<size_t>(issue::not_aligned) + 1}; // not aligned by default
                 // acmacs::virus::host_t host_;
                 std::string country_;
                 std::string continent_;

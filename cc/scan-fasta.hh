@@ -77,6 +77,7 @@ namespace acmacs::seqdb
                     void merge(scan_results_t&& source);
                 };
 
+                constexpr const auto is_good = [](const scan_result_t& sc) { return sc.sequence.good(); };
                 constexpr const auto is_aligned = [](const scan_result_t& sc) { return sc.sequence.aligned(); };
                 constexpr const auto isnot_aligned = [](const scan_result_t& sc) { return !sc.sequence.aligned(); };
                 constexpr const auto is_translated = [](const scan_result_t& sc) { return sc.sequence.translated(); };

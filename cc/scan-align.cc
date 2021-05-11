@@ -155,10 +155,8 @@ void acmacs::seqdb::v3::scan::translate_align(std::vector<fasta::scan_result_t>&
     // remove not translated
     sequences.erase(std::remove_if(std::begin(sequences), std::end(sequences), [](const auto& entry) { return entry.sequence.aa().empty(); }), std::end(sequences));
 
-    // fmt::print(stderr, "translate_align aligned 1: {} :: {}\n", ranges::count_if(sequences, fasta::is_aligned), date::current_date_time());
-
     local::Aligner aligner;
-    for (const auto& entry : sequences | ranges::views::filter(fasta::is_aligned)) {
+    for (const auto& entry : sequences | ranges::views::filter(fasta::is_good)) {
         aligner.update(entry.sequence.aa_aligned(), entry.sequence.type_subtype());
     }
     // aligner.report();
@@ -169,7 +167,10 @@ void acmacs::seqdb::v3::scan::translate_align(std::vector<fasta::scan_result_t>&
             if (const auto align_data = aligner.align(entry.sequence.aa(), entry.fasta.type_subtype); align_data.has_value()) {
                 const auto [shift, type_subtype] = *align_data;
                 entry.sequence.set_shift(shift, type_subtype);
+                // AD_DEBUG("aligned {} {}", entry.sequence.name(), entry.sequence.aligned());
             }
+            // else
+            //     AD_DEBUG("no align_data {} {}", entry.sequence.name(), entry.sequence.aa());
         }
     }
 

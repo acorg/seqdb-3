@@ -50,7 +50,7 @@ struct Options : public argv
 
     option<str>  print_aa_for{*this, "print-aa-for", dflt{""}};
     option<str>  print_not_aligned_for{*this, "print-not-aligned-for", dflt{""}, desc{"ALL or comma separated: H1N,H3,B"}};
-    option<str>  print_counter_for{*this, "print-counter-for", dflt{""}};
+    // option<str>  print_counter_for{*this, "print-counter-for", dflt{""}};
     option<str>  print_aligned_for{*this, "print-aligned-for", dflt{""}};
     option<bool> print_aa_sizes{*this, "print-aa-sizes"};
     option<bool> print_stat{*this, "stat"};
@@ -64,16 +64,16 @@ struct Options : public argv
 
 static int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const Options& opt);
 static void report_messages(acmacs::messages::messages_t& messages);
+static void report_issues(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& all_sequences);
 
 int main(int argc, char* const argv[])
 {
     try {
         Options opt(argc, argv);
 
-        const acmacs::seqdb::scan::fasta::scan_options_t scan_options(
-            opt.verbose ? acmacs::debug::yes : acmacs::debug::no,
-            opt.gisaid ? acmacs::seqdb::scan::fasta::scan_name_adjustments::gisaid : acmacs::seqdb::scan::fasta::scan_name_adjustments::none,
-            opt.print_names ? acmacs::seqdb::scan::fasta::print_names::yes : acmacs::seqdb::scan::fasta::print_names::no);
+        const acmacs::seqdb::scan::fasta::scan_options_t scan_options(opt.verbose ? acmacs::debug::yes : acmacs::debug::no,
+                                                                      opt.gisaid ? acmacs::seqdb::scan::fasta::scan_name_adjustments::gisaid : acmacs::seqdb::scan::fasta::scan_name_adjustments::none,
+                                                                      opt.print_names ? acmacs::seqdb::scan::fasta::print_names::yes : acmacs::seqdb::scan::fasta::print_names::no);
         acmacs::seqdb::scan::fasta::scan_results_t scan_results;
         if (!opt.filenames->empty())
             scan_results.merge(acmacs::seqdb::scan::fasta::scan(opt.filenames, scan_options));
@@ -106,16 +106,16 @@ int main(int argc, char* const argv[])
         AD_INFO("Total sequences upon translating:    {:7d}  aligned: {}", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::scan::fasta::is_aligned));
         fmt::print(stderr, "\n");
 
-        if (!opt.print_counter_for->empty()) {
-            const auto chunk = ::string::upper(*opt.print_counter_for);
-            const auto found = [&chunk](size_t limit) { return [&chunk, limit](const auto& sc) { return sc.sequence.aa().find(std::string_view(chunk)) < limit; }; };
-            for (auto limit : {50, 100, 150, 200, 1000}) {
-                acmacs::Counter<std::string> counter;
-                for (const auto& sc : all_sequences | ranges::views::filter(acmacs::seqdb::scan::fasta::is_translated) | ranges::views::filter(found(static_cast<size_t>(limit))))
-                    counter.count(sc.fasta.type_subtype.h_or_b());
-                fmt::print(stderr, "Counter for {} at first {} positions\n{}\n", chunk, limit, counter.report_sorted_max_first());
-            }
-        }
+        // if (!opt.print_counter_for->empty()) {
+        //     const auto chunk = ::string::upper(*opt.print_counter_for);
+        //     const auto found = [&chunk](size_t limit) { return [&chunk, limit](const auto& sc) { return sc.sequence.aa().find(std::string_view(chunk)) < limit; }; };
+        //     for (auto limit : {50, 100, 150, 200, 1000}) {
+        //         acmacs::Counter<std::string> counter;
+        //         for (const auto& sc : all_sequences | ranges::views::filter(acmacs::seqdb::scan::fasta::is_translated) | ranges::views::filter(found(static_cast<size_t>(limit))))
+        //             counter.count(sc.fasta.type_subtype.h_or_b());
+        //         fmt::print(stderr, "Counter for {} at first {} positions\n{}\n", chunk, limit, counter.report_sorted_max_first());
+        //     }
+        // }
 
         if (const auto false_positive = acmacs::seqdb::scan::fasta::report_false_positive(all_sequences, 200); !false_positive.empty()) {
             AD_ERROR("FALSE POSITIVES ({})", ranges::count(false_positive, '\n') / 2);
@@ -123,20 +123,10 @@ int main(int argc, char* const argv[])
         }
 
         const auto dates_to_report = acmacs::seqdb::scan::fasta::min_max_dates(all_sequences);
-        fmt::print(stderr, "Isolation date range:  {} .. {}\nSubmission date range: {} .. {}\n",
-                   dates_to_report.min_isolation_date, dates_to_report.max_isolation_date, dates_to_report.min_submission_date, dates_to_report.max_submission_date);
+        fmt::print(stderr, "Isolation date range:  {} .. {}\nSubmission date range: {} .. {}\n", dates_to_report.min_isolation_date, dates_to_report.max_isolation_date,
+                   dates_to_report.min_submission_date, dates_to_report.max_submission_date);
 
-        if (opt.print_counter_for->empty()) {
-            acmacs::Counter<std::string> counter_not_aligned, counter_not_aligned_h;
-            for (const auto& sc : all_sequences | ranges::views::filter(acmacs::seqdb::scan::fasta::is_translated) | ranges::views::filter(acmacs::seqdb::scan::fasta::isnot_aligned)) {
-                counter_not_aligned.count(*sc.fasta.type_subtype);
-                counter_not_aligned_h.count(sc.fasta.type_subtype.hn_or_b());
-            }
-            if (counter_not_aligned_h.total())
-                AD_WARNING("NOT ALIGNED\n{}", counter_not_aligned_h.report_sorted_max_first());
-            else
-                AD_INFO("all aligned");
-        }
+        report_issues(all_sequences);
 
         if (!opt.print_aa_for->empty()) {
             const auto report = acmacs::seqdb::scan::fasta::report_aa(all_sequences, ::string::upper(*opt.print_aa_for), 99999);
@@ -306,6 +296,28 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
     return errors;
 
 } // report
+
+// ----------------------------------------------------------------------
+
+void report_issues(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& all_sequences)
+{
+    using namespace acmacs::seqdb::scan;
+    constexpr const auto issue_first = static_cast<size_t>(sequence_t::issue::not_aligned), issue_last = static_cast<size_t>(sequence_t::issue::_last);
+    const std::array<const char*, issue_last> issue_name{"Not aligned", "Has insertions", "Too short", "garbage_at_the_beginning", "garbage_at_the_end"};
+
+    std::array<acmacs::Counter<std::string>, issue_last> counters;
+    for (const auto& sc : all_sequences | ranges::views::filter(fasta::is_translated)) {
+        for (auto iss = issue_first; iss < issue_last; ++iss) {
+            if (sc.sequence.has_issue(static_cast<sequence_t::issue>(iss)))
+                counters[iss].count(*sc.fasta.type_subtype);
+        }
+    }
+    for (auto iss = issue_first; iss < issue_last; ++iss) {
+        if (!counters[iss].empty())
+            AD_WARNING("Issue: {}\n{}", issue_name[iss], counters[iss].report_sorted_max_first());
+    }
+
+} // report_issues
 
 // ----------------------------------------------------------------------
 /// Local Variables:

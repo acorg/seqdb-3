@@ -362,6 +362,7 @@ void acmacs::seqdb::v3::scan::sequence_t::set_shift(int shift_aa, std::optional<
         type_subtype_ = *type_subtype;
         acmacs::virus::set_type_subtype(name_, type_subtype_);
     }
+    remove_issue_not_aligned();
 
 } // acmacs::seqdb::v3::scan::sequence_t::set_shift
 
