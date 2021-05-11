@@ -6,6 +6,7 @@
 #include "acmacs-base/date.hh"
 #include "acmacs-base/range-v3.hh"
 #include "seqdb-3/scan-deletions.hh"
+#include "seqdb-3/hamming-distance.hh"
 
 // ----------------------------------------------------------------------
 
@@ -143,11 +144,14 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
             to_align.add_issue(sequence_t::issue::too_short);
             // AD_DEBUG("too_short {} {} < {}\n{}\n{}", to_align.name(), to_align.aa_aligned_length(), master.aa_aligned_length(), master.aa_format(), to_align.aa_format());
         }
-        else if (const auto master_last_pos = pos0_t{master.aa_aligned_length() - 1}, master_prelast_pos = pos0_t{master.aa_aligned_length() - 2};
-                 master.aa_at_pos(master_last_pos) != to_align.aa_at_pos(master_last_pos) || master.aa_at_pos(master_prelast_pos) != to_align.aa_at_pos(master_prelast_pos)) {
-            AD_DEBUG("garbage_at_the_end {} {} {} {} {} {}\n{}\n{}", to_align.name(), to_align.deletions(), master_last_pos, to_align.aa_aligned_length(), master.aa_at_pos(master_last_pos),
-                     to_align.aa_at_pos(master_last_pos), master.aa_format(), to_align.aa_format());
-            to_align.add_issue(sequence_t::issue::garbage_at_the_end);
+        else {
+            const auto master_with_deletions = master.aa_format(), to_align_with_deletions = to_align.aa_format();
+            constexpr const size_t tail_size = 10, mismatches_threshold = 2;
+            if (hamming_distance(std::string_view{master_with_deletions}.substr(master_with_deletions.size() - tail_size),
+                                 std::string_view{to_align_with_deletions}.substr(master_with_deletions.size() - tail_size)) > mismatches_threshold) {
+                // AD_DEBUG("garbage_at_the_end {}\n{}\n{}", to_align.name(), master.aa_format(), to_align.aa_format());
+                to_align.add_issue(sequence_t::issue::garbage_at_the_end);
+            }
         }
     }
     AD_DEBUG(dbg, "deletions: {}", to_align.deletions());
