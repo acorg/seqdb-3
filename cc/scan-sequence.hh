@@ -289,6 +289,7 @@ namespace acmacs::seqdb
                 void merge_from(const sequence_t& source);
 
                 bool good() const { return issues_.none(); }
+                bool has_issues() const { return !issues_.none(); }
                 void add_issue(issue iss) { issues_.set(static_cast<size_t>(iss)); }
                 void remove_issue(issue iss) { issues_.reset(static_cast<size_t>(iss)); }
                 void remove_issue_not_aligned() { remove_issue(issue::not_aligned); }

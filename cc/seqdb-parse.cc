@@ -58,7 +58,7 @@ namespace local
               case 'd':
                   break;
                 default:
-                    throw in_json::parse_error(fmt::format("gisaid: unexpected key: \"{}\"", key_));
+                    throw in_json::parse_error(AD_FORMAT("gisaid: unexpected key: \"{}\"", key_));
             }
         }
 
@@ -91,7 +91,7 @@ namespace local
                 //     target_.annotations = data;
                 //     break;
                 default:
-                    throw in_json::parse_error(fmt::format("seq reference (\"R\"): unexpected key: \"{}\"", key_));
+                    throw in_json::parse_error(AD_FORMAT("seq reference (\"R\"): unexpected key: \"{}\"", key_));
             }
             reset_key();
         }
@@ -120,20 +120,20 @@ namespace local
                   reset_key();
                   return std::make_unique<reference>(target_.master);
               default:
-                  throw in_json::parse_error(fmt::format("seq: unexpected sub-object, key: \"{}\"", key_));
+                  throw in_json::parse_error(AD_FORMAT("seq: unexpected sub-object, key: \"{}\"", key_));
             }
         }
 
         void injson_put_array() override
         {
             // if (key_.size() != 1 || (key_[0] != 'p' && key_[0] != 'c' && key_[0] != 'h' && key_[0] != 'r'))
-            //     throw in_json::parse_error(fmt::format("seq: unexpected array, key: \"{}\"", key_));
+            //     throw in_json::parse_error(AD_FORMAT("seq: unexpected array, key: \"{}\"", key_));
         }
 
         void injson_pop_array() override
         {
             // if (key_.size() != 1 || (key_[0] != 'p' && key_[0] != 'c' && key_[0] != 'h' && key_[0] != 'r'))
-            //     throw in_json::parse_error(fmt::format("seq: unexpected array, key: \"{}\"", key_));
+            //     throw in_json::parse_error(AD_FORMAT("seq: unexpected array, key: \"{}\"", key_));
             reset_key();
         }
 
@@ -173,12 +173,16 @@ namespace local
                     target_.hash = data;
                     reset_key();
                     break;
+                case 'i':       // issues
+                    // std::get<std::string_view>(target_.amino_acids) = data;
+                    reset_key();
+                    break;
                 default:
-                    throw in_json::parse_error(fmt::format("seq: unexpected key: \"{}\"", key_));
+                    throw in_json::parse_error(AD_FORMAT("seq: unexpected key: \"{}\"", key_));
             }
             // }
             // else
-            //     throw in_json::parse_error(fmt::format("seq: unexpected key: \"{}\"", key_));
+            //     throw in_json::parse_error(AD_FORMAT("seq: unexpected key: \"{}\"", key_));
         }
 
         void injson_put_integer(std::string_view data) override
@@ -222,14 +226,14 @@ namespace local
         {
             // fmt::print(stderr, "WARNING: entry::injson_put_array\n");
             // if (key_.size() != 1 || (key_[0] != 'd' && key_[0] != 's'))
-            //     throw in_json::parse_error(fmt::format("entry: unexpected array, key: \"{}\"", key_));
+            //     throw in_json::parse_error(AD_FORMAT("entry: unexpected array, key: \"{}\"", key_));
         }
 
         void injson_pop_array() override
         {
             // fmt::print(stderr, "WARNING: entry::injson_pop_array\n");
             // if (key_.size() != 1 || (key_[0] != 'd' && key_[0] != 's'))
-            //     throw in_json::parse_error(fmt::format("entry: unexpected array, key: \"{}\"", key_));
+            //     throw in_json::parse_error(AD_FORMAT("entry: unexpected array, key: \"{}\"", key_));
             reset_key();
         }
 
@@ -261,11 +265,11 @@ namespace local
                     reset_key();
                     break;
                 default:
-                    throw in_json::parse_error(fmt::format("entry: unexpected key: \"{}\"", key_));
+                    throw in_json::parse_error(AD_FORMAT("entry: unexpected key: \"{}\"", key_));
             }
             // }
             // else
-            //     throw in_json::parse_error(fmt::format("entry: unexpected key: \"{}\"", key_));
+            //     throw in_json::parse_error(AD_FORMAT("entry: unexpected key: \"{}\"", key_));
         }
 
       private:
@@ -285,13 +289,13 @@ namespace local
         {
             if (key_ == "  version") {
                 if (data != "sequence-database-v2" && data != "sequence-database-v3")
-                    throw in_json::parse_error(fmt::format("unsupported version: {}", data));
+                    throw in_json::parse_error(AD_FORMAT("unsupported version: {}", data));
                 reset_key();
             }
             else if (key_ == "  date" || key_ == "_")
                 reset_key();
             else
-                throw in_json::parse_error(fmt::format("unsupported field: \"{}\": {}", key_, data));
+                throw in_json::parse_error(AD_FORMAT("unsupported field: \"{}\": {}", key_, data));
         }
 
         void injson_put_array() override {}

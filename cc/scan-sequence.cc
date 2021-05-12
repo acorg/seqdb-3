@@ -85,6 +85,9 @@ std::string acmacs::seqdb::v3::scan::sequence_t::aa_format() const
 
 std::string acmacs::seqdb::v3::scan::sequence_t::aa_format_not_aligned() const
 {
+    if (!aligned())
+        throw std::runtime_error{AD_FORMAT("aa_format_not_aligned called for not aligned")};
+
     std::string_view aav{aa_};
     fmt::memory_buffer out;
     if (shift_aa_ > shift_t{0}) {
@@ -122,6 +125,9 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format() const
 
 std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned() const
 {
+    if (!aligned())
+        throw std::runtime_error{AD_FORMAT("aa_format_not_aligned called for not aligned")};
+
     std::string_view nucv{nuc_};
     fmt::memory_buffer out;
     if (shift_nuc_ > shift_t{0}) {

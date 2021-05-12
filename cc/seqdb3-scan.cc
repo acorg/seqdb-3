@@ -303,7 +303,7 @@ void report_issues(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>&
 {
     using namespace acmacs::seqdb::scan;
     constexpr const auto issue_first = static_cast<size_t>(sequence_t::issue::not_aligned), issue_last = static_cast<size_t>(sequence_t::issue::_last);
-    const std::array<const char*, issue_last> issue_name{"Not aligned", "Has insertions", "Too short", "garbage_at_the_beginning", "garbage_at_the_end"};
+    constexpr const std::array<const char*, issue_last> issue_name{"Not aligned", "Has insertions", "Too short", "garbage_at_the_beginning", "garbage_at_the_end"};
 
     std::array<acmacs::Counter<std::string>, issue_last> counters;
     for (const auto& sc : all_sequences | ranges::views::filter(fasta::is_translated)) {

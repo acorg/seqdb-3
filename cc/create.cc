@@ -2,6 +2,7 @@
 
 #include "acmacs-base/to-json.hh"
 #include "acmacs-base/read-file.hh"
+#include "acmacs-base/range-v3.hh"
 #include "seqdb-3/create.hh"
 #include "seqdb-3/scan-fasta.hh"
 
@@ -15,7 +16,7 @@ struct filter_base
 
 struct filter_all_aligned : public filter_base
 {
-    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override { return seq.good(); }
+    bool good(const acmacs::seqdb::scan::sequence_t& seq) const override { return seq.aligned(); }
 };
 
 struct filter_h1_h3_b_aligned : public filter_all_aligned
@@ -39,6 +40,17 @@ struct filter_whocc_aligned : public filter_h1_h3_b_aligned
 };
 
 static void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequences, const filter_base& filter);
+
+inline std::string format_issue(const acmacs::seqdb::scan::sequence_t& seq)
+{
+    using namespace acmacs::seqdb::scan;
+    constexpr const auto issue_first = static_cast<size_t>(sequence_t::issue::not_aligned), issue_last = static_cast<size_t>(sequence_t::issue::_last);
+    constexpr const std::array<char, issue_last> issue_name{'A', 'i', 's', 'b', 'e'};
+    return ranges::views::iota(issue_first, issue_last)                                                             //
+           | ranges::views::filter([&seq](auto iss) { return seq.has_issue(static_cast<sequence_t::issue>(iss)); }) //
+           | ranges::views::transform([&issue_name](auto iss) { return issue_name[iss]; })                          //
+           | ranges::to<std::string>();
+}
 
 // ----------------------------------------------------------------------
 
@@ -134,6 +146,8 @@ void generate(std::string_view filename, const std::vector<acmacs::seqdb::scan::
                     if (!seq.clades().empty())
                         entry_seq << to_json::key_val("c", to_json::array(
                                                                seq.clades().begin(), seq.clades().end(), [](const auto& clade) { return *clade; }, to_json::json::compact_output::yes));
+                    if (seq.has_issues())
+                        entry_seq << to_json::key_val("i", format_issue(seq));
                 }
                 if (!seq.hi_names().empty())
                     entry_seq << to_json::key_val("h", to_json::array(seq.hi_names().begin(), seq.hi_names().end(), to_json::json::compact_output::yes));

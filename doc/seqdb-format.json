@@ -23,6 +23,7 @@
                  "r": ["reassortant"],
                  "A": "annotations",
                  "H": "hash of nucs or aa (if nucs absent), xxhash<32> hex encoded", //? absent if "R" given
+                 "i": "<issues (letters): i - insertions, s - short, b - garbage_at_the_beginning, e - garbage_at_the_end>",
                  "G": {         //? gisaid data, added 2019-08-27
                      "i": ["isolate_id"],
                      "S": ["submitters"],
