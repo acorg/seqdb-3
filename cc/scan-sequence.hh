@@ -3,7 +3,6 @@
 #include <tuple>
 #include <map>
 #include <set>
-#include <bitset>
 
 #include "acmacs-base/date.hh"
 #include "acmacs-base/string.hh"
@@ -13,6 +12,7 @@
 #include "acmacs-virus/virus-name.hh"
 #include "seqdb-3/types.hh"
 #include "seqdb-3/sequence.hh"
+#include "seqdb-3/sequence-issues.hh"
 
 // ----------------------------------------------------------------------
 
@@ -86,17 +86,6 @@ namespace acmacs::seqdb
               public:
                 using shift_t = named_size_t<struct shift_t_tag>;
                 constexpr static const shift_t not_aligned{99999};
-
-                enum class issue {
-                    not_aligned,
-                    has_insertions, // not detected, unused
-                    too_short,
-                    garbage_at_the_beginning,
-                    garbage_at_the_end,
-
-                    _last
-                };
-                using issues_t = std::bitset<static_cast<size_t>(issue::_last)>;
 
                 sequence_t() = default;
                 static sequence_t from_aligned_aa(const acmacs::virus::name_t& name, std::string_view source);
@@ -290,15 +279,15 @@ namespace acmacs::seqdb
 
                 bool good() const { return issues_.none(); }
                 bool has_issues() const { return !issues_.none(); }
-                void add_issue(issue iss) { issues_.set(static_cast<size_t>(iss)); }
-                void remove_issue(issue iss) { issues_.reset(static_cast<size_t>(iss)); }
-                void remove_issue_not_aligned() { remove_issue(issue::not_aligned); }
-                constexpr bool has_issue(issue iss) const { return issues_[static_cast<size_t>(iss)]; }
-                constexpr bool aligned() const { return !has_issue(issue::not_aligned); }
+                void add_issue(sequence::issue iss) { sequence::set(issues_, iss); }
+                void remove_issue(sequence::issue iss) { sequence::reset(issues_, iss); }
+                void remove_issue_not_aligned() { remove_issue(sequence::issue::not_aligned); }
+                constexpr bool has_issue(sequence::issue iss) const { return sequence::has(issues_, iss); }
+                constexpr bool aligned() const { return !has_issue(sequence::issue::not_aligned); }
 
               private:
                 acmacs::virus::name_t name_;
-                issues_t issues_{static_cast<size_t>(issue::not_aligned) + 1}; // not aligned by default
+                sequence::issues_t issues_{static_cast<size_t>(sequence::issue::not_aligned) + 1}; // not aligned by default
                 // acmacs::virus::host_t host_;
                 std::string country_;
                 std::string continent_;

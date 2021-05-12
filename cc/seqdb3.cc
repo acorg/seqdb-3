@@ -51,6 +51,7 @@ struct Options : public argv
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
     option<size_t>    minimum_aa_length{*this, "minimum-aa-length", dflt{0ul}, desc{"Select only sequences having min number of AAs in alignment."}};
     option<size_t>    minimum_nuc_length{*this, "minimum-nuc-length", dflt{0ul}, desc{"Select only sequences having min number of nucs in alignment."}};
+    option<bool>      with_issues{*this, "with-issues", desc{"do not filter out sequences with issues"}};
 
     // subset
     option<size_t>    random{*this, "random", dflt{0UL}, desc{"subset at random and keep the specified number of sequences"}};
@@ -162,6 +163,7 @@ int main(int argc, char* const argv[])
             .dates(fix_date(opt.start_date), fix_date(opt.end_date))
             .continent(acmacs::uppercase{*opt.continent})
             .country(fix_country(acmacs::uppercase{*opt.country}))
+            .with_issues(opt.with_issues)
             .clade(seqdb, acmacs::uppercase{*opt.clade})
             .aa_at_pos(seqdb, aa_at_pos)
             .nuc_at_pos(seqdb, nuc_at_pos)

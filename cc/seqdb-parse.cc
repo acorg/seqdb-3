@@ -174,7 +174,28 @@ namespace local
                     reset_key();
                     break;
                 case 'i':       // issues
-                    // std::get<std::string_view>(target_.amino_acids) = data;
+                    for (const auto iss : data) {
+                        using namespace acmacs::seqdb::sequence;
+                        switch (iss) {
+                            case 'A':
+                                set(target_.issues, issue::not_aligned);
+                                break;
+                            case 'i':
+                                set(target_.issues, issue::has_insertions);
+                                break;
+                            case 's':
+                                set(target_.issues, issue::too_short);
+                                break;
+                            case 'b':
+                                set(target_.issues, issue::garbage_at_the_beginning);
+                                break;
+                            case 'e':
+                                set(target_.issues, issue::garbage_at_the_end);
+                                break;
+                            default:
+                                throw in_json::parse_error(AD_FORMAT("seq: unrecognized issue: {}", iss));
+                        }
+                    }
                     reset_key();
                     break;
                 default:

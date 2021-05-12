@@ -116,6 +116,16 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::country(const acmacs::uppe
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::with_issues(bool keep_with_issues)
+{
+    if (!keep_with_issues)
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.has_issues(); }), std::end(refs_));
+    return *this;
+
+} // acmacs::seqdb::v3::subset::with_issues
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::clade(const Seqdb& seqdb, const acmacs::uppercase& clade)
 {
     if (!clade.empty())

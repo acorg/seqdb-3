@@ -10,6 +10,7 @@
 #include "acmacs-chart-2/chart-modify.hh"
 #include "seqdb-3/aa-at-pos.hh"
 #include "seqdb-3/seq-id.hh"
+#include "seqdb-3/sequence-issues.hh"
 
 // ----------------------------------------------------------------------
 
@@ -194,6 +195,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<std::string_view> clades; // for master only
         std::vector<std::string_view> hi_names;
         std::string_view hash;
+        sequence::issues_t issues;
         labs_t lab_ids;
         gisaid_data_t gisaid;
         mutable std::unique_ptr<std::vector<ref>> slaves_; // for master only, list of slaves pointing to this master
@@ -300,6 +302,7 @@ namespace acmacs::seqdb::inline v3
             else
                 return std::string{seq().hi_names.front()};
         }
+        bool has_issues() const { return !seq().issues.none(); }
         bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
         bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade_master(clade); }
         bool has_hi_names() const { return !seq().hi_names.empty(); }
@@ -342,6 +345,7 @@ namespace acmacs::seqdb::inline v3
         subset& dates(std::string_view start, std::string_view end);
         subset& continent(const acmacs::uppercase& continent);
         subset& country(const acmacs::uppercase& country);
+        subset& with_issues(bool keep_with_issues);
         subset& clade(const Seqdb& seqdb, const acmacs::uppercase& clade);
         subset& recent(size_t recent, master_only master);
         subset& recent_matched(const std::vector<size_t>& recent_matched, master_only master);

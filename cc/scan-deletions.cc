@@ -136,12 +136,12 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
     }
     if (local::is_whocc_subtype(to_align.type_subtype())) {
         if (master_aa_aligned[0] != to_align_aa_aligned[0] && to_align_aa_aligned[0] != 'X') {
-            to_align.add_issue(sequence_t::issue::garbage_at_the_beginning);
+            to_align.add_issue(sequence::issue::garbage_at_the_beginning);
             // AD_DEBUG(to_align.type_subtype() == acmacs::virus::type_subtype_t{"A(H3N2)"} ? acmacs::debug::yes : acmacs::debug::no, "{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
             // AD_DEBUG("{} NOT aligned\n{}", to_align.name(), to_align_aa_aligned);
         }
         if (master.aa_aligned_length() > to_align.aa_aligned_length()) {
-            to_align.add_issue(sequence_t::issue::too_short);
+            to_align.add_issue(sequence::issue::too_short);
             // AD_DEBUG("too_short {} {} < {}\n{}\n{}", to_align.name(), to_align.aa_aligned_length(), master.aa_aligned_length(), master.aa_format(), to_align.aa_format());
         }
         else {
@@ -150,7 +150,7 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
             if (hamming_distance(std::string_view{master_with_deletions}.substr(master_with_deletions.size() - tail_size),
                                  std::string_view{to_align_with_deletions}.substr(master_with_deletions.size() - tail_size)) > mismatches_threshold) {
                 // AD_DEBUG("garbage_at_the_end {}\n{}\n{}", to_align.name(), master.aa_format(), to_align.aa_format());
-                to_align.add_issue(sequence_t::issue::garbage_at_the_end);
+                to_align.add_issue(sequence::issue::garbage_at_the_end);
             }
         }
     }

@@ -43,12 +43,13 @@ static void generate(std::string_view filename, const std::vector<acmacs::seqdb:
 
 inline std::string format_issue(const acmacs::seqdb::scan::sequence_t& seq)
 {
+    using namespace acmacs::seqdb;
     using namespace acmacs::seqdb::scan;
-    constexpr const auto issue_first = static_cast<size_t>(sequence_t::issue::not_aligned), issue_last = static_cast<size_t>(sequence_t::issue::_last);
+    constexpr const auto issue_first = static_cast<size_t>(sequence::issue::not_aligned), issue_last = static_cast<size_t>(sequence::issue::_last);
     constexpr const std::array<char, issue_last> issue_name{'A', 'i', 's', 'b', 'e'};
-    return ranges::views::iota(issue_first, issue_last)                                                             //
-           | ranges::views::filter([&seq](auto iss) { return seq.has_issue(static_cast<sequence_t::issue>(iss)); }) //
-           | ranges::views::transform([&issue_name](auto iss) { return issue_name[iss]; })                          //
+    return ranges::views::iota(issue_first, issue_last)                                                           //
+           | ranges::views::filter([&seq](auto iss) { return seq.has_issue(static_cast<sequence::issue>(iss)); }) //
+           | ranges::views::transform([&issue_name](auto iss) { return issue_name[iss]; })                        //
            | ranges::to<std::string>();
 }
 
