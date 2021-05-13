@@ -282,8 +282,8 @@ namespace acmacs::seqdb
                 void add_issue(sequence::issue iss) { sequence::set(issues_, iss); }
                 void remove_issue(sequence::issue iss) { sequence::reset(issues_, iss); }
                 void remove_issue_not_aligned() { remove_issue(sequence::issue::not_aligned); }
-                constexpr bool has_issue(sequence::issue iss) const { return sequence::has(issues_, iss); }
-                constexpr bool aligned() const { return !has_issue(sequence::issue::not_aligned); }
+                bool has_issue(sequence::issue iss) const { return sequence::has(issues_, iss); }
+                bool aligned() const { return !has_issue(sequence::issue::not_aligned); }
 
               private:
                 acmacs::virus::name_t name_;
