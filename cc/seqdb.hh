@@ -23,7 +23,7 @@ namespace acmacs::seqdb::inline v3
 
     using seq_id_index_t = map_with_duplicating_keys_t<seq_id_t, ref>; // duplicating seq_ids without hash present (for backward compatibility)
     using hi_name_index_t = map_with_unique_keys_t<std::string_view, ref>;
-    using lab_id_index_t = map_with_unique_keys_t<std::string, ref>;
+    using lab_id_index_t = map_with_duplicating_keys_t<std::string, ref>;
     using hash_index_t = map_with_duplicating_keys_t<std::string_view, ref>;
 
     class Seqdb
@@ -447,6 +447,15 @@ namespace acmacs::seqdb::inline v3
     void remove_nuc_duplicates(subset::refs_t& refs, bool keep_hi_matched = false);
 
 } // namespace acmacs::seqdb::inlinev3
+
+// ----------------------------------------------------------------------
+
+template <> struct fmt::formatter<acmacs::seqdb::v3::ref> : fmt::formatter<acmacs::fmt_helper::default_formatter> {
+    template <typename FormatCtx> auto format(const acmacs::seqdb::v3::ref& rf, FormatCtx& ctx)
+    {
+        return format_to(ctx.out(), "{}", rf.seq_id());
+    }
+};
 
 // ----------------------------------------------------------------------
 /// Local Variables:

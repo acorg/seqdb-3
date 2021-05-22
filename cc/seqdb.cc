@@ -351,7 +351,7 @@ const acmacs::seqdb::v3::lab_id_index_t& acmacs::seqdb::v3::Seqdb::lab_id_index(
             }
         }
         lab_id_index_.sort();     // force sorting to avoid future raise condition during access from different threads
-        // lab_id_index_.check();    // duplicates are possible!
+        // duplicates are possible!
     }
     return lab_id_index_;
 
@@ -450,10 +450,23 @@ template <typename AgSr> acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::mat
         return std::nullopt;
     };
 
-    auto find_by_lab_id = [&](const auto& lab_id, const auto& /*antigen*/) -> std::optional<ref> {
-        // AD_DEBUG("lab_id: {}", lab_id);
-        if (const auto* found_ref = lab_id_index().find(lab_id); found_ref)
-            return *found_ref;
+    auto find_by_lab_id = [&](const auto& lab_id, const auto& antigen) -> std::optional<ref> {
+        if (const auto [first, last] = lab_id_index().find(lab_id); first != last) {
+            if (std::distance(first, last) == 1)
+                return first->second;
+            // multiple refs for the same lab_id
+            subset sequences;
+            for (auto r1 = first; r1 != last; ++r1) {
+                // AD_DEBUG("{} {} -> {}", antigen.name_full(), r1->first, r1->second.seq_id());
+                sequences.append(r1->second);
+            }
+            if (const auto matched = ::match(sequences, antigen.reassortant(), antigen.passage()); matched.has_value()) {
+                // AD_DEBUG("--> {}", matched->seq_id());
+                return *matched;
+            }
+            AD_WARNING("multiple refs for {} {} (first is selected): ({}) {}", antigen.name_full(), lab_id, sequences.size(), sequences);
+            return first->second;
+        }
         else
             return std::nullopt;
     };
