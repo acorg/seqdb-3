@@ -825,27 +825,19 @@ acmacs::seqdb::v3::subset::collected_t acmacs::seqdb::v3::subset::export_collect
 
 std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, const export_options& options)
 {
-    std::string output;
-    const auto output_size =
-        std::accumulate(std::begin(entries), std::end(entries), 0UL, [](size_t size, const auto& en) { return size + en.seq_id.size() + en.sequence.size() + 2 + en.sequence.size() / 40; });
-    output.reserve(output_size);
+    fmt::memory_buffer out;
     for (const auto& en : entries) {
-        output.append(1, '>');
-        output.append(en.seq_id);
-        output.append(1, '\n');
+        fmt::format_to(out, ">{}\n", en.seq_id);
         if (options.e_wrap_at == 0 || options.e_wrap_at >= en.sequence.size()) {
-            output.append(en.sequence);
-            output.append(1, '\n');
+            fmt::format_to(out, "{}\n", en.sequence);
         }
         else {
-            for (const auto chunk : en.sequence | ranges::views::chunk(options.e_wrap_at)) {
-                output.append(ranges::to<std::string>(chunk));
-                output.append(1, '\n');
-            }
+            for (const auto chunk : en.sequence | ranges::views::chunk(options.e_wrap_at))
+                fmt::format_to(out, "{}\n", ranges::to<std::string>(chunk));
         }
     }
     fmt::print("INFO: exported to fasta: {}\n", entries.size());
-    return output;
+    return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::subset::export_fasta
 
