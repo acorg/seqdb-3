@@ -344,7 +344,6 @@ const acmacs::seqdb::v3::lab_id_index_t& acmacs::seqdb::v3::Seqdb::lab_id_index(
             for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
                 for (const auto& [lab, lab_ids] : entry.seqs[seq_no].lab_ids) {
                     for (const auto& lab_id : lab_ids) {
-                        // duplicates are possible!
                         const auto lab_and_id = fmt::format("{}#{}", lab, lab_id);
                         lab_id_index_.emplace(lab_and_id, ref{&entry, seq_no});
                     }
@@ -352,6 +351,7 @@ const acmacs::seqdb::v3::lab_id_index_t& acmacs::seqdb::v3::Seqdb::lab_id_index(
             }
         }
         lab_id_index_.sort();     // force sorting to avoid future raise condition during access from different threads
+        // lab_id_index_.check();    // duplicates are possible!
     }
     return lab_id_index_;
 
