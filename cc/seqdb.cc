@@ -336,6 +336,29 @@ const acmacs::seqdb::v3::hi_name_index_t& acmacs::seqdb::v3::Seqdb::hi_name_inde
 
 // ----------------------------------------------------------------------
 
+const acmacs::seqdb::v3::lab_id_index_t& acmacs::seqdb::v3::Seqdb::lab_id_index() const
+{
+    std::lock_guard<std::mutex> index_guard(index_access_);
+    if (lab_id_index_.empty()) {
+        for (const auto& entry : entries_) {
+            for (size_t seq_no = 0; seq_no < entry.seqs.size(); ++seq_no) {
+                for (const auto& [lab, lab_ids] : entry.seqs[seq_no].lab_ids) {
+                    for (const auto& lab_id : lab_ids) {
+                        // duplicates are possible!
+                        const auto lab_and_id = fmt::format("{}#{}", lab, lab_id);
+                        lab_id_index_.emplace(lab_and_id, ref{&entry, seq_no});
+                    }
+                }
+            }
+        }
+        lab_id_index_.sort();     // force sorting to avoid future raise condition during access from different threads
+    }
+    return lab_id_index_;
+
+} // acmacs::seqdb::v3::Seqdb::lab_id_index
+
+// ----------------------------------------------------------------------
+
 const acmacs::seqdb::v3::hash_index_t& acmacs::seqdb::v3::Seqdb::hash_index() const
 {
     std::lock_guard<std::mutex> index_guard(index_access_);
@@ -412,33 +435,51 @@ template <typename AgSr> acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::mat
             return std::nullopt;
     };
 
+    auto find_by_parsed_name = [&](const auto& antigen) -> std::optional<ref> {
+        if (const auto name_fields = acmacs::virus::name::parse(antigen.name()); name_fields.mutations.empty()) {
+            const acmacs::virus::Reassortant ag_reassortant{antigen.reassortant().empty() ? name_fields.reassortant : antigen.reassortant()};
+            const acmacs::virus::Passage ag_passage{antigen.passage().empty() ? name_fields.passage : antigen.passage()};
+            const auto sequences{select_by_name(name_fields.name())};
+            AD_LOG(acmacs::log::hi_name_matching, "match find_by_parsed_name \"{}\" ({}) \"{}\" sequences:{}", antigen.name(), name_fields.name(), antigen.format("{name_full}"), sequences.size());
+            AD_LOG_INDENT;
+            if (const auto matched = ::match(sequences, ag_reassortant, ag_passage); matched.has_value()) {
+                AD_LOG(acmacs::log::hi_name_matching, "--> {}", matched->seq_id());
+                return *matched;
+            }
+        }
+        return std::nullopt;
+    };
+
+    auto find_by_lab_id = [&](const auto& lab_id, const auto& /*antigen*/) -> std::optional<ref> {
+        // AD_DEBUG("lab_id: {}", lab_id);
+        if (const auto* found_ref = lab_id_index().find(lab_id); found_ref)
+            return *found_ref;
+        else
+            return std::nullopt;
+    };
+
     size_t num_matched = 0;
     for (auto antigen : antigens_sera) {
-        if (auto found_ref = find_by_hi_name(*antigen); found_ref.has_value()) {
+        std::optional<ref> found_ref{std::nullopt};
+        if constexpr (std::is_same_v<AgSr, chart::Antigens> || std::is_same_v<AgSr, chart::AntigensModify>) {
+            for (const auto& lab_id : antigen->lab_ids()) {
+                found_ref = find_by_lab_id(lab_id, *antigen);
+                if (found_ref.has_value())
+                    break;
+            }
+        }
+        if (!found_ref.has_value())
+            found_ref = find_by_hi_name(*antigen);
+        if (!found_ref.has_value())
+            found_ref = find_by_parsed_name(*antigen);
+        if (found_ref.has_value()) {
             result.refs_.push_back(std::move(*found_ref));
             ++num_matched;
         }
-        else {
-            const auto name_fields = acmacs::virus::name::parse(antigen->name());
-            if (name_fields.mutations.empty()) {
-                const acmacs::virus::Reassortant ag_reassortant{antigen->reassortant().empty() ? name_fields.reassortant : antigen->reassortant()};
-                const acmacs::virus::Passage ag_passage{antigen->passage().empty() ? name_fields.passage : antigen->passage()};
-                const auto sequences{select_by_name(name_fields.name())};
-                AD_LOG(acmacs::log::hi_name_matching, "match select_by_name \"{}\" ({}) \"{}\" sequences:{}", antigen->name(), name_fields.name(), antigen->format("{name_full}"), sequences.size());
-                AD_LOG_INDENT;
-                if (const auto matched = ::match(sequences, ag_reassortant, ag_passage); matched.has_value()) {
-                    AD_LOG(acmacs::log::hi_name_matching, "--> {}", matched->seq_id());
-                    result.refs_.push_back(*matched);
-                    ++num_matched;
-                }
-                else
-                    result.refs_.emplace_back();
-            }
-            else // contains mutation data, nothing to look in seqdb
-                result.refs_.emplace_back();
-        }
+        else
+            result.refs_.emplace_back();
     }
-    fmt::print("INFO: antigens from chart have sequences in seqdb: {}\n", num_matched);
+    AD_INFO("antigens from chart have sequences in seqdb: {}", num_matched);
 
     return result;
 

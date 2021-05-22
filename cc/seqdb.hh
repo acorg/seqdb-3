@@ -23,6 +23,7 @@ namespace acmacs::seqdb::inline v3
 
     using seq_id_index_t = map_with_duplicating_keys_t<seq_id_t, ref>; // duplicating seq_ids without hash present (for backward compatibility)
     using hi_name_index_t = map_with_unique_keys_t<std::string_view, ref>;
+    using lab_id_index_t = map_with_unique_keys_t<std::string, ref>;
     using hash_index_t = map_with_duplicating_keys_t<std::string_view, ref>;
 
     class Seqdb
@@ -43,6 +44,7 @@ namespace acmacs::seqdb::inline v3
         ref find_hi_name(std::string_view full_name) const;
         const seq_id_index_t& seq_id_index() const;
         const hi_name_index_t& hi_name_index() const;
+        const lab_id_index_t& lab_id_index() const;
         const hash_index_t& hash_index() const;
 
         // returned subset contains elements for each antigen, i.e. it may contain empty ref's
@@ -73,6 +75,7 @@ namespace acmacs::seqdb::inline v3
         std::vector<SeqdbEntry> entries_;
         mutable seq_id_index_t seq_id_index_;
         mutable hi_name_index_t hi_name_index_;
+        mutable lab_id_index_t lab_id_index_;
         mutable hash_index_t hash_index_;
         mutable std::mutex index_access_; // acmacs-api is multi-threaded app
         mutable bool slaves_found_{false};
