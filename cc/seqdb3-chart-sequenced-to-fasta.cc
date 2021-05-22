@@ -34,7 +34,9 @@ int main(int argc, char* const argv[])
         size_t matched{0};
         for (size_t ag_no{0}; ag_no < antigens->size(); ++ag_no) {
             if (!subset[ag_no].empty()) {
-                fmt::format_to(out, ">{}\n{}\n", antigens->at(ag_no)->name_full(), *opt.nuc ? subset[ag_no].nuc_aligned(seqdb) : subset[ag_no].aa_aligned(seqdb));
+                const auto seq = *opt.nuc ? subset[ag_no].nuc_aligned(seqdb) : subset[ag_no].aa_aligned(seqdb);
+                if (!seq.empty())
+                    fmt::format_to(out, ">{}\n{}\n", antigens->at(ag_no)->name_full(), seq);
                 ++matched;
             }
         }
