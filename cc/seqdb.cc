@@ -548,6 +548,8 @@ void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
             if (ref) {
                 const auto& seq = ref.seq().with_sequence(*this);
                 auto& antigen_serum = antigens_sera.at(no);
+                antigen_serum.sequence_aa(seq.aa_aligned_master());
+                antigen_serum.sequence_nuc(seq.nuc_aligned_master());
                 if (!seq.clades.empty()) {
                     for (const auto& clade : seq.clades)
                         antigen_serum.add_clade(std::string{clade});
