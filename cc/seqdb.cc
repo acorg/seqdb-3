@@ -492,7 +492,10 @@ template <typename AgSr> acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::mat
         else
             result.refs_.emplace_back();
     }
-    AD_INFO("antigens from chart have sequences in seqdb: {}", num_matched);
+    if constexpr (std::is_same_v<AgSr, acmacs::chart::Antigens> || std::is_same_v<AgSr, acmacs::chart::AntigensModify>)
+        AD_INFO("antigens from chart have sequences in seqdb: {}", num_matched);
+    else
+        AD_INFO("sera from chart have sequences in seqdb: {}", num_matched);
 
     return result;
 
