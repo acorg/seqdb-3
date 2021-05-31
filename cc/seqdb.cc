@@ -58,6 +58,7 @@ const acmacs::seqdb::v3::Seqdb& acmacs::seqdb::v3::Seqdb::get()
 
 acmacs::seqdb::v3::Seqdb::Seqdb(std::string_view filename)
 {
+    // AD_DEBUG("loading seqdb from {}", filename);
     try {
         json_text_ = static_cast<std::string>(acmacs::file::read(filename));
         parse(json_text_, entries_);
@@ -544,7 +545,16 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap) const
+void acmacs::seqdb::v3::populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap)
+{
+    if (eiap == even_if_already_popuplated::yes || !chart.has_sequences())
+        get().populate(chart);
+
+} // acmacs::seqdb::v3::populate
+
+// ----------------------------------------------------------------------
+
+void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
 {
     const auto populate_ag_sr = [this, &chart]<typename AgSr>(AgSr& antigens_sera) {
         acmacs::enumerate(match(antigens_sera, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto no, const auto& ref) {
@@ -575,10 +585,8 @@ void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart, even_
         });
     };
 
-    if (eiap == even_if_already_popuplated::yes || !chart.has_sequences()) {
-        populate_ag_sr(chart.antigens_modify());
-        populate_ag_sr(chart.sera_modify());
-    }
+    populate_ag_sr(chart.antigens_modify());
+    populate_ag_sr(chart.sera_modify());
 
 } // acmacs::seqdb::v3::Seqdb::populate
 

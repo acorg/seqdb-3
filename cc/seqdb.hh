@@ -60,7 +60,7 @@ namespace acmacs::seqdb::inline v3
         enum class clades_for_name_inclusive { no /* only common clades for matching sequences */, yes /* all possible clades */ };
         clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
 
-        void populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap = even_if_already_popuplated::no) const;
+        void populate(acmacs::chart::ChartModify& chart) const;
 
         // returns subset where each entry corresponds to the entry in seq_ids
         subset find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const;
@@ -94,6 +94,7 @@ namespace acmacs::seqdb::inline v3
 
     void setup(std::string_view filename);
     inline const Seqdb& get() { return Seqdb::get(); }
+    void populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap = even_if_already_popuplated::no);
 
     extern template subset Seqdb::match(const acmacs::chart::Antigens&, std::string_view) const;
     extern template subset Seqdb::match(const acmacs::chart::AntigensModify&, std::string_view) const;
