@@ -544,7 +544,7 @@ acmacs::seqdb::v3::Seqdb::clades_t acmacs::seqdb::v3::Seqdb::clades_for_name(std
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
+void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap) const
 {
     const auto populate_ag_sr = [this, &chart]<typename AgSr>(AgSr& antigens_sera) {
         acmacs::enumerate(match(antigens_sera, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto no, const auto& ref) {
@@ -575,8 +575,10 @@ void acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
         });
     };
 
-    populate_ag_sr(chart.antigens_modify());
-    populate_ag_sr(chart.sera_modify());
+    if (eiap == even_if_already_popuplated::yes || !chart.has_sequences()) {
+        populate_ag_sr(chart.antigens_modify());
+        populate_ag_sr(chart.sera_modify());
+    }
 
 } // acmacs::seqdb::v3::Seqdb::populate
 

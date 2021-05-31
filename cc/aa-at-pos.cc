@@ -86,6 +86,16 @@ acmacs::seqdb::amino_acid_at_pos1_eq_list_t acmacs::seqdb::v3::extract_aa_at_pos
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::amino_acid_at_pos1_eq_list_t acmacs::seqdb::v3::extract_aa_at_pos1_eq_list(const std::vector<std::string>& source)
+{
+    amino_acid_at_pos1_eq_list_t list(source.size());
+    std::transform(std::begin(source), std::end(source), std::begin(list), [](const auto& en) { return extract_aa_at_pos1_eq(en); });
+    return list;
+
+} // acmacs::seqdb::v3::extract_aa_at_pos1_eq_list
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::amino_acid_at_pos1_eq_list_t acmacs::seqdb::v3::extract_aa_at_pos1_eq_list(std::string_view source)
 {
     return extract_aa_nuc_at_pos1_eq_list<acmacs::seqdb::amino_acid_at_pos1_eq_list_t, 2, 4>(source);
@@ -113,6 +123,16 @@ acmacs::seqdb::nucleotide_at_pos1_eq_list_t acmacs::seqdb::v3::extract_nuc_at_po
 acmacs::seqdb::nucleotide_at_pos1_eq_list_t acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list(std::string_view source) // space or comma separated list, e.g. 1703A 384C 618C !1010G"
 {
     return extract_aa_nuc_at_pos1_eq_list<acmacs::seqdb::nucleotide_at_pos1_eq_list_t, 2, 5>(source);
+
+} // acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::nucleotide_at_pos1_eq_list_t acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list(const std::vector<std::string>& source)
+{
+    nucleotide_at_pos1_eq_list_t list(source.size());
+    std::transform(std::begin(source), std::end(source), std::begin(list), [](const auto& en) { return extract_nuc_at_pos1_eq(en); });
+    return list;
 
 } // acmacs::seqdb::v3::extract_nuc_at_pos1_eq_list
 

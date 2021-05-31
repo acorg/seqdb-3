@@ -21,6 +21,8 @@ namespace acmacs::seqdb::inline v3
     struct ref;
     class subset;
 
+    enum class even_if_already_popuplated { no, yes };
+
     using seq_id_index_t = map_with_duplicating_keys_t<seq_id_t, ref>; // duplicating seq_ids without hash present (for backward compatibility)
     using hi_name_index_t = map_with_unique_keys_t<std::string_view, ref>;
     using lab_id_index_t = map_with_duplicating_keys_t<std::string, ref>;
@@ -58,7 +60,7 @@ namespace acmacs::seqdb::inline v3
         enum class clades_for_name_inclusive { no /* only common clades for matching sequences */, yes /* all possible clades */ };
         clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
 
-        void populate(acmacs::chart::ChartModify& chart) const;
+        void populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap = even_if_already_popuplated::no) const;
 
         // returns subset where each entry corresponds to the entry in seq_ids
         subset find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const;
