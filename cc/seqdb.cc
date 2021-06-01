@@ -69,7 +69,7 @@ acmacs::seqdb::v3::Seqdb::Seqdb(std::string_view filename)
         std::exit(99);
     }
     catch (std::exception& err) {
-        fmt::print(stderr, "WARNING: seqdb not loaded: {}\n", err);
+        AD_WARNING("seqdb not loaded: {}", err);
         json_text_.clear();
         entries_.clear();
     }
@@ -249,7 +249,7 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name_hash(std::str
             }
         }
         if (!ref_found)
-            fmt::print(stderr, "WARNING: Seqdb::select_by_name_hash: name difference for hash {}, no \"{}\"\n", hash, name);
+            AD_WARNING("Seqdb::select_by_name_hash: name difference for hash {}, no \"{}\"", hash, name);
     }
     // else
     //     fmt::print(stderr, "DEBUG: select_by_name_hash {} {} -> NOT FOUND\n", name, hash);

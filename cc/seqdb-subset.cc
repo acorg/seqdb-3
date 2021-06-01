@@ -761,29 +761,32 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_json_sequences(std:
 std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const
 {
     const auto nf = ::string::replace(::string::replace(name_format, "\\t", "\t"), "\\n", "\n");
-    return fmt::format(nf,
-                       fmt::arg("seq_id", entry.seq_id()),
-                       fmt::arg("full_name", entry.full_name()),
-                       fmt::arg("hi_name_or_full_name", entry.hi_name_or_full_name()),
-                       fmt::arg("hi_names", entry.seq().hi_names),
-                       fmt::arg("hi_name", !entry.seq().hi_names.empty() ? entry.seq().hi_names.front() : std::string_view{}),
-                       fmt::arg("lineage", entry.entry->lineage),
-                       fmt::arg("name", entry.entry->name),
-                       fmt::arg("date", entry.entry->date()),
-                       fmt::arg("dates", entry.entry->dates),
-                       fmt::arg("lab_id", entry.seq().lab_id()),
-                       fmt::arg("passage", entry.seq().passage()),
-                       fmt::arg("clades", entry.seq().with_sequence(seqdb).clades),
-                       fmt::arg("lab", entry.seq().lab()),
-                       fmt::arg("country", entry.entry->country),
-                       fmt::arg("continent", entry.entry->continent),
-                       fmt::arg("group_no", entry.group_no ? fmt::format("group:{}", entry.group_no) : std::string{}),
-                       fmt::arg("hamming_distance", entry.hamming_distance),
-                       fmt::arg("nuc_length", entry.seq().nuc_aligned_length_master()),
-                       fmt::arg("aa_length", entry.seq().aa_aligned_length_master()),
-                       fmt::arg("gisaid_accession_numbers", acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.isolate_ids)),
-                       fmt::arg("ncbi_accession_numbers", acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.sample_ids_by_sample_provider))
-                       );
+    return fmt::substitute(nf,                                                                                                                                                                  //
+                           std::pair{"seq_id", [&entry]() { return entry.seq_id(); }},                                                                                                          //
+                           std::pair{"full_name", [&entry]() { return entry.full_name(); }},                                                                                                    //
+                           std::pair{"hi_name_or_full_name", [&entry]() { return entry.hi_name_or_full_name(); }},                                                                              //
+                           std::pair{"hi_names", entry.seq().hi_names},                                                                                                                         //
+                           std::pair{"hi_name", [&entry]() { return !entry.seq().hi_names.empty() ? entry.seq().hi_names.front() : std::string_view{}; }},                                      //
+                           std::pair{"lineage", entry.entry->lineage},                                                                                                                          //
+                           std::pair{"name", entry.entry->name},                                                                                                                                //
+                           std::pair{"date", entry.entry->date()},                                                                                                                              //
+                           std::pair{"dates", entry.entry->dates},                                                                                                                              //
+                           std::pair{"lab_id", [&entry]() { return entry.seq().lab_id(); }},                                                                                                    //
+                           std::pair{"passage", [&entry]() { return entry.seq().passage(); }},                                                                                                  //
+                           std::pair{"clades", [&entry, &seqdb]() { return entry.seq().with_sequence(seqdb).clades; }},                                                                         //
+                           std::pair{"lab", [&entry]() { return entry.seq().lab(); }},                                                                                                          //
+                           std::pair{"country", entry.entry->country},                                                                                                                          //
+                           std::pair{"continent", entry.entry->continent},                                                                                                                      //
+                           std::pair{"group_no", [&entry]() { return entry.group_no ? fmt::format("group:{}", entry.group_no) : std::string{}; }},                                              //
+                           std::pair{"hamming_distance", entry.hamming_distance},                                                                                                               //
+                           std::pair{"nuc_length", [&entry, &seqdb]() { return entry.nuc_aligned_length(seqdb); }},                                                                             //
+                           std::pair{"aa_length", [&entry, &seqdb]() { return entry.aa_aligned_length(seqdb); }},                                                                               //
+                           std::pair{"gisaid_accession_numbers", [&entry]() { return acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.isolate_ids); }},                 //
+                           std::pair{"ncbi_accession_numbers", [&entry]() { return acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.sample_ids_by_sample_provider); }}, //
+
+                           std::pair{"nuc", [&entry, &seqdb]() { return entry.nuc_aligned(seqdb); }}, //
+                           std::pair{"aa", [&entry, &seqdb]() { return entry.aa_aligned(seqdb); }}    //
+    );
 
 } // acmacs::seqdb::v3::subset::make_name
 
