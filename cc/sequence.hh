@@ -17,6 +17,8 @@ namespace acmacs::seqdb::inline v3
         constexpr pos1_t(pos0_t pos0);
     };
 
+    constexpr const pos1_t NoPos1{static_cast<size_t>(-1)};
+
     struct pos0_t : public named_size_t<struct seqdb_pos0_tag_t>
     {
         using named_size_t<struct seqdb_pos0_tag_t>::named_size_t;
@@ -27,6 +29,8 @@ namespace acmacs::seqdb::inline v3
         constexpr pos0_t aa_to_nuc() const { return pos0_t{get() * 3}; }
         constexpr size_t nuc_offset() const { return get() % 3; }
     };
+
+    constexpr const pos0_t NoPos0{static_cast<size_t>(-1)};
 
     constexpr inline pos1_t::pos1_t(pos0_t pos0) : named_size_t<struct seqdb_pos1_tag_t>{*pos0 + 1} {}
 
@@ -41,9 +45,9 @@ namespace acmacs::seqdb::inline v3
 
     // --------------------------------------------------
 
-    struct sequence_aligned_t : public named_string_t<struct seqdb_sequence_aligned_ref_tag_t>
+    struct sequence_aligned_t : public named_string_t<struct seqdb_sequence_aligned_tag_t>
     {
-        using base = named_string_t<struct seqdb_sequence_aligned_ref_tag_t>;
+        using base = named_string_t<struct seqdb_sequence_aligned_tag_t>;
         using base::named_string_t;
         /*constexpr*/ char at(pos0_t pos0) const noexcept { return pos0 < size() ? operator[](*pos0) : ' '; }
         /*constexpr*/ pos0_t size() const noexcept { return pos0_t{base::size()}; }
@@ -99,6 +103,56 @@ template <> struct fmt::formatter<acmacs::seqdb::pos1_t> : fmt::formatter<size_t
 
 template <> struct fmt::formatter<acmacs::seqdb::pos0_t> : fmt::formatter<size_t> {
     template <typename FormatCtx> auto format(const acmacs::seqdb::pos0_t& pos0, FormatCtx& ctx) { return fmt::formatter<size_t>::format(pos0.get() + 1, ctx); }
+};
+
+// ----------------------------------------------------------------------
+
+// {} - whole sequence
+// {:193} - at 193
+// {:193:6} - at 193-198 (inclusive)
+template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_t>
+{
+    template <typename ParseContext> constexpr auto parse(ParseContext& ctx)
+    {
+        auto it = ctx.begin();
+        const auto get = [&it, &ctx]() -> size_t {
+            if (it == ctx.end() || *it != ':')
+                return 0;
+            ++it;
+            char* end;
+            const auto value = std::strtoul(&*it, &end, 10);
+            it = std::next(it, end - &*it);
+            return value;
+        };
+
+        first_ = acmacs::seqdb::pos1_t{get()};
+        len_ = get();
+        while (it != ctx.end() && *it != '}')
+            ++it;
+        return it;
+    }
+
+    template <typename FormatContext> auto format(const acmacs::seqdb::sequence_aligned_t& seq, FormatContext& ctx) { return _format(seq, ctx); }
+
+  protected:
+    template <typename Seq, typename FormatContext> auto _format(const Seq& seq, FormatContext& ctx)
+    {
+        if (first_ == acmacs::seqdb::pos1_t{0})
+            return format_to(ctx.out(), "{}", *seq);
+        else if (len_ == 0 || len_ == 1)
+            return format_to(ctx.out(), "{}", seq.at(first_));
+        else
+            return format_to(ctx.out(), "{}", seq->substr(*first_ - 1, len_));
+    }
+
+  private:
+    acmacs::seqdb::pos1_t first_{0};
+    size_t len_{0};
+};
+
+template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_ref_t> : public fmt::formatter<acmacs::seqdb::sequence_aligned_t>
+{
+    template <typename FormatContext> auto format(const acmacs::seqdb::sequence_aligned_ref_t& seq, FormatContext& ctx) { return _format(seq, ctx); }
 };
 
 // ----------------------------------------------------------------------
