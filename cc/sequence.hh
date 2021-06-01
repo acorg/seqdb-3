@@ -112,13 +112,14 @@ template <> struct fmt::formatter<acmacs::seqdb::pos0_t> : fmt::formatter<size_t
 // {:193:6} - at 193-198 (inclusive)
 template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_t>
 {
-    template <typename ParseContext> constexpr auto parse(ParseContext& ctx)
+    template <typename ParseContext> auto parse(ParseContext& ctx)
     {
         auto it = ctx.begin();
         const auto get = [&it, &ctx]() -> size_t {
-            if (it == ctx.end() || *it != ':')
+            if (it != ctx.end() && *it == ':')
+                ++it;
+            if (it == ctx.end() || *it == '}')
                 return 0;
-            ++it;
             char* end;
             const auto value = std::strtoul(&*it, &end, 10);
             it = std::next(it, end - &*it);
@@ -132,10 +133,7 @@ template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_t>
         return it;
     }
 
-    template <typename FormatContext> auto format(const acmacs::seqdb::sequence_aligned_t& seq, FormatContext& ctx) { return _format(seq, ctx); }
-
-  protected:
-    template <typename Seq, typename FormatContext> auto _format(const Seq& seq, FormatContext& ctx)
+    template <typename Seq, typename FormatContext> auto format(const Seq& seq, FormatContext& ctx)
     {
         if (first_ == acmacs::seqdb::pos1_t{0})
             return format_to(ctx.out(), "{}", *seq);
@@ -152,7 +150,6 @@ template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_t>
 
 template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_ref_t> : public fmt::formatter<acmacs::seqdb::sequence_aligned_t>
 {
-    template <typename FormatContext> auto format(const acmacs::seqdb::sequence_aligned_ref_t& seq, FormatContext& ctx) { return _format(seq, ctx); }
 };
 
 // ----------------------------------------------------------------------
