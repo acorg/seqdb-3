@@ -883,9 +883,11 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::subset::filter_by_indexes(const acm
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(const Seqdb& seqdb, std::string_view name_format, bool do_print)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::print(const Seqdb& seqdb, std::string_view name_format, std::string_view header, bool do_print)
 {
     if (do_print) {
+        if (!header.empty())
+            fmt::print("{}\n", header);
         for (const auto& ref : *this)
             fmt::print("{}\n", make_name(seqdb, name_format, ref));
     }

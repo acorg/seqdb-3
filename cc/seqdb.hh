@@ -380,7 +380,7 @@ namespace acmacs::seqdb::inline v3
         subset& sort(sorting srt);
         subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
         subset& export_json_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
-        subset& print(const Seqdb& seqdb, std::string_view name_format, bool do_print = true);
+        subset& print(const Seqdb& seqdb, std::string_view name_format, std::string_view header = {}, bool do_print = true);
         subset& report_stat(const Seqdb& seqdb, bool do_report = true);
         subset& report_stat_month_region(bool do_report = true);
         subset& report_aa_at(const Seqdb& seqdb, const pos1_list_t& pos1_list);
