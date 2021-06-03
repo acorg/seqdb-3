@@ -58,14 +58,13 @@ const acmacs::seqdb::v3::Seqdb& acmacs::seqdb::v3::Seqdb::get()
 
 acmacs::seqdb::v3::Seqdb::Seqdb(std::string_view filename)
 {
-    // AD_DEBUG("loading seqdb from {}", filename);
     try {
         json_text_ = static_cast<std::string>(acmacs::file::read(filename));
         parse(json_text_, entries_);
         find_slaves();
     }
     catch (in_json::error& err) {
-        fmt::print(stderr, "{}:{}:{}: error: {}\n", filename, err.line_no, err.column_no, err.message);
+        AD_ERROR("{}:{}:{}: error: {}", filename, err.line_no, err.column_no, err.message);
         std::exit(99);
     }
     catch (std::exception& err) {
