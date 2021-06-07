@@ -242,7 +242,7 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_name_hash(std::str
         bool ref_found{false};
         for (; found_first != found_last; ++found_first) {
             if (found_first->second.entry->name == name) {
-                ss.refs_.push_back(found_first->second);
+                ss.append(found_first->second);
                 ref_found = true;
                 // fmt::print(stderr, "DEBUG: select_by_name_hash {} {} -> {}\n", name, hash, found_first->second.full_name());
             }

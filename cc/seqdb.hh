@@ -387,10 +387,16 @@ namespace acmacs::seqdb::inline v3
         subset& report_aa_at(const Seqdb& seqdb, const pos1_list_t& pos1_list);
         subset& report_hamming_distance(bool do_report);
 
-        subset& append(const subset& another);
         subset& append(const ref& seq)
         {
-            refs_.push_back(seq);
+            if (std::find_if(std::begin(refs_), std::end(refs_), [&seq](const auto& en) { return en.entry == seq.entry && en.seq_index == seq.seq_index; }) == std::end(refs_))
+                refs_.push_back(seq);
+            return *this;
+        }
+
+        subset& append(const subset& another) {
+            for (const auto& en : another)
+                append(en);
             return *this;
         }
 

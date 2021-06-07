@@ -861,15 +861,6 @@ std::string acmacs::seqdb::v3::subset::export_json(const collected_t& entries, c
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::append(const subset& another)
-{
-    std::copy(std::begin(another), std::end(another), std::back_inserter(refs_));
-    return *this;
-
-} // acmacs::seqdb::v3::subset::append
-
-// ----------------------------------------------------------------------
-
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::subset::filter_by_indexes(const acmacs::chart::PointIndexList& indexes, enum matched_only matched_only) const
 {
     subset result;
