@@ -42,6 +42,7 @@ namespace acmacs::seqdb::inline v3
         subset select_by_name(const std::vector<std::string_view>& names) const;
         subset select_by_accession_number(const std::vector<std::string_view>& accession_numbers) const;
         subset select_by_regex(std::string_view re) const;
+        subset select_by_lab_ids(const chart::LabIds& lab_ids) const;
         subset select_slaves() const;
         ref find_hi_name(std::string_view full_name) const;
         const seq_id_index_t& seq_id_index() const;

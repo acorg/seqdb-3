@@ -274,6 +274,20 @@ acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_regex(std::string_
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_by_lab_ids(const chart::LabIds& lab_ids) const
+{
+    subset ss;
+    for (const auto& lab_id : lab_ids) {
+        const auto [first, last] = lab_id_index().find(lab_id);
+        for (auto it = first; it != last; ++it)
+            ss.append(it->second);
+    }
+    return ss;
+
+} // acmacs::seqdb::v3::Seqdb::select_by_lab_ids
+
+// ----------------------------------------------------------------------
+
 acmacs::seqdb::v3::subset acmacs::seqdb::v3::Seqdb::select_slaves() const
 {
     subset ss;
