@@ -718,10 +718,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::export_sequences(std::stri
         }
 
         ranges::for_each(to_export, [deletion_report_threshold = options.e_deletion_report_threshold](auto& en) {
-            const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; }));
-            const auto dels_at_the_end = en.sequence.back() == '-' || en.sequence.back() == 'X';
-            if (dels_at_the_end || dels > deletion_report_threshold)
-                AD_WARNING("{}: {} deletions or unknown AAs or deletions at the end", en.seq_id, dels);
+            if (const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; })); dels > deletion_report_threshold)
+                AD_WARNING("{}: {} deletions or unknown AAs, seq length: {}\n{}", en.seq_id, dels, en.sequence.size(), en.sequence);
+            if (en.sequence.back() == '-' || en.sequence.back() == 'X')
+                AD_WARNING("{}: deletions at the end, seq length: {}\n{}", en.seq_id, en.sequence.size(), en.sequence);
         });
 
         AD_LOG(acmacs::log::fasta, "writing {} sequences to {}", to_export.size(), filename);
