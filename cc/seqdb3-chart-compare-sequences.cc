@@ -33,7 +33,7 @@ int main(int argc, char* const argv[])
         auto matched_seqdb = acmacs::seqdb::get().match(*chart->antigens(), chart->info()->virus_type(acmacs::chart::Info::Compute::Yes));
 
         const auto nuc_aa{opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa};
-        acmacs::seqdb::v3::subsets_to_compare_t subsets_to_compare{nuc_aa};
+        acmacs::seqdb::subsets_to_compare_t<acmacs::seqdb::subset_to_compare_t> subsets_to_compare{nuc_aa};
         for (const auto& group_desc : opt.groups) {
             const auto fields{acmacs::string::split(group_desc)};
             auto& subset = subsets_to_compare.subsets.emplace_back(fields[0]).subset;

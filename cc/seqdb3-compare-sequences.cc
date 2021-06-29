@@ -29,7 +29,7 @@ int main(int argc, char* const argv[])
         const auto& seqdb = acmacs::seqdb::get();
 
         const auto nuc_aa{opt.nuc ? acmacs::seqdb::compare::nuc : acmacs::seqdb::compare::aa};
-        acmacs::seqdb::v3::subsets_to_compare_t subsets_to_compare{nuc_aa};
+        acmacs::seqdb::v3::subsets_to_compare_t<acmacs::seqdb::subset_to_compare_t> subsets_to_compare{nuc_aa};
 
         acmacs::seqdb::subset* comparing_subset{nullptr};
         for (const auto& seq_id : *opt.seq_ids) {

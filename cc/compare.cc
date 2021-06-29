@@ -3,9 +3,7 @@
 #include "acmacs-base/range.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/color-amino-acid.hh"
-#include "acmacs-base/to-json.hh"
 #include "acmacs-base/string-compare.hh"
-#include "acmacs-base/read-file.hh"
 #include "acmacs-base/acmacsd.hh"
 #include "acmacs-base/color-amino-acid.hh"
 #include "acmacs-base/html.hh"
@@ -21,39 +19,25 @@ namespace local
         sequence_no_found() : std::runtime_error{"sequence not found in seqdb"} {}
     };
 
-    inline acmacs::seqdb::sequence_aligned_ref_t aligned(const acmacs::seqdb::ref& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
-    {
-        if (!ref)
-            throw sequence_no_found{};
-        switch (cmp_nuc_aa) {
-            case acmacs::seqdb::compare::nuc:
-                return ref.nuc_aligned(acmacs::seqdb::get());
-            case acmacs::seqdb::compare::aa:
-                return ref.aa_aligned(acmacs::seqdb::get());
-        }
-        AD_ERROR("unreachable code");
-        throw std::runtime_error{"unreachable code"}; // hey g++9
-    };
+    // inline acmacs::seqdb::sequence_aligned_ref_t aligned(const acmacs::seqdb::ref& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
+    // {
+    //     if (!ref)
+    //         throw sequence_no_found{};
+    //     switch (cmp_nuc_aa) {
+    //         case acmacs::seqdb::compare::nuc:
+    //             return ref.nuc_aligned(acmacs::seqdb::get());
+    //         case acmacs::seqdb::compare::aa:
+    //             return ref.aa_aligned(acmacs::seqdb::get());
+    //     }
+    //     AD_ERROR("unreachable code");
+    //     throw std::runtime_error{"unreachable code"}; // hey g++9
+    // };
 
 } // namespace local
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::subset_to_compare_t::make_counters(enum compare cmp_nuc_aa)
-{
-    for (const auto& ref : subset) {
-        const auto seq{local::aligned(ref, cmp_nuc_aa)};
-        if (counters.size() < *seq.size())
-            counters.resize(*seq.size());
-        for (pos0_t pos{0}; pos < seq.size(); ++pos)
-            counters[*pos].count(seq.at(pos));
-    }
-
-} // acmacs::seqdb::v3::subset_to_compare_t::make_counters
-
-// ----------------------------------------------------------------------
-
-std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_t::positions_to_report() const
+std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_base_t::positions_to_report() const
 {
     std::vector<pos0_t> positions;
     for (size_t pos{0}; pos < counters.size(); ++pos) {
@@ -63,22 +47,22 @@ std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subset_to_compare_t::p
     }
     return positions;
 
-} // acmacs::seqdb::v3::subset_to_compare_t::positions_to_report
+} // acmacs::seqdb::v3::subset_to_compare_base_t::positions_to_report
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subset_to_compare_t::most_frequent(const std::vector<pos0_t>& positions) const
+std::string acmacs::seqdb::v3::subset_to_compare_base_t::most_frequent(const std::vector<pos0_t>& positions) const
 {
     std::string result(positions.size(), '/');
     for (size_t pp{0}; pp < positions.size(); ++pp)
         result[pp] = counters[*positions[pp]].max().first;
     return result;
 
-} // acmacs::seqdb::v3::subset_to_compare_t::most_frequent
+} // acmacs::seqdb::v3::subset_to_compare_base_t::most_frequent
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent) const
+std::string acmacs::seqdb::v3::subset_to_compare_base_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent) const
 {
     const auto num_rows{max_counter_size()};
     fmt::memory_buffer output;
@@ -104,11 +88,11 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::ve
     }
     return fmt::to_string(output);
 
-} // acmacs::seqdb::v3::subset_to_compare_t::format_summary
+} // acmacs::seqdb::v3::subset_to_compare_base_t::format_summary
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent, double threshold) const
+std::string acmacs::seqdb::v3::subset_to_compare_base_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent, double threshold) const
 {
     fmt::memory_buffer output;
     fmt::format_to(output, "{}{:{}s}", prefix, name, name_width);
@@ -129,7 +113,21 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_summary(const std::ve
     fmt::format_to(output, "\n");
     return fmt::to_string(output);
 
-} // acmacs::seqdb::v3::subset_to_compare_t::format_summary
+} // acmacs::seqdb::v3::subset_to_compare_base_t::format_summary
+
+// ======================================================================
+
+void acmacs::seqdb::v3::subset_to_compare_t::make_counters(enum compare cmp_nuc_aa)
+{
+    for (const auto& ref : subset) {
+        const auto seq{aligned(ref, cmp_nuc_aa)};
+        if (counters.size() < *seq.size())
+            counters.resize(*seq.size());
+        for (pos0_t pos{0}; pos < seq.size(); ++pos)
+            counters[*pos].count(seq.at(pos));
+    }
+
+} // acmacs::seqdb::v3::subset_to_compare_t::make_counters
 
 // ----------------------------------------------------------------------
 
@@ -145,67 +143,124 @@ std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent
 
 } // acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids
 
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::sequence_aligned_ref_t acmacs::seqdb::v3::subset_to_compare_t::aligned(const acmacs::seqdb::ref& ref, enum acmacs::seqdb::compare cmp_nuc_aa)
+{
+    if (!ref)
+        throw local::sequence_no_found{};
+    switch (cmp_nuc_aa) {
+        case acmacs::seqdb::compare::nuc:
+            return ref.nuc_aligned(acmacs::seqdb::get());
+        case acmacs::seqdb::compare::aa:
+            return ref.aa_aligned(acmacs::seqdb::get());
+    }
+    AD_ERROR("unreachable code");
+    throw std::runtime_error{"unreachable code"}; // hey g++9
+
+} // acmacs::seqdb::v3::subset_to_compare_t::aligned
+
 // ======================================================================
 
-std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report() const
+void acmacs::seqdb::v3::subset_to_compare_selected_t::make_counters(enum compare cmp_nuc_aa)
 {
-    subset_to_compare_t::counters_t merged_counters; // (subsets.front().counters.size());
-    for (const auto& ssc : subsets) {
-        if (!ssc.subset.empty()) {
-            if (merged_counters.size() < ssc.counters.size())
-                merged_counters.resize(ssc.counters.size());
-            for (size_t pos{0}; pos < ssc.counters.size(); ++pos)
-                merged_counters[pos] = merge_CounterCharSome(merged_counters[pos], ssc.counters[pos]);
-        }
-        else
-            AD_WARNING("subset empty: {}", ssc.name);
+    for (const auto [ag_no, ag] : selected) {
+        acmacs::seqdb::sequence_aligned_t seq{cmp_nuc_aa == acmacs::seqdb::compare::nuc ? ag->sequence_nuc() : ag->sequence_aa()};
+        if (counters.size() < *seq.size())
+            counters.resize(*seq.size());
+        for (pos0_t pos{0}; pos < seq.size(); ++pos)
+            counters[*pos].count(seq.at(pos));
     }
 
-    std::vector<pos0_t> positions;
-    for (size_t pos{0}; pos < merged_counters.size(); ++pos) {
-        if (merged_counters[pos].size() > 1)
-            positions.push_back(pos0_t{pos});
-    }
-    return positions;
-
-} // acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report
+} // acmacs::seqdb::v3::subset_to_compare_selected_t::make_counters
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t indent, size_t column_width, double threshold) const
+std::string acmacs::seqdb::v3::subset_to_compare_selected_t::format_seq_ids(size_t indent) const
 {
-    const std::string prefix(indent, ' ');
-    const auto name_width{max_name()};
-    const auto positions{positions_to_report()};
     fmt::memory_buffer output;
-    const auto most_frequent{subsets.front().most_frequent(positions)};
-    // fmt::format_to(output, "{}\n\n", most_frequent);
-    fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
-    for (const auto pos : positions)
-        fmt::format_to(output, "{:^{}d}", pos, column_width);
-    fmt::format_to(output, "\n");
-    bool first_group{true};
-    for (const auto& ssc : subsets) {
-        if (threshold > 0.0)
-            fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent, threshold));
-        else
-            fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
-        first_group = false;
-    }
+    fmt::format_to(output, "{:{}c}{}\n", ' ', indent, name);
+    for (const auto [ag_no, ag] : selected)
+        fmt::format_to(output, "{:{}c}{}\n", ' ', indent + 2, ag->name_full());
     return fmt::to_string(output);
 
-} // acmacs::seqdb::v3::subsets_to_compare_t::format_summary
+} // acmacs::seqdb::v3::subset_to_compare_selected_tt::format_seq_ids
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids(size_t indent) const
+acmacs::seqdb::sequence_aligned_ref_t acmacs::seqdb::v3::subset_to_compare_selected_t::aligned(const acmacs::chart::Antigen& antigen, enum acmacs::seqdb::compare cmp_nuc_aa)
 {
-    fmt::memory_buffer output;
-    for (const auto& ssc : subsets)
-        fmt::format_to(output, "{}\n", ssc.format_seq_ids(indent));
-    return fmt::to_string(output);
+    switch (cmp_nuc_aa) {
+        case acmacs::seqdb::compare::nuc:
+            return sequence_aligned_ref_t{antigen.sequence_nuc()};
+        case acmacs::seqdb::compare::aa:
+            return sequence_aligned_ref_t{antigen.sequence_aa()};
+    }
+    throw std::runtime_error{"unreachable code"}; // hey g++9
 
-} // acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids
+} // acmacs::seqdb::v3::subset_to_compare_selected_t::aligned
+
+// ======================================================================
+
+// std::vector<acmacs::seqdb::v3::pos0_t> acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report() const
+// {
+//     subset_to_compare_base_t::counters_t merged_counters; // (subsets.front().counters.size());
+//     for (const auto& ssc : subsets) {
+//         if (!ssc.subset.empty()) {
+//             if (merged_counters.size() < ssc.counters.size())
+//                 merged_counters.resize(ssc.counters.size());
+//             for (size_t pos{0}; pos < ssc.counters.size(); ++pos)
+//                 merged_counters[pos] = merge_CounterCharSome(merged_counters[pos], ssc.counters[pos]);
+//         }
+//         else
+//             AD_WARNING("subset empty: {}", ssc.name);
+//     }
+
+//     std::vector<pos0_t> positions;
+//     for (size_t pos{0}; pos < merged_counters.size(); ++pos) {
+//         if (merged_counters[pos].size() > 1)
+//             positions.push_back(pos0_t{pos});
+//     }
+//     return positions;
+
+// } // acmacs::seqdb::v3::subsets_to_compare_t::positions_to_report
+
+// ----------------------------------------------------------------------
+
+// std::string acmacs::seqdb::v3::subsets_to_compare_t::format_summary(size_t indent, size_t column_width, double threshold) const
+// {
+//     const std::string prefix(indent, ' ');
+//     const auto name_width{max_name()};
+//     const auto positions{positions_to_report()};
+//     fmt::memory_buffer output;
+//     const auto most_frequent{subsets.front().most_frequent(positions)};
+//     // fmt::format_to(output, "{}\n\n", most_frequent);
+//     fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
+//     for (const auto pos : positions)
+//         fmt::format_to(output, "{:^{}d}", pos, column_width);
+//     fmt::format_to(output, "\n");
+//     bool first_group{true};
+//     for (const auto& ssc : subsets) {
+//         if (threshold > 0.0)
+//             fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent, threshold));
+//         else
+//             fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
+//         first_group = false;
+//     }
+//     return fmt::to_string(output);
+
+// } // acmacs::seqdb::v3::subsets_to_compare_t::format_summary
+
+// ----------------------------------------------------------------------
+
+// std::string acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids(size_t indent) const
+// {
+//     fmt::memory_buffer output;
+//     for (const auto& ssc : subsets)
+//         fmt::format_to(output, "{}\n", ssc.format_seq_ids(indent));
+//     return fmt::to_string(output);
+
+// } // acmacs::seqdb::v3::subsets_to_compare_t::format_seq_ids
 
 // ----------------------------------------------------------------------
 
@@ -224,37 +279,37 @@ template <> inline to_json::val::val(acmacs::seqdb::sequence_aligned_ref_t&& seq
     push_back(fmt::format("\"{}\"", seq));
 }
 
-std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) const
-{
-    using namespace to_json;
-    using namespace std::string_view_literals;
+// std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) const
+// {
+//     using namespace to_json;
+//     using namespace std::string_view_literals;
 
-    const auto positions{positions_to_report()};
+//     const auto positions{positions_to_report()};
 
-    const auto make_sequence = [this](const seqdb::ref& ref) { return object{key_val{"id"sv, ref.seq_id()}, key_val{"seq"sv, local::aligned(ref, cmp_nuc_aa)}}; };
+//     const auto make_sequence = [this](const seqdb::ref& ref) { return object{key_val{"id"sv, ref.seq_id()}, key_val{"seq"sv, local::aligned(ref, cmp_nuc_aa)}}; };
 
-    const auto make_group_pos = [&positions](const subset_to_compare_t& group) {
-        const auto make_aa_counter = [](const auto& aap) { return object{key_val{"a"sv, std::string(1, aap.first)}, key_val{"c", aap.second}}; };
-        object result;
-        for (const auto pos : positions) {
-            const auto aa_pairs{group.counters[*pos].pairs(subset_to_compare_t::counter_t::sorted::yes)};
-            result << key_val{fmt::format("{}", pos), array{std::begin(aa_pairs), std::end(aa_pairs), make_aa_counter, array::compact_output::yes}};
-        }
-        return result;
-    };
+//     const auto make_group_pos = [&positions](const subset_to_compare_base_t& group) {
+//         const auto make_aa_counter = [](const auto& aap) { return object{key_val{"a"sv, std::string(1, aap.first)}, key_val{"c", aap.second}}; };
+//         object result;
+//         for (const auto pos : positions) {
+//             const auto aa_pairs{group.counters[*pos].pairs(subset_to_compare_base_t::counter_t::sorted::yes)};
+//             result << key_val{fmt::format("{}", pos), array{std::begin(aa_pairs), std::end(aa_pairs), make_aa_counter, array::compact_output::yes}};
+//         }
+//         return result;
+//     };
 
-    const auto make_group = [make_group_pos, make_sequence](const subset_to_compare_t& group) {
-        return object{
-            key_val{"name"sv, group.name},
-            key_val{"pos1"sv, make_group_pos(group)},
-            key_val{"seq"sv, array{std::begin(group.subset), std::end(group.subset), make_sequence}},
-        };
-    };
+//     const auto make_group = [make_group_pos, make_sequence](const subset_to_compare_t& group) {
+//         return object{
+//             key_val{"name"sv, group.name},
+//             key_val{"pos1"sv, make_group_pos(group)},
+//             key_val{"seq"sv, array{std::begin(group.subset), std::end(group.subset), make_sequence}},
+//         };
+//     };
 
-    const object data{key_val{"pos1"sv, array{std::begin(positions), std::end(positions), array::compact_output::yes}}, key_val{"groups"sv, array{std::begin(subsets), std::end(subsets), make_group}}};
-    return fmt::format(fmt::format("{{:{}}}", indent), data);
+//     const object data{key_val{"pos1"sv, array{std::begin(positions), std::end(positions), array::compact_output::yes}}, key_val{"groups"sv, array{std::begin(subsets), std::end(subsets), make_group}}};
+//     return fmt::format(fmt::format("{{:{}}}", indent), data);
 
-} // acmacs::seqdb::v3::subsets_to_compare_t::format_json
+// } // acmacs::seqdb::v3::subsets_to_compare_t::format_json
 
 // ----------------------------------------------------------------------
 
@@ -282,7 +337,7 @@ std::string acmacs::seqdb::v3::subsets_to_compare_t::format_json(size_t indent) 
 void acmacs::seqdb::v3::update_common(sequence_aligned_t& target, const subset& source, enum compare cmp_nuc_aa)
 {
     for (const auto& ref : source) {
-        const auto seq{local::aligned(ref, cmp_nuc_aa)};
+        const auto seq{subset_to_compare_t::aligned(ref, cmp_nuc_aa)};
         const auto end{target.size()};
         if (end < seq.size()) {
             target.resize(seq.size());
@@ -298,18 +353,9 @@ void acmacs::seqdb::v3::update_common(sequence_aligned_t& target, const subset& 
 
 // ----------------------------------------------------------------------
 
-void acmacs::seqdb::v3::compare_sequences_generate_html(std::string_view html_filename, const subsets_to_compare_t& data)
+void acmacs::seqdb::v3::detail::generate_html(std::string_view html_filename, std::string_view data_filename_name, std::string_view data_var_name)
 {
     using namespace std::string_view_literals;
-
-    const auto prefix{html_filename.substr(0, html_filename.size() - 5)};
-    const auto data_filename{fmt::format("{}.data.js", prefix)};
-    const auto data_var_name{fmt::format("compare_sequences_{}", ::string::replace(prefix, "/"sv, "_"sv, "-"sv, "_"sv))};
-    acmacs::file::write(data_filename, fmt::format("const {} =\n{}", data_var_name, data.format_json(2)));
-
-    std::string data_filename_name{data_filename};
-    if (const auto pos = std::string_view{data_filename}.find_last_of('/'); pos != std::string_view::npos)
-        data_filename_name.erase(0, pos + 1);
 
     const auto templates_dir{fmt::format("{}/share/templates/seqdb-3", acmacs::acmacsd_root())};
     acmacs::html::Generator html;
@@ -322,7 +368,33 @@ void acmacs::seqdb::v3::compare_sequences_generate_html(std::string_view html_fi
     html.add_to_body(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.body.html", templates_dir))));
     acmacs::file::write(html_filename, html.generate());
 
-} // acmacs::seqdb::v3::compare_sequences_generate_html
+} // acmacs::seqdb::v3::detail::generate_html
+
+// void acmacs::seqdb::v3::compare_sequences_generate_html(std::string_view html_filename, const subsets_to_compare_t& data)
+// {
+//     using namespace std::string_view_literals;
+
+//     const auto prefix{html_filename.substr(0, html_filename.size() - 5)};
+//     const auto data_filename{fmt::format("{}.data.js", prefix)};
+//     const auto data_var_name{fmt::format("compare_sequences_{}", ::string::replace(prefix, "/"sv, "_"sv, "-"sv, "_"sv))};
+//     acmacs::file::write(data_filename, fmt::format("const {} =\n{}", data_var_name, data.format_json(2)));
+
+//     std::string data_filename_name{data_filename};
+//     if (const auto pos = std::string_view{data_filename}.find_last_of('/'); pos != std::string_view::npos)
+//         data_filename_name.erase(0, pos + 1);
+
+//     const auto templates_dir{fmt::format("{}/share/templates/seqdb-3", acmacs::acmacsd_root())};
+//     acmacs::html::Generator html;
+//     html.title("Compare sequences"sv);
+//     html.add_css(acmacs::amino_acid_nucleotide_color_css());
+//     html.add_css(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.css", templates_dir))));
+//     html.add_script_link(data_filename_name);
+//     html.add_script(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.js", templates_dir))));
+//     html.add_script(fmt::format(R"(document.addEventListener("DOMContentLoaded", function() {{ compare_sequences({}); }});)", data_var_name));
+//     html.add_to_body(static_cast<std::string>(acmacs::file::read(fmt::format("{}/compare-sequences.body.html", templates_dir))));
+//     acmacs::file::write(html_filename, html.generate());
+
+// } // acmacs::seqdb::v3::compare_sequences_generate_html
 
 // ======================================================================
 // ======================================================================
