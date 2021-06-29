@@ -46,8 +46,10 @@ namespace acmacs::seqdb::inline v3
 
         auto begin() const { return subset.begin(); }
         auto end() const { return subset.end(); }
+        bool empty() const { return subset.empty(); }
 
-        static acmacs::seqdb::sequence_aligned_ref_t aligned(const acmacs::seqdb::ref& ref, enum acmacs::seqdb::compare cmp_nuc_aa);
+        static acmacs::seqdb::sequence_aligned_t aligned(const acmacs::seqdb::ref& ref, enum acmacs::seqdb::compare cmp_nuc_aa);
+        static std::string seq_id(const acmacs::seqdb::ref& ref) { return *ref.seq_id(); }
     };
 
     struct subset_to_compare_selected_t : public subset_to_compare_base_t
@@ -56,14 +58,21 @@ namespace acmacs::seqdb::inline v3
 
         using subset_to_compare_base_t::subset_to_compare_base_t;
         subset_to_compare_selected_t(std::string_view a_name, acmacs::chart::SelectedAntigensModify&& a_selected) : subset_to_compare_base_t{a_name}, selected{std::move(a_selected)} {}
+        subset_to_compare_selected_t(std::string_view a_name, const acmacs::chart::SelectedAntigensModify& a_selected) : subset_to_compare_base_t{a_name}, selected{a_selected} {}
 
         void make_counters(enum compare cmp_nuc_aa) override;
         std::string format_seq_ids(size_t indent) const;
 
         auto begin() const { return selected.begin(); }
         auto end() const { return selected.end(); }
+        bool empty() const { return selected.empty(); }
 
-        static acmacs::seqdb::sequence_aligned_ref_t aligned(const acmacs::chart::Antigen& antigen, enum acmacs::seqdb::compare cmp_nuc_aa);
+        static acmacs::seqdb::sequence_aligned_t aligned(const acmacs::chart::Antigen& antigen, enum acmacs::seqdb::compare cmp_nuc_aa);
+        static inline acmacs::seqdb::sequence_aligned_t aligned(const std::pair<size_t, std::shared_ptr<acmacs::chart::AntigenModify>>& antigen, enum acmacs::seqdb::compare cmp_nuc_aa)
+        {
+            return aligned(*antigen.second, cmp_nuc_aa);
+        }
+        static std::string seq_id(const std::pair<size_t, std::shared_ptr<acmacs::chart::AntigenModify>>& ref) { return ref.second->name_full(); }
     };
 
     // ----------------------------------------------------------------------
@@ -83,7 +92,7 @@ namespace acmacs::seqdb::inline v3
         {
             subset_to_compare_base_t::counters_t merged_counters; // (subsets.front().counters.size());
             for (const auto& ssc : subsets) {
-                if (!ssc.subset.empty()) {
+                if (!ssc.empty()) {
                     if (merged_counters.size() < ssc.counters.size())
                         merged_counters.resize(ssc.counters.size());
                     for (size_t pos{0}; pos < ssc.counters.size(); ++pos)
@@ -156,7 +165,7 @@ namespace acmacs::seqdb::inline v3
 
             const auto make_group = [this, make_group_pos](const Subset& group) {
                 const auto make_sequence = [this](const auto& ref) {
-                    return object{key_val{"id"sv, static_cast<std::string>(ref.seq_id())}, key_val{"seq"sv, static_cast<std::string>(Subset::aligned(ref, cmp_nuc_aa))}};
+                    return object{key_val{"id"sv, Subset::seq_id(ref)}, key_val{"seq"sv, fmt::format("{}", Subset::aligned(ref, cmp_nuc_aa))}};
                 };
                 return object{
                     key_val{"name"sv, group.name},                                      //
