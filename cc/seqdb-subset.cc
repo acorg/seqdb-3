@@ -716,10 +716,10 @@ std::pair<size_t, std::string> acmacs::seqdb::v3::subset::export_sequences(const
         ranges::for_each(to_export, [length = options.e_length](auto& en) { en.sequence.resize(length, '-'); });
     }
 
-    ranges::for_each(to_export, [deletion_report_threshold = options.e_deletion_report_threshold](auto& en) {
+    ranges::for_each(to_export, [deletion_report_threshold = options.e_deletion_report_threshold, report_deletions_at_the_end=options.e_report_deletions_at_the_end](auto& en) {
         if (const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; })); dels > deletion_report_threshold)
             AD_WARNING("{}: {} deletions or unknown AAs, seq length: {}\n{}", en.seq_id, dels, en.sequence.size(), en.sequence);
-        if (en.sequence.back() == '-' || en.sequence.back() == 'X')
+        if ((en.sequence.back() == '-' || en.sequence.back() == 'X') && report_deletions_at_the_end)
             AD_WARNING("{}: deletions at the end, seq length: {}\n{}", en.seq_id, en.sequence.size(), en.sequence);
     });
 

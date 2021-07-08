@@ -116,7 +116,8 @@ namespace acmacs::seqdb::inline v3
         most_common_length e_most_common_length{most_common_length::no};
         std::string e_name_format{"{seq_id}"};
         size_t e_length{0};     // truncate/extend all sequences to this length
-        size_t e_deletion_report_threshold{4}; // if sequence has this or more deletions, report the name. Deletions at the sequence end are always reported.
+        size_t e_deletion_report_threshold{4}; // if sequence has this or more deletions, report the name.
+        bool e_report_deletions_at_the_end{false};
 
         export_options& fasta(bool nucs)
         {
@@ -162,6 +163,11 @@ namespace acmacs::seqdb::inline v3
         {
             if (subtype == "B" && e_deletion_report_threshold < 9) // do not report 3-del mutatants
                 e_deletion_report_threshold = 9;
+            return *this;
+        }
+        export_options& report_deletions_at_the_end(bool report)
+        {
+            e_report_deletions_at_the_end = report;
             return *this;
         }
     };
