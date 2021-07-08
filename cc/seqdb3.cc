@@ -45,6 +45,7 @@ struct Options : public argv
     option<bool>      multiple_dates{*this, "multiple-dates"};
     option<str>       sort_by{*this, "sort", dflt{"none"}, desc{"none, name, -name, date, -date"}};
     option<bool>      remove_nuc_duplicates{*this, "remove-nuc-duplicates", desc{""}};
+    option<size_t>    remove_with_deletions{*this, dflt{0ul}, "remove-with-deletions", desc{"remove if number of deletions >= value, 0 - do not remove"}};
     option<bool>      remove_with_front_back_deletions{*this, "remove-with-front-back-deletions", desc{""}};
     option<bool>      keep_all_hi_matched{*this, "keep-all-hi", desc{"do NOT remove HI matched when removing duplicates (--remove-nuc-duplicates)"}};
     option<size_t>    output_size{*this, "output-size", dflt{4000ul}, desc{"Number of sequences to use from grouped by hamming distance."}};
@@ -183,7 +184,8 @@ int main(int argc, char* const argv[])
             .with_hi_name(opt.with_hi_name)
             .names_matching_regex(opt.name_regex)
             .exclude(opt.exclude)
-            .remove_with_front_back_deletions(seqdb, opt.remove_with_front_back_deletions, opt.length)
+            .remove_with_front_back_deletions(seqdb, opt.remove_with_front_back_deletions, opt.length) // opt.length = nuc_length
+            .remove_with_deletions(seqdb, *opt.remove_with_deletions > 0, opt.remove_with_deletions) // opt.length = nuc_length
             .nuc_hamming_distance_mean(opt.nuc_hamming_distance_mean_threshold, 1000)
             // .nuc_hamming_distance_to(opt.nuc_hamming_distance_threshold, opt.base_seq_id)
             .recent(opt.recent, opt.remove_nuc_duplicates ? acmacs::seqdb::subset::master_only::yes : acmacs::seqdb::subset::master_only::no)

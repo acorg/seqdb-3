@@ -453,14 +453,14 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::min_nuc_length(const Seqdb
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_with_front_back_deletions(const Seqdb& seqdb, bool remove, size_t length)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_with_front_back_deletions(const Seqdb& seqdb, bool remove, size_t nuc_length)
 {
     if (remove) {
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [length, &seqdb](const auto& en) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [nuc_length, &seqdb](const auto& en) {
             const auto nucs = en.nuc_aligned(seqdb);
             if (nucs.at(pos1_t{1}) == '-')
                 return true;
-            if (length > 0 && (nucs.size() < pos0_t{length} || nucs.at(pos1_t{length}) == '-'))
+            if (nuc_length > 0 && (nucs.size() < pos0_t{nuc_length} || nucs.at(pos1_t{nuc_length}) == '-'))
                 return true;    // too short or has deletion in the last nuc
             return false;
         }), std::end(refs_));
@@ -468,6 +468,19 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_with_front_back_del
     return *this;
 
 } // acmacs::seqdb::v3::subset::remove_with_front_back_deletions
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_with_deletions(const Seqdb& seqdb, bool remove, size_t threshold) // remove if number of deletions >= threshold
+{
+    if (remove) {
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [threshold, &seqdb](const auto& en) {
+            return static_cast<size_t>(ranges::count_if(*en.aa_aligned(seqdb), [](char aa) { return aa == '-'; })) >= threshold;
+        }), std::end(refs_));
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::remove_with_deletions
 
 // ----------------------------------------------------------------------
 
@@ -716,8 +729,8 @@ std::pair<size_t, std::string> acmacs::seqdb::v3::subset::export_sequences(const
         ranges::for_each(to_export, [length = options.e_length](auto& en) { en.sequence.resize(length, '-'); });
     }
 
-    ranges::for_each(to_export, [deletion_report_threshold = options.e_deletion_report_threshold, report_deletions_at_the_end=options.e_report_deletions_at_the_end](auto& en) {
-        if (const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [](char nuc_aa) { return nuc_aa == '-' || nuc_aa == 'X'; })); dels > deletion_report_threshold)
+    ranges::for_each(to_export, [deletion_report_threshold = options.e_deletion_report_threshold, report_deletions_at_the_end=options.e_report_deletions_at_the_end, nucs=options.e_format == export_options::format::fasta_nuc](auto& en) {
+        if (const auto dels = static_cast<size_t>(ranges::count_if(en.sequence, [nucs](char nuc_aa) { return nuc_aa == '-' || (nucs && nuc_aa == 'X'); })); dels > deletion_report_threshold)
             AD_WARNING("{}: {} deletions or unknown AAs, seq length: {}\n{}", en.seq_id, dels, en.sequence.size(), en.sequence);
         if ((en.sequence.back() == '-' || en.sequence.back() == 'X') && report_deletions_at_the_end)
             AD_WARNING("{}: deletions at the end, seq length: {}\n{}", en.seq_id, en.sequence.size(), en.sequence);
