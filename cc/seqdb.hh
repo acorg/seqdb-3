@@ -379,9 +379,10 @@ namespace acmacs::seqdb::inline v3
         subset& nuc_hamming_distance_to(size_t threshold, std::string_view seq_id);
         subset& nuc_hamming_distance_to_base(size_t threshold, bool do_filter = true);
         subset& sort(sorting srt);
-        subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
+        std::pair<size_t, std::string> export_sequences(const Seqdb& seqdb, const export_options& options) const; // returns {num_sequences, fasta_data}
+        subset& export_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options) const;
         subset& export_json_sequences(std::string_view filename, const Seqdb& seqdb, const export_options& options);
-        subset& print(const Seqdb& seqdb, std::string_view name_format, std::string_view header = {}, bool do_print = true);
+        subset& print(const Seqdb& seqdb, std::string_view name_format, std::string_view header = {}, bool do_print = true) const;
         subset& report_stat(const Seqdb& seqdb, bool do_report = true);
         subset& report_stat_month_region(bool do_report = true);
         subset& report_aa_at(const Seqdb& seqdb, const pos1_list_t& pos1_list);
@@ -445,8 +446,8 @@ namespace acmacs::seqdb::inline v3
         using collected_t = std::vector<collected_entry_t>;
 
         collected_t export_collect(const Seqdb& seqdb, const export_options& options) const;
-        std::string export_fasta(const collected_t& entries, const export_options& options);
-        std::string export_json(const collected_t& entries, const export_options& options);
+        std::string export_fasta(const collected_t& entries, const export_options& options) const;
+        std::string export_json(const collected_t& entries, const export_options& options) const;
         std::string make_name(const Seqdb& seqdb, std::string_view name_format, const ref& entry) const;
 
         friend class Seqdb;

@@ -135,7 +135,7 @@ int main(int argc, char* const argv[])
                 return acmacs::seqdb::subset::sorting::date_asc;
             if (desc == acmacs::lowercase{"-date"})
                 return acmacs::seqdb::subset::sorting::date_desc;
-            fmt::print(stderr, "WARNING: unrecognized soriting: {}\n", desc);
+            AD_WARNING("unrecognized soriting: {}", desc);
             return acmacs::seqdb::subset::sorting::name_asc;
         };
 
