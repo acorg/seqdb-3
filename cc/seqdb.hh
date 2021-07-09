@@ -287,6 +287,7 @@ namespace acmacs::seqdb::inline v3
         size_t seq_index;
         size_t group_no{0};         // for group_by_hamming_distance
         size_t hamming_distance{0}; // for group_by_hamming_distance and nuc_hamming_distance_to_base, printed using {hamming_distance}
+        bool marked_for_removal{false}; // py-seqdb remove_nuc_duplicates_by_aligned_truncated
 
         ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
         ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
@@ -335,17 +336,22 @@ namespace acmacs::seqdb::inline v3
     {
       public:
         using refs_t = std::vector<ref>;
+        using iterator = typename refs_t::iterator;
+        using const_iterator = typename refs_t::const_iterator;
+
         enum class sorting { none, name_asc, name_desc, date_asc, date_desc };
         enum class master_only { no, yes };
 
         subset() = default;
+        subset(iterator first, iterator last) : refs_{first, last} {} // copy of the part of another subset
+        subset(const_iterator first, const_iterator last) : refs_{first, last} {} // copy of the part of another subset
 
         auto empty() const { return refs_.empty(); }
         auto size() const { return refs_.size(); }
-        auto begin() const { return refs_.begin(); }
-        auto end() const { return refs_.end(); }
-        auto begin() { return refs_.begin(); }
-        auto end() { return refs_.end(); }
+        const_iterator begin() const { return refs_.begin(); }
+        const_iterator end() const { return refs_.end(); }
+        iterator begin() { return refs_.begin(); }
+        iterator end() { return refs_.end(); }
         const auto& operator[](size_t index) const { return refs_.at(index); }
         const auto& front() const { return refs_.front(); }
 
@@ -370,6 +376,7 @@ namespace acmacs::seqdb::inline v3
         subset& remove_empty(const Seqdb& seqdb, bool nuc);
         subset& remove_with_front_back_deletions(const Seqdb& seqdb, bool remove, size_t nuc_length);
         subset& remove_with_deletions(const Seqdb& seqdb, bool remove, size_t threshold); // remove if number of deletions >= threshold
+        subset& remove_marked(); // ref::marked_for_removal
         subset& with_hi_name(bool with_hi_name);
         subset& aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos);
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
@@ -411,6 +418,11 @@ namespace acmacs::seqdb::inline v3
         // returns new subset, this subset is not modified
         enum class matched_only { no, yes };
         subset filter_by_indexes(const acmacs::chart::PointIndexList& indexes, enum matched_only matched_only = matched_only::yes) const;
+
+        void sort_by_nuc_aligned_truncated(const Seqdb& seqdb, size_t truncate_at)
+        {
+            std::sort(std::begin(refs_), std::end(refs_), [&seqdb, truncate_at](const auto& e1, const auto& e2) { return e1.nuc_aligned(seqdb, truncate_at) < e2.nuc_aligned(seqdb, truncate_at); });
+        }
 
       private:
         refs_t refs_;

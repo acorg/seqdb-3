@@ -335,6 +335,17 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_empty(const Seqdb& 
 
 // ----------------------------------------------------------------------
 
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_marked() // ref::marked_for_removal
+{
+    const auto remove = [](const auto& ref) { return ref.marked_for_removal; };
+    const auto end = std::remove_if(std::begin(refs_), std::end(refs_), remove);
+    refs_.erase(end, std::end(refs_));
+    return *this;
+
+} // acmacs::seqdb::v3::subset::remove_marked
+
+// ----------------------------------------------------------------------
+
 // acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::remove_nuc_duplicates(const Seqdb& seqdb, bool do_remove, bool keep_hi_matched)
 // {
 //     if (do_remove) {
