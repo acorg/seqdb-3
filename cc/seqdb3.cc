@@ -59,8 +59,9 @@ struct Options : public argv
 
     option<size_t>    nuc_hamming_distance_mean_threshold{*this, "nuc-hamming-distance-mean-threshold", dflt{0ul}, desc{"Select only sequences having hamming distance to the sequence found by subset::nuc_hamming_distance_mean using 1000 most recent sequences."}};
     // option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
-    option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance."}};
+    option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance (subsseting 2019-07-23)."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
+    option<size_t>    hamming_bins{*this, "hamming-bins", dflt{0ul}, desc{"report hamming distance bins (arg is bin size, e.g. 100) for selected sequences, distances are calculated agains other sequences of the same subtype."}};
 
     // print
     option<str> name_format{
@@ -201,6 +202,7 @@ int main(int argc, char* const argv[])
             .report_stat(seqdb, !opt.no_stat && !opt.stat_month_region) // static_cast<bool>(opt.fasta))
             .report_stat_month_region(opt.stat_month_region)
             .report_aa_at(seqdb, aa_at_pos_report)
+            .report_hamming_bins(seqdb, opt.hamming_bins)
             .export_sequences(opt.fasta, seqdb,
                               acmacs::seqdb::export_options{}
                                   .fasta(opt.nucs)

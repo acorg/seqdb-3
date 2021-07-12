@@ -401,6 +401,7 @@ namespace acmacs::seqdb::inline v3
         subset& report_stat_month_region(bool do_report = true);
         subset& report_aa_at(const Seqdb& seqdb, const pos1_list_t& pos1_list);
         subset& report_hamming_distance(bool do_report);
+        subset& report_hamming_bins(const Seqdb& seqdb, size_t bin_size);
 
         subset& append(const ref& seq)
         {

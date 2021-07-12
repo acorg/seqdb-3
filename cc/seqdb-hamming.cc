@@ -298,6 +298,36 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
 } // acmacs::seqdb::v3::subset::subset_by_hamming_distance_random
 
 // ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_bins(const Seqdb& seqdb, size_t bin_size)
+{
+    if (bin_size > 0) {
+        for (const auto& ref : refs_) {
+            auto others = seqdb.all();
+            others.subtype(ref.entry->virus_type).host(ref.entry->host());
+            // keep non-zero distances only
+            size_t max_distance = 0;
+            others.refs_.erase(std::remove_if(std::next(std::begin(others)), std::end(others),
+                                              [&seqdb, &max_distance, base_seq = ref.nuc_aligned(seqdb)](auto& en) {
+                                            en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), base_seq, hamming_distance_by_shortest::yes);
+                                            max_distance = std::max(max_distance, en.hamming_distance);
+                                            return en.hamming_distance == 0;
+                                        }),
+                         std::end(others));
+            const size_t number_of_bins = max_distance / bin_size + ((max_distance % bin_size) ? 1 : 0);
+            std::vector<size_t> bins(number_of_bins, 0ul);
+            for (const auto& another : others)
+                ++bins[another.hamming_distance / bin_size];
+            AD_INFO("{} max hamming distance: {}  others: {}", ref.seq_id(), max_distance, others.size());
+            for (const auto [bin_no, bin] : acmacs::enumerate(bins))
+                AD_PRINT("  {:4d} - {:4d}  {:5d}", bin_no * bin_size, (bin_no + 1) * bin_size - 1, bin);
+        }
+    }
+    return *this;
+
+} // acmacs::seqdb::v3::subset::report_hamming_bins
+
+// ----------------------------------------------------------------------
 /// Local Variables:
 /// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
 /// End:
