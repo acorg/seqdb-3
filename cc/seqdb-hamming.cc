@@ -1,5 +1,6 @@
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/enumerate.hh"
+#include "acmacs-base/omp.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/hamming-distance.hh"
 #include "seqdb-3/log.hh"
@@ -302,26 +303,46 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::subset_by_hamming_distance
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_bins(const Seqdb& seqdb, size_t bin_size)
 {
     if (bin_size > 0) {
-        for (const auto& ref : refs_) {
-            auto others = seqdb.all();
-            others.subtype(ref.entry->virus_type).host(ref.entry->host());
+        std::vector<std::tuple<std::string, size_t, std::vector<size_t>>> seqids_bins(refs_.size()); // seq_id, max_bin, bins
+
+        auto others = seqdb.all();
+        others.subtype(refs_[0].entry->virus_type).host(refs_[0].entry->host()).remove_nuc_duplicates(true, false);
+
+#ifdef _OPENMP
+        const int num_threads = omp_get_max_threads();
+        // const int slot_size = number_of_antigens() < 1000 ? 4 : 1;
+#endif
+// #pragma omp parallel for default(shared) num_threads(num_threads) firstprivate(stress) schedule(static, slot_size)
+#pragma omp parallel for default(shared) num_threads(num_threads) firstprivate(others) schedule(static, 100)
+        for (size_t ref_no = 0; ref_no < refs_.size(); ++ref_no) {
+            const auto& ref = refs_[ref_no];
+            std::get<std::string>(seqids_bins[ref_no]) = ref.seq_id();
+
             // keep non-zero distances only
             size_t max_distance = 0;
             others.refs_.erase(std::remove_if(std::next(std::begin(others)), std::end(others),
                                               [&seqdb, &max_distance, base_seq = ref.nuc_aligned(seqdb)](auto& en) {
-                                            en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), base_seq, hamming_distance_by_shortest::yes);
-                                            max_distance = std::max(max_distance, en.hamming_distance);
-                                            return en.hamming_distance == 0;
-                                        }),
-                         std::end(others));
+                                                  en.hamming_distance = hamming_distance(en.nuc_aligned(seqdb), base_seq, hamming_distance_by_shortest::yes);
+                                                  max_distance = std::max(max_distance, en.hamming_distance);
+                                                  return en.hamming_distance == 0;
+                                              }),
+                               std::end(others));
+
             const size_t number_of_bins = max_distance / bin_size + ((max_distance % bin_size) ? 1 : 0);
-            std::vector<size_t> bins(number_of_bins, 0ul);
+            auto& bins = std::get<2>(seqids_bins[ref_no]);
+            bins.resize(number_of_bins, 0ul);
             for (const auto& another : others)
                 ++bins[another.hamming_distance / bin_size];
-            AD_INFO("{} max hamming distance: {}  others: {}", ref.seq_id(), max_distance, others.size());
-            for (const auto [bin_no, bin] : acmacs::enumerate(bins))
-                AD_PRINT("  {:4d} - {:4d}  {:5d}", bin_no * bin_size, (bin_no + 1) * bin_size - 1, bin);
+            std::get<1>(seqids_bins[ref_no]) = static_cast<size_t>(std::max_element(std::begin(bins), std::end(bins)) - std::begin(bins));
+            if ((ref_no % 1000) == 0)
+                AD_PRINT("{}", ref_no);
         }
+
+        seqids_bins.erase(std::remove_if(std::begin(seqids_bins), std::end(seqids_bins), [](const auto& en) { return std::get<1>(en) == 0; }), std::end(seqids_bins));
+        std::sort(std::begin(seqids_bins), std::end(seqids_bins), [](const auto& e1, const auto& e2) { return std::get<1>(e1) > std::get<1>(e2); });
+        AD_INFO("Total selected: {}  With non-zero max bin: {}", refs_.size(), seqids_bins.size());
+        for (const auto& [seq_id, max_bin, bins] : seqids_bins)
+            AD_PRINT("  {:2d} {}  {}", max_bin, bins, seq_id);
     }
     return *this;
 

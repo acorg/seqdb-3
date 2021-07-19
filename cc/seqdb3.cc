@@ -61,7 +61,7 @@ struct Options : public argv
     // option<size_t>    nuc_hamming_distance_threshold{*this, "nuc-hamming-distance-threshold", dflt{140UL}, desc{"Select only sequences having hamming distance to the base sequence less than threshold."}};
     option<size_t>    group_by_hamming_distance{*this, "group-by-hamming", dflt{0ul}, desc{"Group sequences by hamming distance (subsseting 2019-07-23)."}};
     option<bool>      subset_by_hamming_distance_random{*this, "subset-by-hamming-random", desc{"Subset using davipatti algorithm 2019-07-23."}};
-    option<size_t>    hamming_bins{*this, "hamming-bins", dflt{0ul}, desc{"report hamming distance bins (arg is bin size, e.g. 100) for selected sequences, distances are calculated agains other sequences of the same subtype."}};
+    option<size_t>    hamming_bins{*this, "hamming-bins", dflt{0ul}, desc{"report hamming distance bins (arg is bin size, e.g. 100) for selected sequences, distances are calculated against other sequences of the same subtype."}};
 
     // print
     option<str> name_format{
