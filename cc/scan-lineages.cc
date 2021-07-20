@@ -25,7 +25,7 @@ class CladeDefinitions : public acmacs::settings::v3::Data
             throw std::runtime_error{fmt::format("WARNING: cannot load \"{}\": file not found\n", filename)};
 
         using pp = std::pair<std::string, std::string_view>;
-        for (const auto& [virus_type, tag] : {pp{"H1"s, "clades-A(H1N1)PDM09"sv}, pp{"H3"s, "clades-A(H3N2)"sv}, pp{"BVICTORIA"s, "clades-BVICTORIA"sv}, pp{"BYAMAGATA"s, "clades-BYAMAGATA"sv}}) {
+        for (const auto& [virus_type, tag] : {pp{"H1"s, "clades-A(H1N1)2009pdm"sv}, pp{"H3"s, "clades-A(H3N2)"sv}, pp{"BVICTORIA"s, "clades-B/Vic"sv}, pp{"BYAMAGATA"s, "clades-B/Yama"sv}}) {
             current_virus_type_ = virus_type;
             apply(tag);
         }
