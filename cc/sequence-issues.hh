@@ -12,6 +12,7 @@ namespace acmacs::seqdb::inline v3::sequence
         too_short,
         garbage_at_the_beginning,
         garbage_at_the_end,
+        high_hamming_distance_bin,
 
         _last
     };

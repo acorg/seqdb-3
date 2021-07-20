@@ -161,6 +161,7 @@ void acmacs::seqdb::v3::scan::translate_align(std::vector<fasta::scan_result_t>&
     }
     // aligner.report();
 
+#pragma omp parallel for default(shared) schedule(static, 256)
     for (size_t e_no = 0; e_no < sequences.size(); ++e_no) {
         auto& entry = sequences[e_no];
         if (!entry.sequence.aligned()) {

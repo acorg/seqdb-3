@@ -55,7 +55,7 @@ static void update_seqdb(hi_to_seq_t& hi_to_seq);
 void acmacs::seqdb::v3::scan::match_hidb(std::vector<fasta::scan_result_t>& sequences)
 {
     AD_INFO("INFO: matching against hidb");
-    // sequences must be sorted by name!
+    acmacs::seqdb::scan::fasta::sort_by_name(sequences); // sequences must be sorted by name!
     std::map<std::string, hidb_ref_t, std::less<>> hidbs;
     for (const std::string_view subtype : {"B", "H1", "H3"}) {
         const auto& hidb = hidb::get(acmacs::virus::type_subtype_t{subtype}, report_time::no);

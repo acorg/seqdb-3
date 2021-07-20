@@ -18,22 +18,23 @@ TARGETS = \
   $(DIST)/seqdb3-stat-aa-at-pos \
   $(DIST)/test-insertions-deletions
 
-SEQDB_SOURCES =          \
-  seqdb.cc               \
-  scan-fasta.cc          \
-  ncbi.cc                \
-  scan-match-hidb.cc     \
-  seqdb-subset.cc        \
-  seqdb-hamming.cc       \
-  create.cc              \
-  compare.cc             \
-  scan-lineages.cc       \
-  scan-sequence.cc       \
-  scan-align.cc          \
-  scan-deletions.cc      \
-  aa-at-pos.cc           \
-  seqdb-parse.cc         \
-  eliminate-identical.cc \
+SEQDB_SOURCES =            \
+  seqdb.cc                 \
+  scan-fasta.cc            \
+  ncbi.cc                  \
+  scan-match-hidb.cc       \
+  seqdb-subset.cc          \
+  seqdb-hamming.cc         \
+  create.cc                \
+  compare.cc               \
+  scan-lineages.cc         \
+  scan-sequence.cc         \
+  scan-align.cc            \
+  scan-deletions.cc        \
+  aa-at-pos.cc             \
+  seqdb-parse.cc           \
+  eliminate-identical.cc   \
+  hamming-distance-bins.cc \
   seq-id.cc
 
 SEQDB_LIB_MAJOR = 3

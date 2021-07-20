@@ -18,6 +18,7 @@
 #include "seqdb-3/scan-deletions.hh"
 #include "seqdb-3/scan-lineages.hh"
 #include "seqdb-3/scan-match-hidb.hh"
+#include "seqdb-3/hamming-distance-bins.hh"
 #include "seqdb-3/create.hh"
 
 // ----------------------------------------------------------------------
@@ -90,21 +91,21 @@ int main(int argc, char* const argv[])
         AD_INFO("Total sequences upon scanning fasta: {:7d}", all_sequences.size());
         acmacs::seqdb::scan::fasta::remove_without_names(all_sequences);
         acmacs::seqdb::scan::fasta::merge_duplicates(all_sequences);
-        acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::translate_align(all_sequences);
         acmacs::seqdb::scan::detect_insertions_deletions(all_sequences);
         acmacs::seqdb::scan::detect_lineages_clades(all_sequences);
-        acmacs::seqdb::scan::fasta::sort_by_name(all_sequences);
-        acmacs::seqdb::scan::match_hidb(all_sequences); // must be sorted by name
-        if (!opt.dont_eliminate_identical) {            // after hidb matching, because matching may change subtype (e.g. H3 -> H3N2) and it affectes reference to master
-            acmacs::seqdb::scan::eliminate_identical(all_sequences);
+        // acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
+        acmacs::seqdb::scan::match_hidb(all_sequences); // sorts all_sequences by name
+        if (!opt.dont_eliminate_identical)            // after hidb matching, because matching may change subtype (e.g. H3 -> H3N2) and it affectes reference to master
+            acmacs::seqdb::scan::eliminate_identical(all_sequences); // changes order of all_sequences
+        acmacs::seqdb::scan::hamming_distance_bins_issues(all_sequences); // changes order of all_sequences
+        if (!opt.output_seqdb->empty()) {
             acmacs::seqdb::scan::fasta::sort_by_name(all_sequences);
-        }
-        if (!opt.output_seqdb->empty())
             acmacs::seqdb::create(opt.output_seqdb, all_sequences, opt.whocc_only ? acmacs::seqdb::create_dbs::whocc_only : acmacs::seqdb::create_dbs::all);
+        }
 
         AD_INFO("Total sequences upon translating:    {:7d}  aligned: {}", all_sequences.size(), ranges::count_if(all_sequences, acmacs::seqdb::scan::fasta::is_aligned));
-        fmt::print(stderr, "\n");
+        AD_PRINT("");
 
         // if (!opt.print_counter_for->empty()) {
         //     const auto chunk = ::string::upper(*opt.print_counter_for);
