@@ -750,10 +750,7 @@ const std::vector<acmacs::seqdb::v3::ref>& acmacs::seqdb::v3::SeqdbSeq::slaves()
 std::vector<std::string> acmacs::seqdb::v3::SeqdbSeq::designations(bool just_first) const
 {
     const auto prefix = acmacs::string::join(acmacs::string::join_space, annotations, string::join(acmacs::string::join_space, reassortants));
-    std::string my_hash{hash};
-    if (my_hash.empty() && !is_master())
-        my_hash = master.hash;
-    const auto prefixed_hash = fmt::format("h{}", my_hash);
+    const auto prefixed_hash = acmacs::string::join(acmacs::string::join_concat, "h", (hash.empty() && !is_master()) ? master.hash : hash);
     if (passages.empty()) {
         return {acmacs::string::join(acmacs::string::join_space, prefix, prefixed_hash), prefix}; // not seq-id with hash must be first to support just_first
     }

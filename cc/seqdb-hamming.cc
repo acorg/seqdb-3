@@ -312,8 +312,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_bins(const 
         const int num_threads = omp_get_max_threads();
         // const int slot_size = number_of_antigens() < 1000 ? 4 : 1;
 #endif
-// #pragma omp parallel for default(shared) num_threads(num_threads) firstprivate(stress) schedule(static, slot_size)
-#pragma omp parallel for default(shared) num_threads(num_threads) firstprivate(others) schedule(static, 100)
+#pragma omp parallel for default(shared) num_threads(num_threads) firstprivate(others) schedule(static, 1000)
         for (size_t ref_no = 0; ref_no < refs_.size(); ++ref_no) {
             const auto& ref = refs_[ref_no];
             std::get<std::string>(seqids_bins[ref_no]) = ref.seq_id();
@@ -328,7 +327,7 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::report_hamming_bins(const 
                                               }),
                                std::end(others));
 
-            const size_t number_of_bins = max_distance / bin_size + ((max_distance % bin_size) ? 1 : 0);
+            const size_t number_of_bins = max_distance / bin_size + 1;
             auto& bins = std::get<2>(seqids_bins[ref_no]);
             bins.resize(number_of_bins, 0ul);
             for (const auto& another : others)
