@@ -24,6 +24,11 @@ namespace acmacs::seqdb::inline v3::scan::local
 
 void acmacs::seqdb::v3::scan::hamming_distance_bins_issues(std::vector<fasta::scan_result_t>& sequences)
 {
+    // 2021-07-21
+    // for each sequence that has no issues find hamming distances to all other sequences without issues of the same subtype (for H1 consider only H1pdm)
+    // put calculated hamming distances into bins (BIN_SIZE)
+    // if a bin number with maximum number of sequences >= MIN_BIN, add high_hamming_distance_bin issue for that sequence
+
     std::sort(std::begin(sequences), std::end(sequences), [](const auto& e1, const auto& e2) -> bool {
         // sort by subtype, issues and year,
         // having issues first (for a subtype), they will be ignored
