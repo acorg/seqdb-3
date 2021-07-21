@@ -20,6 +20,7 @@ namespace acmacs::seqdb::inline v3::sequence
 
     constexpr const auto number_of_issues{static_cast<size_t>(issue::_last)};
     constexpr const std::array<const char*, number_of_issues> issue_name{"Not aligned", "Has insertions", "Too short", "garbage_at_the_beginning", "garbage_at_the_end", "high_hamming_distance_bin"};
+    constexpr const std::array<char, number_of_issues> issue_name_char{'A', 'i', 's', 'b', 'e', 'h'};
 
     using issues_t = std::bitset<number_of_issues>;
 

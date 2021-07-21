@@ -78,6 +78,7 @@ std::pair<size_t, size_t> acmacs::seqdb::v3::scan::local::set_high_hamming_dista
     for (auto mb = max_bin_per_seq.begin(); mb != max_bin_per_seq.end(); ++mb) {
         if (*mb >= min_bin) {
             std::next(first, mb - max_bin_per_seq.begin())->sequence.add_issue(sequence::issue::high_hamming_distance_bin);
+            // AD_DEBUG("{:60s} {}", std::next(first, mb - max_bin_per_seq.begin())->sequence.name(), std::next(first, mb - max_bin_per_seq.begin())->sequence.issues());
             ++with_issue;
         }
     }
@@ -126,7 +127,9 @@ std::vector<size_t> acmacs::seqdb::v3::scan::local::hamming_distance_max_bin(sca
             set_bin(distances[s2 * num_sequences + s1]); // s2 < s1
         for (size_t s2 = s1 + 1; s2 < num_sequences; ++s2)
             set_bin(distances[s1 * num_sequences + s2]); // s2 > s1
+        // AD_DEBUG("bins {:60s} {}", std::next(first, static_cast<ssize_t>(s1))->sequence.name(), bins);
         max_bin[s1] = static_cast<size_t>(std::max_element(std::begin(bins), std::end(bins)) - std::begin(bins));
+        // AD_DEBUG(max_bin[s1] > 0, "bins {:60s} {}", std::next(first, static_cast<ssize_t>(s1))->sequence.name(), bins);
     }
 
     return max_bin;

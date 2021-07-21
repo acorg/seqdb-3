@@ -116,10 +116,10 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::country(const acmacs::uppe
 
 // ----------------------------------------------------------------------
 
-acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::with_issues(bool keep_with_issues)
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::with_issues(const Seqdb& seqdb, bool keep_with_issues)
 {
     if (!keep_with_issues)
-        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [](const auto& en) { return en.has_issues(); }), std::end(refs_));
+        refs_.erase(std::remove_if(std::begin(refs_), std::end(refs_), [&seqdb](const auto& en) { return en.has_issues(seqdb); }), std::end(refs_));
     return *this;
 
 } // acmacs::seqdb::v3::subset::with_issues
@@ -816,7 +816,7 @@ std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string
                            std::pair{"aa_length", [&entry, &seqdb]() { return entry.aa_aligned_length(seqdb); }},                                                                               //
                            std::pair{"gisaid_accession_numbers", [&entry]() { return acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.isolate_ids); }},                 //
                            std::pair{"ncbi_accession_numbers", [&entry]() { return acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.sample_ids_by_sample_provider); }}, //
-                           std::pair{"issues", [&entry]() { return fmt::format("{}", entry.seq().issues); }},                                                                                   //
+                           std::pair{"issues", [&entry, &seqdb]() { return fmt::format("{}", entry.seq().with_sequence(seqdb).issues); }},                                                      //
 
                            std::pair{"nuc", [&entry, &seqdb]() { return entry.nuc_aligned(seqdb); }}, //
                            std::pair{"aa", [&entry, &seqdb]() { return entry.aa_aligned(seqdb); }}    //
