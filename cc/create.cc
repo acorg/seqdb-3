@@ -46,7 +46,7 @@ inline std::string format_issue(const acmacs::seqdb::scan::sequence_t& seq)
     using namespace acmacs::seqdb;
     using namespace acmacs::seqdb::scan;
     constexpr const auto issue_first = static_cast<size_t>(sequence::issue::not_aligned), issue_last = static_cast<size_t>(sequence::issue::_last);
-    constexpr const std::array<char, issue_last> issue_name{'A', 'i', 's', 'b', 'e'};
+    constexpr const std::array<char, issue_last> issue_name{'A', 'i', 's', 'b', 'e', 'h'};
     return ranges::views::iota(issue_first, issue_last)                                                           //
            | ranges::views::filter([&seq](auto iss) { return seq.has_issue(static_cast<sequence::issue>(iss)); }) //
            | ranges::views::transform([&issue_name](auto iss) { return issue_name[iss]; })                        //

@@ -277,6 +277,7 @@ namespace acmacs::seqdb
 
                 void merge_from(const sequence_t& source);
 
+                constexpr sequence::issues_t issues() const { return issues_; }
                 bool good() const { return issues_.none(); }
                 bool has_issues() const { return !issues_.none(); }
                 void add_issue(sequence::issue iss) { sequence::set(issues_, iss); }

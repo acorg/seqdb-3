@@ -96,9 +96,9 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::scan::detect_lineages_clades(all_sequences);
         // acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::match_hidb(all_sequences); // sorts all_sequences by name
+        acmacs::seqdb::scan::hamming_distance_bins_issues(all_sequences); // changes order of all_sequences
         if (!opt.dont_eliminate_identical)            // after hidb matching, because matching may change subtype (e.g. H3 -> H3N2) and it affectes reference to master
             acmacs::seqdb::scan::eliminate_identical(all_sequences); // changes order of all_sequences
-        acmacs::seqdb::scan::hamming_distance_bins_issues(all_sequences); // changes order of all_sequences
         if (!opt.output_seqdb->empty()) {
             acmacs::seqdb::scan::fasta::sort_by_name(all_sequences);
             acmacs::seqdb::create(opt.output_seqdb, all_sequences, opt.whocc_only ? acmacs::seqdb::create_dbs::whocc_only : acmacs::seqdb::create_dbs::all);
@@ -303,19 +303,18 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
 void report_issues(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& all_sequences)
 {
     using namespace acmacs::seqdb;
-    constexpr const auto issue_first = static_cast<size_t>(sequence::issue::not_aligned), issue_last = static_cast<size_t>(sequence::issue::_last);
-    constexpr const std::array<const char*, issue_last> issue_name{"Not aligned", "Has insertions", "Too short", "garbage_at_the_beginning", "garbage_at_the_end"};
+    constexpr const auto issue_first = static_cast<size_t>(sequence::issue::not_aligned);
 
-    std::array<acmacs::Counter<std::string>, issue_last> counters;
+    std::array<acmacs::Counter<std::string>, sequence::number_of_issues> counters;
     for (const auto& sc : all_sequences | ranges::views::filter(scan::fasta::is_translated)) {
-        for (auto iss = issue_first; iss < issue_last; ++iss) {
+        for (auto iss = issue_first; iss < sequence::number_of_issues; ++iss) {
             if (sc.sequence.has_issue(static_cast<sequence::issue>(iss)))
                 counters[iss].count(*sc.fasta.type_subtype);
         }
     }
-    for (auto iss = issue_first; iss < issue_last; ++iss) {
+    for (auto iss = issue_first; iss < sequence::number_of_issues; ++iss) {
         if (!counters[iss].empty())
-            AD_WARNING("Issue: {}\n{}", issue_name[iss], counters[iss].report_sorted_max_first());
+            AD_WARNING("Issue: {}\n{}", sequence::issue_name[iss], counters[iss].report_sorted_max_first());
     }
 
 } // report_issues

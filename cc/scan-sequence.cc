@@ -109,6 +109,9 @@ std::string acmacs::seqdb::v3::scan::sequence_t::aa_format_not_aligned() const
 
 std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format() const
 {
+    if (!aligned())
+        return {};
+
     fmt::memory_buffer out;
     const auto nuc = nuc_aligned();
     pos0_t pos{0};
@@ -116,7 +119,8 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format() const
         fmt::format_to(out, "{}{:->{}s}", nuc.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
         pos = en.pos.aa_to_nuc();
     }
-    fmt::format_to(out, "{}", nuc.substr(*pos));
+    if (*pos < nuc.size())
+        fmt::format_to(out, "{}", nuc.substr(*pos));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::sequence_t::nuc_format
