@@ -4,6 +4,7 @@
 #include "acmacs-base/string-split.hh"
 #include "acmacs-base/read-file.hh"
 #include "acmacs-base/range-v3.hh"
+#include "acmacs-base/coredump.hh"
 #include "acmacs-whocc-data/labs.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/log.hh"
@@ -92,6 +93,8 @@ struct Options : public argv
 
 int main(int argc, char* const argv[])
 {
+    acmacs::enable_coredump();
+
     using namespace std::string_view_literals;
 
     try {
