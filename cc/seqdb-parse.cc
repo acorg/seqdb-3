@@ -192,6 +192,9 @@ namespace local
                             case 'e':
                                 set(target_.issues, issue::garbage_at_the_end);
                                 break;
+                            case 'h':
+                                set(target_.issues, issue::high_hamming_distance_bin);
+                                break;
                             default:
                                 throw in_json::parse_error(AD_FORMAT("seq: unrecognized issue: {}", iss));
                         }

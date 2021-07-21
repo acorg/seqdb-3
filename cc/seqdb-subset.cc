@@ -816,6 +816,7 @@ std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string
                            std::pair{"aa_length", [&entry, &seqdb]() { return entry.aa_aligned_length(seqdb); }},                                                                               //
                            std::pair{"gisaid_accession_numbers", [&entry]() { return acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.isolate_ids); }},                 //
                            std::pair{"ncbi_accession_numbers", [&entry]() { return acmacs::string::join(acmacs::string::join_sep_t{"|"}, entry.seq().gisaid.sample_ids_by_sample_provider); }}, //
+                           std::pair{"issues", [&entry]() { return fmt::format("{}", entry.seq().issues); }},                                                                                   //
 
                            std::pair{"nuc", [&entry, &seqdb]() { return entry.nuc_aligned(seqdb); }}, //
                            std::pair{"aa", [&entry, &seqdb]() { return entry.aa_aligned(seqdb); }}    //

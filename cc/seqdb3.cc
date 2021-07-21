@@ -66,9 +66,11 @@ struct Options : public argv
     // print
     option<str> name_format{
         *this, 'f', "name-format",
-        desc{"{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {hi_name} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} "
-             "{continent} {group_no}\n                                       {hamming_distance} {nuc_length} {aa_length} {gisaid_accession_numbers} {ncbi_accession_numbers}\n                         "
-             "     {aa} {aa:193} {aa:193:6} {nuc} {nuc:193} {nuc:193:6}\n                              default: \"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {seq_id}"}};
+        desc{
+            "{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {hi_name} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} "
+            "{continent} {group_no}\n                                       {hamming_distance} {issues} {nuc_length} {aa_length} {gisaid_accession_numbers} {ncbi_accession_numbers}\n                 "
+            "        "
+            "     {aa} {aa:193} {aa:193:6} {nuc} {nuc:193} {nuc:193:6}\n                              default: \"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {issues} {seq_id}"}};
     option<bool>      print{*this, 'p', "print", desc{"force printing selected sequences"}};
     option<bool>      b7{*this, "b7", desc{"print b7 positions, format: {seq_id:60}   {aa:145}    {aa:155}    {aa:156}    {aa:158}    {aa:159}    {aa:189}    {aa:193}"}};
     option<bool>      report_hamming_distance{*this, "report-hamming", desc{"Report hamming distance from base for all strains."}};
@@ -160,7 +162,7 @@ int main(int argc, char* const argv[])
                 print_header = "                                                    145  155  156  158  159  189  193";
             }
             else if (opt.fasta->empty())
-                opt.name_format.add("\"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {seq_id}");
+                opt.name_format.add("\"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {issues} {seq_id}");
             else
                 opt.name_format.add("{seq_id}");
         }
