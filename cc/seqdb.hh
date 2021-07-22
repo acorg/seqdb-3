@@ -388,6 +388,7 @@ namespace acmacs::seqdb::inline v3
         subset& keep_master_only();
         subset& prepend(std::string_view seq_id, const Seqdb& seqdb);
         subset& prepend(const std::vector<std::string_view>& seq_ids, const Seqdb& seqdb);
+        subset& prepend_from(const std::vector<std::string_view>& filenames, const Seqdb& seqdb);
         // subset& prepend_single_matching(std::string_view re, const Seqdb& seqdb);
         subset& nuc_hamming_distance_mean(size_t threshold, size_t size_threshold = 1000);
         subset& nuc_hamming_distance_to(size_t threshold, std::string_view seq_id);

@@ -2,6 +2,7 @@
 #include "acmacs-base/counter.hh"
 #include "acmacs-base/range-v3.hh"
 #include "acmacs-base/to-json.hh"
+#include "acmacs-base/string-split.hh"
 #include "acmacs-chart-2/point-index-list.hh"
 #include "seqdb-3/seqdb.hh"
 #include "seqdb-3/log.hh"
@@ -566,6 +567,22 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend(const std::vector<
     return *this;
 
 } // prepend
+
+// ----------------------------------------------------------------------
+
+acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend_from(const std::vector<std::string_view>& filenames, const Seqdb& seqdb)
+{
+    if (!filenames.empty()) {
+        for (const auto& filename : filenames) {
+            const std::string text{acmacs::file::read(filename)};
+            auto lines = acmacs::string::split(text, "\n", acmacs::string::Split::StripRemoveEmpty);
+            // remove lines that start with #
+            lines.erase(std::remove_if(std::begin(lines), std::end(lines), [](std::string_view line) { return line.empty() || line[0] == '#'; }), std::end(lines));
+            prepend(lines, seqdb);
+        }
+    }
+
+} // acmacs::seqdb::v3::subset::prepend_from
 
 // ----------------------------------------------------------------------
 

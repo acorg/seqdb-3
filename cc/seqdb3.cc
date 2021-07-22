@@ -41,6 +41,7 @@ struct Options : public argv
     option<bool>      with_hi_name{*this, "with-hi-name", desc{"matched against hidb"}};
     option<str_array> name_regex{*this, "re", desc{"filter names by regex, multiple regex possible, all matching listed"}};
     option<str_array> prepend{*this, "prepend", desc{"prepend with seq by seq-id, multiple possible, always included"}};
+    option<str_array> prepend_from{*this, "prepend-from", desc{"prepend with seq by seq-id read from a file (# starts comment), multiple possible, always included"}};
     option<str_array> exclude{*this, "exclude-seq-id", desc{"exclude by seq-id"}};
     option<str>       base_seq_id{*this, "base-seq-id", desc{"single base sequence (outgroup), always included"}};
     option<bool>      multiple_dates{*this, "multiple-dates"};
@@ -204,6 +205,7 @@ int main(int argc, char* const argv[])
             .remove_empty(seqdb, opt.nucs)
             .sort(sorting_order(opt.sort_by))
             .prepend(opt.prepend, seqdb)
+            .prepend_from(opt.prepend_from, seqdb)
             .prepend(opt.base_seq_id, seqdb)
             .report_stat(seqdb, !opt.no_stat && !opt.stat_month_region) // static_cast<bool>(opt.fasta))
             .report_stat_month_region(opt.stat_month_region)
