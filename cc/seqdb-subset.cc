@@ -572,15 +572,14 @@ acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend(const std::vector<
 
 acmacs::seqdb::v3::subset& acmacs::seqdb::v3::subset::prepend_from(const std::vector<std::string_view>& filenames, const Seqdb& seqdb)
 {
-    if (!filenames.empty()) {
-        for (const auto& filename : filenames) {
-            const std::string text{acmacs::file::read(filename)};
-            auto lines = acmacs::string::split(text, "\n", acmacs::string::Split::StripRemoveEmpty);
-            // remove lines that start with #
-            lines.erase(std::remove_if(std::begin(lines), std::end(lines), [](std::string_view line) { return line.empty() || line[0] == '#'; }), std::end(lines));
-            prepend(lines, seqdb);
-        }
+    for (const auto& filename : filenames) {
+        const std::string text{acmacs::file::read(filename)};
+        auto lines = acmacs::string::split(text, "\n", acmacs::string::Split::StripRemoveEmpty);
+        // remove lines that start with #
+        lines.erase(std::remove_if(std::begin(lines), std::end(lines), [](std::string_view line) { return line.empty() || line[0] == '#'; }), std::end(lines));
+        prepend(lines, seqdb);
     }
+    return *this;
 
 } // acmacs::seqdb::v3::subset::prepend_from
 

@@ -95,7 +95,7 @@ struct Options : public argv
 
 int main(int argc, char* const argv[])
 {
-    acmacs::enable_coredump();
+    // acmacs::enable_coredump();
 
     using namespace std::string_view_literals;
 
