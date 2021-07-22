@@ -796,6 +796,7 @@ std::string acmacs::seqdb::v3::subset::make_name(const Seqdb& seqdb, std::string
     const auto nf = ::string::replace(::string::replace(name_format, "\\t", "\t"), "\\n", "\n");
     return fmt::substitute(nf,                                                                                                                                                                  //
                            std::pair{"seq_id", [&entry]() { return entry.seq_id(); }},                                                                                                          //
+                           std::pair{"hash", [&entry,&seqdb]() { return entry.seq().with_sequence(seqdb).hash; }},                                                                                                          //
                            std::pair{"full_name", [&entry]() { return entry.full_name(); }},                                                                                                    //
                            std::pair{"hi_name_or_full_name", [&entry]() { return entry.hi_name_or_full_name(); }},                                                                              //
                            std::pair{"hi_names", entry.seq().hi_names},                                                                                                                         //

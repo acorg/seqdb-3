@@ -68,7 +68,8 @@ struct Options : public argv
     option<str> name_format{
         *this, 'f', "name-format",
         desc{
-            "{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {hi_name} {lineage} {name}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} {country} "
+            "{seq_id} {full_name} {hi_name_or_full_name} {hi_names} {hi_name} {lineage} {name} {hash}\n                                       {date} {dates} {lab_id} {passage} {clades} {lab} "
+            "{country} "
             "{continent} {group_no}\n                                       {hamming_distance} {issues} {nuc_length} {aa_length} {gisaid_accession_numbers} {ncbi_accession_numbers}\n                 "
             "        "
             "     {aa} {aa:193} {aa:193:6} {nuc} {nuc:193} {nuc:193:6}\n                              default: \"{full_name}\" {lineage} {dates} {country} {clades} \"{lab}\" {issues} {seq_id}"}};
