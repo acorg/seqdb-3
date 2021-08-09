@@ -157,9 +157,8 @@ int main(int argc, char* const argv[])
         if (opt.print_stat)
             report(all_sequences, opt);
 
-        if (opt.filenames->size() == 1 && opt.filenames->front() == "/d/gisaid_epiflu_sequence.fasta") {
-            fmt::print("T=$HOME/ac/sequences-2019/gisaid-{}-{}.fas.xz; if [[ ! -f $T ]]; then xz -9ecv /d/gisaid_epiflu_sequence.fasta >$T; else echo ERROR: $T already exists; false; fi\n",
-                       string::replace(dates_to_report.min_submission_date, "-", ""), string::replace(dates_to_report.max_submission_date, "-", ""));
+        if (opt.filenames->size() == 1 && opt.filenames->front().substr(0, 3) == "/r/") {
+            fmt::print("mv -i {} /r/gisaid-{}-{}.fas", opt.filenames->front(), string::replace(dates_to_report.min_submission_date, "-", ""), string::replace(dates_to_report.max_submission_date, "-", ""));
         }
 
         return 0;

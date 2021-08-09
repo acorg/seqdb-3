@@ -4,18 +4,19 @@
 TARGETS = \
   $(SEQDB_LIB) \
   $(SEQDB_PY_LIB) \
-  $(DIST)/seqdb3-scan \
   $(DIST)/seqdb3 \
+  $(DIST)/seqdb3-chart-clades \
+  $(DIST)/seqdb3-chart-compare-sequences \
+  $(DIST)/seqdb3-chart-dates \
+  $(DIST)/seqdb3-chart-populate \
   $(DIST)/seqdb3-chart-sequenced \
   $(DIST)/seqdb3-chart-sequenced-to-fasta \
   $(DIST)/seqdb3-compare-sequences \
-  $(DIST)/seqdb3-chart-compare-sequences \
-  $(DIST)/seqdb3-chart-clades \
+  $(DIST)/seqdb3-scan \
   $(DIST)/seqdb3-seqid-by-name \
-  $(DIST)/seqdb3-chart-dates \
-  $(DIST)/seqdb3-stat-by-clade-year-pos \
-  $(DIST)/seqdb3-stat-by-clade-season \
   $(DIST)/seqdb3-stat-aa-at-pos \
+  $(DIST)/seqdb3-stat-by-clade-season \
+  $(DIST)/seqdb3-stat-by-clade-year-pos \
   $(DIST)/test-insertions-deletions
 
 SEQDB_SOURCES =            \
