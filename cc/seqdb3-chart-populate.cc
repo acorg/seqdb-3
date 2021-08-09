@@ -14,7 +14,7 @@ struct Options : public argv
     option<str> db{*this, "db", dflt{""}};
     option<str_array> verbose{*this, 'v', "verbose", desc{"comma separated list (or multiple switches) of enablers"}};
 
-    argument<str> chart_name{*this, arg_name{"chart_name"}, mandatory};
+    argument<str_array> chart_name{*this, arg_name{"chart_name"}, mandatory};
 };
 
 int main(int argc, char* const argv[])
@@ -24,10 +24,12 @@ int main(int argc, char* const argv[])
         acmacs::log::enable(opt.verbose);
 
         acmacs::seqdb::setup(opt.db);
-        acmacs::chart::ChartModify chart{acmacs::chart::import_from_file(opt.chart_name)};
-        const auto [matched_antigens, matched_sera] = acmacs::seqdb::get().populate(chart);
-        AD_PRINT("Matched\n  antigens: {:5d} (of {:5d})\n  sera:     {:5d} (of {:5d})", matched_antigens, chart.number_of_antigens(), matched_sera, chart.number_of_sera());
-        acmacs::chart::export_factory(chart, opt.chart_name, opt.program_name());
+        for (const auto& chart_name : *opt.chart_name) {
+            acmacs::chart::ChartModify chart{acmacs::chart::import_from_file(chart_name)};
+            const auto [matched_antigens, matched_sera] = acmacs::seqdb::get().populate(chart);
+            AD_PRINT("{}\n  antigens: {:5d} (of {:5d})\n  sera:     {:5d} (of {:5d})", chart_name, matched_antigens, chart.number_of_antigens(), matched_sera, chart.number_of_sera());
+            acmacs::chart::export_factory(chart, chart_name, opt.program_name());
+        }
         return 0;
     }
     catch (std::exception& err) {
