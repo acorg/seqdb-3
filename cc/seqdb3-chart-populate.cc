@@ -12,14 +12,16 @@ struct Options : public argv
     Options(int a_argc, const char* const a_argv[], on_error on_err = on_error::exit) : argv() { parse(a_argc, a_argv, on_err); }
 
     option<str> db{*this, "db", dflt{""}};
-    argument<str> chart_name{*this, arg_name{"chart_name"}, mandatory};
+    option<str_array> verbose{*this, 'v', "verbose", desc{"comma separated list (or multiple switches) of enablers"}};
 
+    argument<str> chart_name{*this, arg_name{"chart_name"}, mandatory};
 };
 
 int main(int argc, char* const argv[])
 {
     try {
         Options opt(argc, argv);
+        acmacs::log::enable(opt.verbose);
 
         acmacs::seqdb::setup(opt.db);
         acmacs::chart::ChartModify chart{acmacs::chart::import_from_file(opt.chart_name)};

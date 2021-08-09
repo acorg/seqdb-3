@@ -414,6 +414,12 @@ inline std::optional<acmacs::seqdb::v3::ref> match(const acmacs::seqdb::v3::subs
                         score_per_seq[seq_no] = std::max(score_per_seq[seq_no], score);
                         AD_LOG(acmacs::log::hi_name_matching, "score: {} P:{}", score, s_passage);
                     }
+                    else {
+                        const string_match::score_t score = 1;
+                        score_per_seq[seq_no] = std::max(score_per_seq[seq_no],
+                                                         score); // allow using sequence with wrong passage in case nothing else available, e.g. match cell vs. egg, to maximize coloring by clade
+                        AD_LOG(acmacs::log::hi_name_matching, "score: {} passage mismatch ag:\"{}\" seq:\"{}\"", score, ag_passage, s_passage);
+                    }
                 }
             }
             else {
