@@ -36,7 +36,7 @@ int main(int argc, char* const argv[])
             if (!subset[ag_no].empty()) {
                 const auto seq = *opt.nuc ? subset[ag_no].nuc_aligned(seqdb) : subset[ag_no].aa_aligned(seqdb);
                 if (!seq.empty())
-                    fmt::format_to(out, ">{}\n{}\n", antigens->at(ag_no)->name_full(), seq);
+                    fmt::format_to_mb(out, ">{}\n{}\n", antigens->at(ag_no)->name_full(), seq);
                 ++matched;
             }
         }

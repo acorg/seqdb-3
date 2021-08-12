@@ -819,7 +819,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_false_positive(const std::vec
     fmt::memory_buffer out;
     const auto ignore_empty_or_a = [](const scan_result_t& sc) { return sc.sequence.type_subtype().empty() || sc.sequence.type_subtype().h_or_b() == "A"; };
     for (const auto& sc : sequences | ranges::views::filter(is_aligned) | ranges::views::filter(is_different_type_subtype_ignore_h0) | ranges::views::filter(ignore_empty_or_a))
-        fmt::format_to(out, "detected:{} | fasta:{} | {} -- {}:{}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
+        fmt::format_to_mb(out, "detected:{} | fasta:{} | {} -- {}:{}\n{}\n", sc.sequence.type_subtype(), sc.fasta.type_subtype, sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::fasta::report_false_positive
@@ -838,8 +838,8 @@ std::string acmacs::seqdb::v3::scan::fasta::report_not_aligned(const std::vector
 
     fmt::memory_buffer out;
     for (const auto& sc : sequences | ranges::views::filter(filter_subtype) | ranges::views::filter(isnot_aligned)) {
-        // fmt::format_to(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
-        fmt::format_to(out, "{}:{}: warning: {} ::: {} \n", sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name);
+        // fmt::format_to_mb(out, "{} -- {}:{}\n{}\n", sc.fasta.entry_name, sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff));
+        fmt::format_to_mb(out, "{}:{}: warning: {} ::: {} \n", sc.fasta.filename, sc.fasta.line_no, sc.sequence.aa().substr(0, sequence_cutoff), sc.fasta.entry_name);
     }
     return fmt::to_string(out);
 
@@ -851,7 +851,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_aa(const std::vector<scan_res
 {
     fmt::memory_buffer out;
     for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.contains(type_subtype_infix); }) | ranges::views::filter(is_translated))
-        fmt::format_to(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
+        fmt::format_to_mb(out, "{}\n{}\n", sc.fasta.entry_name, sc.sequence.aa().substr(0, sequence_cutoff));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::fasta::report_aa
@@ -863,7 +863,7 @@ std::string acmacs::seqdb::v3::scan::fasta::report_aa_aligned(const std::vector<
     fmt::memory_buffer out;
     for (const auto& sc : sequences | ranges::views::filter([type_subtype_infix](const auto& sc) { return sc.fasta.type_subtype.contains(type_subtype_infix); }) | ranges::views::filter(is_aligned)) {
         const auto seq = sc.sequence.aa_aligned();
-        fmt::format_to(out, "{} [{}]\n{}\n", sc.sequence.full_name(), seq.size(), seq.substr(0, sequence_cutoff));
+        fmt::format_to_mb(out, "{} [{}]\n{}\n", sc.sequence.full_name(), seq.size(), seq.substr(0, sequence_cutoff));
     }
     return fmt::to_string(out);
 

@@ -122,17 +122,17 @@ namespace acmacs::seqdb::inline v3
             const auto positions{positions_to_report()};
             fmt::memory_buffer output;
             const auto most_frequent{subsets.front().most_frequent(positions)};
-            // fmt::format_to(output, "{}\n\n", most_frequent);
-            fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
+            // fmt::format_to_mb(output, "{}\n\n", most_frequent);
+            fmt::format_to_mb(output, "{}{:{}c}", prefix, ' ', name_width);
             for (const auto pos : positions)
-                fmt::format_to(output, "{:^{}d}", pos, column_width);
-            fmt::format_to(output, "\n");
+                fmt::format_to_mb(output, "{:^{}d}", pos, column_width);
+            fmt::format_to_mb(output, "\n");
             bool first_group{true};
             for (const auto& ssc : subsets) {
                 if (threshold > 0.0)
-                    fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent, threshold));
+                    fmt::format_to_mb(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent, threshold));
                 else
-                    fmt::format_to(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
+                    fmt::format_to_mb(output, "{}", ssc.format_summary(positions, prefix, name_width, column_width, first_group ? nullptr : &most_frequent));
                 first_group = false;
             }
             return fmt::to_string(output);
@@ -142,7 +142,7 @@ namespace acmacs::seqdb::inline v3
         {
             fmt::memory_buffer output;
             for (const auto& ssc : subsets)
-                fmt::format_to(output, "{}\n", ssc.format_seq_ids(indent));
+                fmt::format_to_mb(output, "{}\n", ssc.format_seq_ids(indent));
             return fmt::to_string(output);
         }
 
@@ -178,7 +178,7 @@ namespace acmacs::seqdb::inline v3
                 key_val{"pos1"sv, array{std::begin(positions), std::end(positions), [](pos0_t pos) { return *pos + 1; }, array::compact_output::yes}}, //
                 key_val{"groups"sv, array{subsets.begin(), subsets.end(), make_group}}                                                                 //
             };
-            return fmt::format(fmt::format("{{:{}}}", indent), data);
+            return fmt::format(fmt::runtime(fmt::format("{{:{}}}", indent)), data);
         }
     };
 

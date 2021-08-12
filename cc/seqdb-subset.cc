@@ -881,13 +881,13 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
 {
     fmt::memory_buffer out;
     for (const auto& en : entries) {
-        fmt::format_to(out, ">{}\n", en.seq_id);
+        fmt::format_to_mb(out, ">{}\n", en.seq_id);
         if (options.e_wrap_at == 0 || options.e_wrap_at >= en.sequence.size()) {
-            fmt::format_to(out, "{}\n", en.sequence);
+            fmt::format_to_mb(out, "{}\n", en.sequence);
         }
         else {
             for (const auto chunk : en.sequence | ranges::views::chunk(options.e_wrap_at))
-                fmt::format_to(out, "{}\n", ranges::to<std::string>(chunk));
+                fmt::format_to_mb(out, "{}\n", ranges::to<std::string>(chunk));
         }
     }
     fmt::print("INFO: exported to fasta: {}\n", entries.size());

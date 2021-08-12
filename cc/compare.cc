@@ -54,23 +54,23 @@ std::string acmacs::seqdb::v3::subset_to_compare_base_t::format_summary(const st
     fmt::memory_buffer output;
     for (size_t row_no{0}; row_no < num_rows; ++row_no) {
         if (row_no == 0)
-            fmt::format_to(output, "{}{:{}s}", prefix, name, name_width);
+            fmt::format_to_mb(output, "{}{:{}s}", prefix, name, name_width);
         else
-            fmt::format_to(output, "{}{:{}c}", prefix, ' ', name_width);
+            fmt::format_to_mb(output, "{}{:{}c}", prefix, ' ', name_width);
         for (size_t pp{0}; pp < positions.size(); ++pp) {
             const auto pos{positions[pp]};
             if (row_no == 0 && most_frequent) {
                 if (const auto aa{counters[*pos].sorted()[row_no]}; aa != (*most_frequent)[pp])
-                    fmt::format_to(output, "{:^{}c}", aa, column_width);
+                    fmt::format_to_mb(output, "{:^{}c}", aa, column_width);
                 else
-                    fmt::format_to(output, "{:^{}c}", '.', column_width);
+                    fmt::format_to_mb(output, "{:^{}c}", '.', column_width);
             }
             else if (const auto aa{counters[*pos].sorted()}; row_no < aa.size())
-                fmt::format_to(output, "{:^{}c}", aa[row_no], column_width);
+                fmt::format_to_mb(output, "{:^{}c}", aa[row_no], column_width);
             else
-                fmt::format_to(output, "{:^{}c}", ' ', column_width);
+                fmt::format_to_mb(output, "{:^{}c}", ' ', column_width);
         }
-        fmt::format_to(output, "\n");
+        fmt::format_to_mb(output, "\n");
     }
     return fmt::to_string(output);
 
@@ -81,7 +81,7 @@ std::string acmacs::seqdb::v3::subset_to_compare_base_t::format_summary(const st
 std::string acmacs::seqdb::v3::subset_to_compare_base_t::format_summary(const std::vector<pos0_t>& positions, std::string_view prefix, size_t name_width, size_t column_width, const std::string* most_frequent, double threshold) const
 {
     fmt::memory_buffer output;
-    fmt::format_to(output, "{}{:{}s}", prefix, name, name_width);
+    fmt::format_to_mb(output, "{}{:{}s}", prefix, name, name_width);
     for (size_t pp{0}; pp < positions.size(); ++pp) {
         const auto pos{positions[pp]};
         const auto aa_pairs{counters[*pos].pairs(counter_t::sorted::yes)};
@@ -94,9 +94,9 @@ std::string acmacs::seqdb::v3::subset_to_compare_base_t::format_summary(const st
         }
         if (most_frequent)
             ::string::replace_in_place(aas, (*most_frequent)[pp], '.');
-        fmt::format_to(output, "{:^{}s}", aas, column_width);
+        fmt::format_to_mb(output, "{:^{}s}", aas, column_width);
     }
-    fmt::format_to(output, "\n");
+    fmt::format_to_mb(output, "\n");
     return fmt::to_string(output);
 
 } // acmacs::seqdb::v3::subset_to_compare_base_t::format_summary
@@ -120,10 +120,10 @@ void acmacs::seqdb::v3::subset_to_compare_t::make_counters(enum compare cmp_nuc_
 std::string acmacs::seqdb::v3::subset_to_compare_t::format_seq_ids(size_t indent) const
 {
     fmt::memory_buffer output;
-    fmt::format_to(output, "{:{}c}{}\n", ' ', indent, name);
+    fmt::format_to_mb(output, "{:{}c}{}\n", ' ', indent, name);
     for (const auto& ref : subset) {
-        fmt::format_to(output, "{:{}c}{}\n", ' ', indent + 2, ref.seq_id());
-        // fmt::format_to(output, "{:{}c}{}\n", ' ', indent + 2, local::aligned(ref, compare::aa));
+        fmt::format_to_mb(output, "{:{}c}{}\n", ' ', indent + 2, ref.seq_id());
+        // fmt::format_to_mb(output, "{:{}c}{}\n", ' ', indent + 2, local::aligned(ref, compare::aa));
     }
     return fmt::to_string(output);
 
@@ -165,9 +165,9 @@ void acmacs::seqdb::v3::subset_to_compare_selected_t::make_counters(enum compare
 std::string acmacs::seqdb::v3::subset_to_compare_selected_t::format_seq_ids(size_t indent) const
 {
     fmt::memory_buffer output;
-    fmt::format_to(output, "{:{}c}{}\n", ' ', indent, name);
+    fmt::format_to_mb(output, "{:{}c}{}\n", ' ', indent, name);
     for (const auto [ag_no, ag] : selected)
-        fmt::format_to(output, "{:{}c}{}\n", ' ', indent + 2, ag->name_full());
+        fmt::format_to_mb(output, "{:{}c}{}\n", ' ', indent + 2, ag->name_full());
     return fmt::to_string(output);
 
 } // acmacs::seqdb::v3::subset_to_compare_selected_tt::format_seq_ids

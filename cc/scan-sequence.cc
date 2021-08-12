@@ -29,10 +29,10 @@ std::string acmacs::seqdb::v3::scan::format_aa(const std::vector<deletions_inser
     fmt::memory_buffer out;
     pos0_t pos{0};
     for (const auto& en : pos_num) {
-        fmt::format_to(out, "{}{}", sequence.substr(*pos, *(en.pos - pos)), std::string(en.num, deletion_symbol));
+        fmt::format_to_mb(out, "{}{}", sequence.substr(*pos, *(en.pos - pos)), std::string(en.num, deletion_symbol));
         pos = en.pos;
     }
-    fmt::format_to(out, "{}", sequence.substr(*pos));
+    fmt::format_to_mb(out, "{}", sequence.substr(*pos));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::format
@@ -44,22 +44,22 @@ std::string acmacs::seqdb::v3::scan::format(const deletions_insertions_t& deleti
     fmt::memory_buffer out;
     const auto frmt = [&out](const char* prefix, const auto& num_pos) {
         if (!num_pos.empty()) {
-            fmt::format_to(out, "{}[{}](", prefix, num_pos.size());
+            fmt::format_to_mb(out, "{}[{}](", prefix, num_pos.size());
             bool first = true;
             for (const auto& en : num_pos) {
                 if (first)
                     first = false;
                 else
-                    fmt::format_to(out, " ");
-                fmt::format_to(out, "{}:{}", *(en.pos + 1UL), en.num);
+                    fmt::format_to_mb(out, " ");
+                fmt::format_to_mb(out, "{}:{}", *(en.pos + 1UL), en.num);
             }
-            fmt::format_to(out, ")");
+            fmt::format_to_mb(out, ")");
         }
     };
 
     frmt("DEL", deletions.deletions);
     frmt(" INS", deletions.insertions);
-    fmt::format_to(out, "<pos-1-based>");
+    fmt::format_to_mb(out, "<pos-1-based>");
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::format
@@ -72,10 +72,10 @@ std::string acmacs::seqdb::v3::scan::sequence_t::aa_format() const
     const auto aa = aa_aligned();
     pos0_t pos{0};
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", aa.substr(*pos, *(en.pos - pos)), "", en.num);
+        fmt::format_to_mb(out, "{}{:->{}s}", aa.substr(*pos, *(en.pos - pos)), "", en.num);
         pos = en.pos;
     }
-    fmt::format_to(out, "{}", aa.substr(*pos));
+    fmt::format_to_mb(out, "{}", aa.substr(*pos));
     // fmt::print(stderr, "aa_format s:{}\n  {}\n  {}\n", pos, aa, fmt::to_string(out));
     return fmt::to_string(out);
 
@@ -91,15 +91,15 @@ std::string acmacs::seqdb::v3::scan::sequence_t::aa_format_not_aligned() const
     std::string_view aav{aa_};
     fmt::memory_buffer out;
     if (shift_aa_ > shift_t{0}) {
-        fmt::format_to(out, "{}", aav.substr(0, *shift_aa_));
+        fmt::format_to_mb(out, "{}", aav.substr(0, *shift_aa_));
         aav.remove_prefix(*shift_aa_);
     }
     pos0_t pos{0};
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", aav.substr(*pos, *(en.pos - pos)), "", en.num);
+        fmt::format_to_mb(out, "{}{:->{}s}", aav.substr(*pos, *(en.pos - pos)), "", en.num);
         pos = en.pos;
     }
-    fmt::format_to(out, "{}", aav.substr(*pos));
+    fmt::format_to_mb(out, "{}", aav.substr(*pos));
     // fmt::print(stderr, "aa_format_not_aligned s:{}\n  {}\n  {}\n", shift_aa_, aa_, fmt::to_string(out));
     return fmt::to_string(out);
 
@@ -116,11 +116,11 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format() const
     const auto nuc = nuc_aligned();
     pos0_t pos{0};
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", nuc.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
+        fmt::format_to_mb(out, "{}{:->{}s}", nuc.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
         pos = en.pos.aa_to_nuc();
     }
     if (*pos < nuc.size())
-        fmt::format_to(out, "{}", nuc.substr(*pos));
+        fmt::format_to_mb(out, "{}", nuc.substr(*pos));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::sequence_t::nuc_format
@@ -135,15 +135,15 @@ std::string acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned() const
     std::string_view nucv{nuc_};
     fmt::memory_buffer out;
     if (shift_nuc_ > shift_t{0}) {
-        fmt::format_to(out, "{}", nucv.substr(0, *shift_nuc_));
+        fmt::format_to_mb(out, "{}", nucv.substr(0, *shift_nuc_));
         nucv.remove_prefix(*shift_nuc_);
     }
     pos0_t pos{0};
     for (const auto& en : deletions_.deletions) {
-        fmt::format_to(out, "{}{:->{}s}", nucv.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
+        fmt::format_to_mb(out, "{}{:->{}s}", nucv.substr(*pos, *(en.pos.aa_to_nuc() - pos)), "", en.num * 3);
         pos = en.pos.aa_to_nuc();
     }
-    fmt::format_to(out, "{}", nucv.substr(*pos));
+    fmt::format_to_mb(out, "{}", nucv.substr(*pos));
     return fmt::to_string(out);
 
 } // acmacs::seqdb::v3::scan::sequence_t::nuc_format_not_aligned
