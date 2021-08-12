@@ -27,7 +27,7 @@ int main(int argc, char* const argv[])
         for (const auto& chart_name : *opt.chart_name) {
             acmacs::chart::ChartModify chart{acmacs::chart::import_from_file(chart_name)};
             const auto [matched_antigens, matched_sera] = acmacs::seqdb::get().populate(chart);
-            AD_PRINT("{}\n  antigens: {:5d} (of {:5d})\n  sera:     {:5d} (of {:5d})", chart_name, matched_antigens, chart.number_of_antigens(), matched_sera, chart.number_of_sera());
+            AD_PRINT(FMT_STRING("{}\n  antigens: {:5d} (of {:5d})\n  sera:     {:5d} (of {:5d})"), chart_name, matched_antigens, chart.number_of_antigens(), matched_sera, chart.number_of_sera());
             acmacs::chart::export_factory(chart, chart_name, opt.program_name());
         }
         return 0;
