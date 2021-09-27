@@ -29,12 +29,31 @@ int main(int argc, char* const argv[])
             acmacs::chart::ChartModify chart{acmacs::chart::import_from_file(chart_name)};
             AD_PRINT("{}", chart_name);
             const auto [matched_antigens, matched_sera] = acmacs::seqdb::get().populate(chart);
-            AD_PRINT("  antigens: {:5d} (of {:5d})", matched_antigens.size(), chart.number_of_antigens());
-            for (const auto* antigen : matched_antigens)
-                AD_PRINT("    {} {}", antigen->name_full(), antigen->clades());
-            AD_PRINT("  sera: {:5d} (of {:5d})", matched_sera.size(), chart.number_of_sera());
-            for (const auto* serum : matched_sera)
-                AD_PRINT("    {} {}", serum->name_full(), serum->clades());
+
+            AD_PRINT("AG matched: {} (of {})", matched_antigens.size(), chart.number_of_antigens());
+            if (matched_antigens.size() < chart.number_of_antigens()) {
+                AD_PRINT("AG NOT matched: {}", chart.number_of_antigens() - matched_antigens.size());
+                for (const auto ag_no : range_from_0_to(chart.number_of_antigens())) {
+                    if (!matched_antigens.contains(ag_no))
+                        AD_PRINT("  {:5d} {}", ag_no, chart.antigens()->at(ag_no)->name_full());
+                }
+            }
+
+            AD_PRINT("SR matched: {} (of {})", matched_sera.size(), chart.number_of_sera());
+            if (matched_sera.size() < chart.number_of_sera()) {
+                AD_PRINT("SR NOT matched: {}", chart.number_of_sera() - matched_sera.size());
+                for (const auto sr_no : range_from_0_to(chart.number_of_sera())) {
+                    if (!matched_sera.contains(sr_no))
+                        AD_PRINT("  {:5d} {}", sr_no, chart.sera()->at(sr_no)->name_full());
+                }
+            }
+
+            // for (const auto ag_no : matched_antigens)
+            //     AD_PRINT("    {:5d} {} {}", ag_no, chart.antigens()->at(ag_no)->name_full(), chart.antigens()->at(ag_no)->clades());
+            // AD_PRINT("  sera: {:5d} (of {:5d})", matched_sera.size(), chart.number_of_sera());
+            // for (const auto sr_no : matched_sera)
+            //     AD_PRINT("    {:5d} {} {}", sr_no, chart.sera()->at(sr_no)->name_full(), chart.sera()->at(sr_no)->clades());
+
             if (!opt.no_export)
                 acmacs::chart::export_factory(chart, chart_name, opt.program_name());
         }

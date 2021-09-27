@@ -62,7 +62,7 @@ namespace acmacs::seqdb::inline v3
         clades_t clades_for_name(std::string_view name, clades_for_name_inclusive inclusive = clades_for_name_inclusive::no) const;
 
         // returns number of antigens and sera matched (populated)
-        std::pair<std::vector<const acmacs::chart::AntigenModify*>, std::vector<const acmacs::chart::SerumModify*>> populate(acmacs::chart::ChartModify& chart) const;
+        std::pair<acmacs::chart::Indexes, acmacs::chart::Indexes> populate(acmacs::chart::ChartModify& chart) const;
 
         // returns subset where each entry corresponds to the entry in seq_ids
         subset find_by_seq_ids(const std::vector<std::string_view>& seq_ids) const;

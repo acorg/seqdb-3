@@ -573,10 +573,10 @@ void acmacs::seqdb::v3::populate(acmacs::chart::ChartModify& chart, even_if_alre
 
 // ----------------------------------------------------------------------
 
-std::pair<std::vector<const acmacs::chart::AntigenModify*>, std::vector<const acmacs::chart::SerumModify*>> acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
+std::pair<acmacs::chart::Indexes, acmacs::chart::Indexes> acmacs::seqdb::v3::Seqdb::populate(acmacs::chart::ChartModify& chart) const
 {
-    const auto populate_ag_sr = [this, &chart]<typename AgSr>(AgSr& antigens_sera) {
-        std::vector<const typename AgSr::AntigenSerumType*> matched;
+    const auto populate_ag_sr = [this, &chart]<typename AgSr>(AgSr& antigens_sera) -> acmacs::chart::Indexes {
+        acmacs::chart::Indexes matched;
         acmacs::enumerate(match(antigens_sera, chart.info()->virus_type(acmacs::chart::Info::Compute::Yes)), [&](auto no, const auto& ref) {
             if (ref) {
                 const auto& seq = ref.seq().with_sequence(*this);
@@ -601,7 +601,7 @@ std::pair<std::vector<const acmacs::chart::AntigenModify*>, std::vector<const ac
                 }
                 AD_LOG(acmacs::log::hi_name_matching, "Seqdb::populate {} <-- {}",
                        acmacs::chart::format_antigen_serum<AgSr>("{ag_sr} {no0:{num_digits}d} {full_name}{ }{lineage}{ }{clades}", chart, no, acmacs::chart::collapse_spaces_t::yes), ref.seq_id());
-                matched.push_back(&antigen_serum);
+                matched.push_back(no);
             }
         });
         return matched;
