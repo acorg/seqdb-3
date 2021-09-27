@@ -155,7 +155,7 @@ void acmacs::seqdb::v3::scan::deletions_insertions(const sequence_t& master, seq
         }
     }
     AD_DEBUG(dbg, "deletions: {}", to_align.deletions());
-    AD_PRINT(dbg, "\n");
+    AD_PRINT_IF(dbg, "\n");
 
 } // acmacs::seqdb::v3::scan::deletions_insertions
 
