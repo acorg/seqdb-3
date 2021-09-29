@@ -34,6 +34,7 @@ function show_full_sequences(compare_sequences_data, div)
     const add_sequence = function(tr, seq_s, master) {
         const seq = [...seq_s];
         seq.forEach(function(aa, pos0) {
+            aa = normalize_aa(aa);
             const aa_td = document.createElement("td");
             aa_td.classList.add(`aa${aa}`);
             aa_td.classList.add("aa");
@@ -125,6 +126,15 @@ function position_ruler(positions, initial_tds)
 
 // --------------------------------------------------------------------------------
 
+function normalize_aa(aa)
+{
+    if (aa < "A" || aa > "Z")
+        aa = "-";
+    return aa;
+}
+
+// ----------------------------------------------------------------------
+
 function show_positions_with_diversity(compare_sequences_data, div)
 {
     const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 2); };
@@ -132,7 +142,7 @@ function show_positions_with_diversity(compare_sequences_data, div)
     const add_sequence = function(tr, seq, master) {
         compare_sequences_data.pos1.forEach(function(pos1, index) {
             const pos0 = pos1 - 1;
-            const aa = seq[pos0];
+            const aa = normalize_aa(seq[pos0]);
             const aa_td = document.createElement("td");
             aa_td.classList.add(`aa${aa}`);
             aa_td.classList.add("aa");
@@ -185,7 +195,7 @@ function show_most_frequent_per_group(compare_sequences_data, div)
 
     const add_aas = function(tr, positions, master_positions) {
         compare_sequences_data.pos1.forEach(function(pos1, index) {
-            const aa = positions[pos1][0].a;
+            const aa = normalize_aa(positions[pos1][0].a);
             const aa_td = document.createElement("td");
             aa_td.classList.add(`aa${aa}`);
             aa_td.classList.add("aa");
@@ -236,7 +246,7 @@ function show_frequency_per_group(compare_sequences_data, div)
             const aa_td = document.createElement("td");
             if (row < en.length) {
                 aa_td.classList.add("aa-and-count");
-                const aa = en[row].a;
+                const aa = normalize_aa(en[row].a);
                 aa_td.innerHTML = `<table><tr><td class="aa aa${aa}">${aa}</td><td class="aa-count">${en[row].c}</td></tr></table>`;
                 // aa_td.classList.add(`aa${aa}`);
                 // aa_td.classList.add("aa");
