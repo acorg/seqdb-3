@@ -4,7 +4,7 @@
 .compare-sequences table { border-collapse: collapse; }
 
 .compare-sequences td.group-name { white-space: nowrap; vertical-align: top; font-weight: bold; padding-right: 1em; }
-.compare-sequences td.seq-id { padding-right: 1em; }
+.compare-sequences td.seq-id { white-space: nowrap; padding-right: 1em; }
 .compare-sequences tr.group-space { background: #F8F8F8; }
 .compare-sequences tr.group-space td { padding-top: 0.5em;  }
 
