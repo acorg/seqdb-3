@@ -3,6 +3,7 @@
 function compare_sequences(compare_sequences_data)
 {
     // console.log("compare_sequences_data", compare_sequences_data);
+    show_clear_differences(compare_sequences_data, document.querySelector("#compare-sequences .clear-differences"));
     show_most_frequent_per_group(compare_sequences_data, document.querySelector("#compare-sequences .most-frequent-per-group"));
     show_frequency_per_group(compare_sequences_data, document.querySelector("#compare-sequences .frequency-per-group"));
     show_positions_with_diversity(compare_sequences_data, document.querySelector("#compare-sequences .positions-with-diversity"));
@@ -286,6 +287,85 @@ function show_frequency_per_group(compare_sequences_data, div)
         }
     });
     div.appendChild(tab1);
+}
+
+// --------------------------------------------------------------------------------
+
+// https://stackoverflow.com/questions/51319147/map-default-value/51321724
+class MapWithDefault extends Map
+{
+    get(key) {
+        if (!this.has(key)) this.set(key, this.default());
+        return super.get(key);
+    }
+
+    constructor(defaultFunction, entries) {
+        super(entries);
+        this.default = defaultFunction;
+    }
+
+    increment(key) {
+        this.set(key, this.get(key) + 1);
+    }
+}
+
+function show_clear_differences(compare_sequences_data, div)
+{
+    // const add_aas = function(tr, positions, master_positions) {
+    //     compare_sequences_data.pos1.forEach(function(pos1, index) {
+    //         const aa = normalize_aa(positions[pos1][0].a);
+    //         const aa_td = document.createElement("td");
+    //         aa_td.classList.add(`aa${aa}`);
+    //         aa_td.classList.add("aa");
+    //         if (index > 0 && (index % 10 == 0 || index % 10 == 5))
+    //             aa_td.classList.add("sep-left-six");
+    //         if (master_positions && aa == master_positions[pos1][0].a)
+    //             aa_td.innerHTML = '&#xB7;';
+    //         else
+    //             aa_td.innerHTML = aa;
+    //         tr.appendChild(aa_td);
+    //     });
+    // };
+
+    // ----------------------------------------------------------------------
+
+    const pos1_mixed = new MapWithDefault(() => new MapWithDefault(() => 0));
+    compare_sequences_data.groups.forEach((group, index) => {
+        for (const pos1 in group.pos1) {
+            const mixed = pos1_mixed.get(pos1);
+            for (const aa_count of group.pos1[pos1]) {
+                mixed.increment(aa_count.a);
+            }
+        }
+    });
+    // console.log(pos1_mixed);
+    const pos1_difference = new MapWithDefault(() => true);
+    for (const [pos1, aa_count] of pos1_mixed.entries()) {
+        for (const [aa, count] of aa_count.entries()) {
+            if (count > 1)
+                pos1_difference.set(pos1, false);
+        }
+    }
+    // console.log(pos1_difference);
+    const pos1_clear_difference = compare_sequences_data.pos1.filter((pos1) => pos1_difference.get("" + pos1));
+    // console.log(pos1_clear_difference);
+
+    if (pos1_clear_difference.length) {
+        const title = document.createElement("p");
+        title.classList.add("title");
+        title.innerHTML = "Clear differences";
+        div.appendChild(title);
+
+        const tab1 = document.createElement("table");
+        tab1.appendChild(position_ruler(pos1_clear_difference, 1));
+        // compare_sequences_data.groups.forEach(function(group, index) {
+        //     const tr = document.createElement("tr");
+        //     tr.innerHTML = `<td class="group-name">${group.name}</td>`;
+        //     add_aas(tr, group.pos1, index == 0 ? null : compare_sequences_data.groups[0].pos1);
+        //     tab1.appendChild(tr);
+        // });
+        div.appendChild(tab1);
+    }
 }
 
 // --------------------------------------------------------------------------------
