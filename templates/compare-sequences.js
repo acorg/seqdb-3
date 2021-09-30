@@ -136,12 +136,12 @@ function normalize_aa(aa)
 
 // ----------------------------------------------------------------------
 
-function show_positions_with_diversity(compare_sequences_data, div)
+function show_positions(compare_sequences_data, div, positions)
 {
-    const add_ruler = function() { return position_ruler(compare_sequences_data.pos1, 2); };
+    const add_ruler = function() { return position_ruler(positions, 2); };
 
     const add_sequence = function(tr, seq, master) {
-        compare_sequences_data.pos1.forEach(function(pos1, index) {
+        positions.forEach(function(pos1, index) {
             const pos0 = pos1 - 1;
             const aa = normalize_aa(seq[pos0]);
             const aa_td = document.createElement("td");
@@ -159,11 +159,6 @@ function show_positions_with_diversity(compare_sequences_data, div)
 
     // ----------------------------------------------------------------------
 
-    const title = document.createElement("p");
-    title.classList.add("title");
-    title.innerHTML = "Positions with diversity";
-    div.appendChild(title);
-
     const tab1 = document.createElement("table");
     tab1.appendChild(add_ruler());
     for (let group of compare_sequences_data.groups) {
@@ -172,7 +167,7 @@ function show_positions_with_diversity(compare_sequences_data, div)
             if (index == 0 && !is_master) {
                 const tr_space = document.createElement("tr");
                 tr_space.classList.add("group-space");
-                tr_space.innerHTML = `<td colspan="${compare_sequences_data.pos1.length + 2}"></td>`;
+                tr_space.innerHTML = `<td colspan="${positions.length + 2}"></td>`;
                 tab1.appendChild(tr_space);
             }
             const tr = document.createElement("tr");
@@ -186,6 +181,18 @@ function show_positions_with_diversity(compare_sequences_data, div)
     }
     tab1.appendChild(add_ruler());
     div.appendChild(tab1);
+}
+
+// ----------------------------------------------------------------------
+
+function show_positions_with_diversity(compare_sequences_data, div)
+{
+    const title = document.createElement("p");
+    title.classList.add("title");
+    title.innerHTML = "Positions with diversity";
+    div.appendChild(title);
+
+    show_positions(compare_sequences_data, div, compare_sequences_data.pos1);
 }
 
 // --------------------------------------------------------------------------------
@@ -338,7 +345,6 @@ function show_clear_differences(compare_sequences_data, div)
             }
         }
     });
-    // console.log(pos1_mixed);
     const pos1_difference = new MapWithDefault(() => true);
     for (const [pos1, aa_count] of pos1_mixed.entries()) {
         for (const [aa, count] of aa_count.entries()) {
@@ -346,9 +352,7 @@ function show_clear_differences(compare_sequences_data, div)
                 pos1_difference.set(pos1, false);
         }
     }
-    // console.log(pos1_difference);
     const pos1_clear_difference = compare_sequences_data.pos1.filter((pos1) => pos1_difference.get("" + pos1));
-    // console.log(pos1_clear_difference);
 
     if (pos1_clear_difference.length) {
         const title = document.createElement("p");
@@ -356,15 +360,7 @@ function show_clear_differences(compare_sequences_data, div)
         title.innerHTML = "Clear differences";
         div.appendChild(title);
 
-        const tab1 = document.createElement("table");
-        tab1.appendChild(position_ruler(pos1_clear_difference, 1));
-        // compare_sequences_data.groups.forEach(function(group, index) {
-        //     const tr = document.createElement("tr");
-        //     tr.innerHTML = `<td class="group-name">${group.name}</td>`;
-        //     add_aas(tr, group.pos1, index == 0 ? null : compare_sequences_data.groups[0].pos1);
-        //     tab1.appendChild(tr);
-        // });
-        div.appendChild(tab1);
+        show_positions(compare_sequences_data, div, pos1_clear_difference);
     }
 }
 
