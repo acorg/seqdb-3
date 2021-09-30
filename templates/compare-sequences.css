@@ -34,10 +34,11 @@
 
 /* highlight column https://css-tricks.com/simple-css-row-column-highlighting/ */
 table { overflow: hidden; }
+tr:hover { background: #f8f8ff; border: 1px solid #a0a0ff; }
 td { position: relative; }
 td:hover::after {
     content: ""; position: absolute;
     background-color: #f8f8ff;
-    border-left: 1px solid #a0a0ff; border-right: 1px solid #a0a0ff;
+    border: 1px solid #a0a0ff;
     left: 0; top: -5000px; height: 10000px; width: 100%; z-index: -1;
 }
