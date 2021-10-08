@@ -21,7 +21,9 @@ namespace acmacs::seqdb::inline v3
         counters_t counters;
 
         subset_to_compare_base_t(std::string_view a_name) : name{a_name} {}
+        subset_to_compare_base_t(const subset_to_compare_base_t&) = default;
         virtual ~subset_to_compare_base_t() = default;
+        subset_to_compare_base_t& operator=(const subset_to_compare_base_t&) = default;
 
         virtual void make_counters(enum compare cmp_nuc_aa) = 0;
         size_t max_counter_size() const

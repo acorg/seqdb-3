@@ -897,7 +897,7 @@ std::string acmacs::seqdb::v3::subset::export_fasta(const collected_t& entries, 
 
 // ----------------------------------------------------------------------
 
-std::string acmacs::seqdb::v3::subset::export_json(const collected_t& entries, const export_options& options) const
+std::string acmacs::seqdb::v3::subset::export_json(const collected_t& entries, const export_options& /*options*/) const
 {
     to_json::array arr;
     for (const auto& en : entries) {
