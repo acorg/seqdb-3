@@ -278,14 +278,14 @@ int report(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>& sequenc
         if (subtypes[subtype] > 1000) {
             fmt::print(stderr, "  {:<10s}", subtype);
             size_t cnt = 0;
-            for (const auto& entry : sorted_by_count(entry)) {
-                if (entry.second < 100)
+            for (const auto& entry2 : sorted_by_count(entry)) {
+                if (entry2.second < 100)
                     break;
                 if (cnt > 14) {
                     fmt::print(stderr, "\n            ");
                     cnt = 0;
                 }
-                fmt::print(stderr, " {:6d}:{:4d}", entry.second, entry.first);
+                fmt::print(stderr, " {:6d}:{:4d}", entry2.second, entry2.first);
                 ++cnt;
             }
             fmt::print(stderr, "\n");
