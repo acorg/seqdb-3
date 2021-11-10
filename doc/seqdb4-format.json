@@ -18,10 +18,10 @@
                  "R": "<name> - reference to the seq entry with the same sequence",
                  "r": ["reassortant"],
                  "A": ["annotations"],
-
-                 "i": "<issues (letters): i - insertions, s - short, b - garbage_at_the_beginning, e - garbage_at_the_end, h - high_hamming_distance_bin>",
-                 "l": {"lab": ["lab_id"]},
                  "p": ["passage"],
+                 "i": "<issues (letters): i - insertions, s - short, b - garbage_at_the_beginning, e - garbage_at_the_end, h - high_hamming_distance_bin>",
+
+                 "l": {"lab": ["lab_id"]},
                  "G": {         //? gisaid data, added 2019-08-27
                      "i": ["isolate_id"],
                      "S": ["submitters"],
