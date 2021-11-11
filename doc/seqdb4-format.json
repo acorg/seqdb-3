@@ -20,15 +20,12 @@
                  "A": ["annotations"],
                  "p": ["passage"],
                  "i": "<issues (letters): i - insertions, s - short, b - garbage_at_the_beginning, e - garbage_at_the_end, h - high_hamming_distance_bin>",
-
                  "l": {"lab": ["lab_id"]},
-                 "G": {         //? gisaid data, added 2019-08-27
-                     "i": ["isolate_id"],
+                 "G": {         //? gisaid, ncbi data
+                     "i": ["accession_number"],
                      "S": ["submitters"],
-                     "s": ["sample_id_by_sample_provider"],
                      "m": ["gisaid_last_modified"],
                      "o": ["originating_lab"],
-                     "n": ["gisaid_segment_number"],
                      "t": ["gisaid_identifier"],
                      "D": ["gisaid_dna_accession_no"],
                      "d": ["gisaid_dna_insdc"]
