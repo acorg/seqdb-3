@@ -28,7 +28,7 @@
 #pragma GCC diagnostic ignored "-Wexit-time-destructors"
 #endif
 
-static std::string sSeqdbFilename = acmacs::acmacsd_root() + "/data/seqdb.json.xz";
+static std::string sSeqdbFilename = acmacs::seqdb_v3_dir() + "/seqdb.json.xz";
 
 #pragma GCC diagnostic pop
 
