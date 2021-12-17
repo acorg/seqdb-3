@@ -96,7 +96,7 @@ int main(int argc, char* const argv[])
         acmacs::seqdb::scan::detect_lineages_clades(all_sequences);
         // acmacs::seqdb::scan::fasta::sort_by_date(all_sequences);
         acmacs::seqdb::scan::match_hidb(all_sequences); // sorts all_sequences by name
-        acmacs::seqdb::scan::hamming_distance_bins_issues(all_sequences); // changes order of all_sequences
+        // acmacs::seqdb::scan::hamming_distance_bins_issues(all_sequences); // changes order of all_sequences
         if (!opt.dont_eliminate_identical)            // after hidb matching, because matching may change subtype (e.g. H3 -> H3N2) and it affectes reference to master
             acmacs::seqdb::scan::eliminate_identical(all_sequences); // changes order of all_sequences
         if (!opt.output_seqdb->empty()) {
@@ -319,6 +319,3 @@ void report_issues(const std::vector<acmacs::seqdb::scan::fasta::scan_result_t>&
 } // report_issues
 
 // ----------------------------------------------------------------------
-/// Local Variables:
-/// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
-/// End:
