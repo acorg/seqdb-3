@@ -233,6 +233,3 @@ namespace acmacs::seqdb::inline v3
 } // namespace acmacs::seqdb::inline v3
 
 // ----------------------------------------------------------------------
-/// Local Variables:
-/// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
-/// End:

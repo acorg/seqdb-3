@@ -225,6 +225,3 @@ void acmacs::seqdb::v3::detail::generate_html(std::string_view html_filename, st
 } // acmacs::seqdb::v3::detail::generate_html
 
 // ----------------------------------------------------------------------
-/// Local Variables:
-/// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
-/// End:
