@@ -195,7 +195,7 @@ namespace acmacs::seqdb::inline v3
 
         const auto prefix{html_filename.substr(0, html_filename.size() - 5)};
         const auto data_filename{fmt::format("{}.data.js", prefix)};
-        const auto data_var_name{fmt::format("compare_sequences_{}", ::string::replace(prefix, "/"sv, "_"sv, "-"sv, "_"sv))};
+        const auto data_var_name{fmt::format("compare_sequences_{}", ::string::replace(prefix, "/"sv, "_"sv, "-"sv, "_"sv, "."sv, "_"sv))};
         acmacs::file::write(data_filename, fmt::format("const {} =\n{}", data_var_name, data.format_json(2)));
 
         std::string data_filename_name{data_filename};
