@@ -16,12 +16,66 @@
 
 namespace acmacs::seqdb::inline v3
 {
+    class Seqdb;
     struct SeqdbSeq;
     struct SeqdbEntry;
-    struct ref;
     class subset;
 
     enum class even_if_already_popuplated { no, yes };
+
+    struct master_ref_t
+    {
+        std::string_view name;
+        std::string_view hash;
+
+        constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && hash == rhs.hash; }
+        constexpr bool operator!=(const master_ref_t& rhs) const { return !operator==(rhs); }
+        // std::string_view annotations;
+        // std::string_view reassortant;
+        // std::string_view passage;
+        // constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && annotations == rhs.annotations && reassortant == rhs.reassortant && passage == rhs.passage; }
+    };
+
+    struct ref
+    {
+        const SeqdbEntry* entry;
+        size_t seq_index;
+        size_t group_no{0};             // for group_by_hamming_distance
+        size_t hamming_distance{0};     // for group_by_hamming_distance and nuc_hamming_distance_to_base, printed using {hamming_distance}
+        bool marked_for_removal{false}; // py-seqdb remove_nuc_duplicates_by_aligned_truncated
+
+        ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
+        ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
+        ref(const SeqdbEntry& a_entry, size_t a_index) : entry{&a_entry}, seq_index{a_index} {}
+
+        constexpr bool operator==(const ref& rhs) const { return entry == rhs.entry && seq_index == rhs.seq_index; }
+        constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
+        constexpr explicit operator bool() const { return entry != nullptr; }
+        constexpr bool empty() const { return entry == nullptr; }
+
+        const SeqdbSeq& seq() const;
+        const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const;
+        bool is_master() const;
+        bool is_hi_matched() const;
+        seq_id_t seq_id() const;
+        std::string full_name() const;
+        std::string full_name_with_date() const;
+        std::string hi_name_or_full_name() const;
+        bool has_issues(const Seqdb& seqdb) const;
+        bool has_lab(std::string_view lab) const;
+        bool has_clade(const Seqdb& seqdb, std::string_view clade) const;
+        bool has_hi_names() const;
+        bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const;
+        bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const;
+        bool matches(const master_ref_t& master) const;
+
+        sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const;
+        sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const;
+        size_t aa_aligned_length(const Seqdb& seqdb) const;
+        size_t nuc_aligned_length(const Seqdb& seqdb) const;
+        char aa_at_pos(const Seqdb& seqdb, pos0_t pos0) const;
+        char aa_at_pos(const Seqdb& seqdb, pos1_t pos1) const;
+    };
 
     using seq_id_index_t = map_with_duplicating_keys_t<seq_id_t, ref>; // duplicating seq_ids without hash present (for backward compatibility)
     using hi_name_index_t = map_with_unique_keys_t<std::string_view, ref>;
@@ -95,7 +149,10 @@ namespace acmacs::seqdb::inline v3
     };
 
     void setup(std::string_view filename);
-    inline const Seqdb& get() { return Seqdb::get(); }
+    inline const Seqdb& get()
+    {
+        return Seqdb::get();
+    }
     void populate(acmacs::chart::ChartModify& chart, even_if_already_popuplated eiap = even_if_already_popuplated::no);
 
     extern template subset Seqdb::match(const acmacs::chart::Antigens&, std::string_view) const;
@@ -116,7 +173,7 @@ namespace acmacs::seqdb::inline v3
         aligned e_aligned{aligned::yes};
         most_common_length e_most_common_length{most_common_length::no};
         std::string e_name_format{"{seq_id}"};
-        size_t e_length{0};     // truncate/extend all sequences to this length
+        size_t e_length{0};                    // truncate/extend all sequences to this length
         size_t e_deletion_report_threshold{4}; // if sequence has this or more deletions, report the name.
         bool e_report_deletions_at_the_end{false};
 
@@ -179,30 +236,18 @@ namespace acmacs::seqdb::inline v3
     {
         using lab_ids_t = std::vector<std::string_view>;
         using labs_t = std::vector<std::pair<std::string_view, lab_ids_t>>;
+        using master_ref_t = acmacs::seqdb::v3::master_ref_t;
 
         struct gisaid_data_t
         {
-            std::vector<std::string_view> isolate_ids; // gisaid accession numbers
+            std::vector<std::string_view> isolate_ids;                   // gisaid accession numbers
             std::vector<std::string_view> sample_ids_by_sample_provider; // ncbi accession numbers
         };
 
-        struct master_ref_t
-        {
-            std::string_view name;
-            std::string_view hash;
-
-            constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && hash == rhs.hash; }
-            constexpr bool operator!=(const master_ref_t& rhs) const { return !operator==(rhs); }
-            // std::string_view annotations;
-            // std::string_view reassortant;
-            // std::string_view passage;
-            // constexpr bool operator==(const master_ref_t& rhs) const { return name == rhs.name && annotations == rhs.annotations && reassortant == rhs.reassortant && passage == rhs.passage; }
-        };
-
         // sequence either contains nucs, amino_acids, clades or reference master sequence with the same nucs
-        master_ref_t master; // for slave only
+        master_ref_t master;                       // for slave only
         sequence_with_alignment_ref_t amino_acids; // for master only
-        sequence_with_alignment_ref_t nucs; // for master only
+        sequence_with_alignment_ref_t nucs;        // for master only
         std::string_view annotations;
         std::vector<std::string_view> reassortants;
         std::vector<std::string_view> passages;
@@ -228,7 +273,8 @@ namespace acmacs::seqdb::inline v3
         {
             return hash == other_reference.hash;
             // return annotations == other_reference.annotations &&
-            //        ((other_reference.reassortant.empty() && reassortants.empty()) || std::find(std::begin(reassortants), std::end(reassortants), other_reference.reassortant) != std::end(reassortants)) &&
+            //        ((other_reference.reassortant.empty() && reassortants.empty()) || std::find(std::begin(reassortants), std::end(reassortants), other_reference.reassortant) !=
+            //        std::end(reassortants)) &&
             //        ((other_reference.passage.empty() && passages.empty()) || (!passages.empty() && passages.front() == other_reference.passage)); // the first passage must match
         }
 
@@ -282,57 +328,6 @@ namespace acmacs::seqdb::inline v3
 
     // ----------------------------------------------------------------------
 
-    struct ref
-    {
-        const SeqdbEntry* entry;
-        size_t seq_index;
-        size_t group_no{0};         // for group_by_hamming_distance
-        size_t hamming_distance{0}; // for group_by_hamming_distance and nuc_hamming_distance_to_base, printed using {hamming_distance}
-        bool marked_for_removal{false}; // py-seqdb remove_nuc_duplicates_by_aligned_truncated
-
-        ref() : entry{nullptr}, seq_index{static_cast<size_t>(-1)} {}
-        ref(const SeqdbEntry* a_entry, size_t a_index) : entry{a_entry}, seq_index{a_index} {}
-        ref(const SeqdbEntry& a_entry, size_t a_index) : entry{&a_entry}, seq_index{a_index} {}
-
-        constexpr bool operator==(const ref& rhs) const { return entry == rhs.entry && seq_index == rhs.seq_index; }
-        constexpr bool operator!=(const ref& rhs) const { return !operator==(rhs); }
-        constexpr explicit operator bool() const { return entry != nullptr; }
-        constexpr bool empty() const { return entry == nullptr; }
-
-        const SeqdbSeq& seq() const { return entry->seqs[seq_index]; }
-        const SeqdbSeq& seq_with_sequence(const Seqdb& seqdb) const { return seq().with_sequence(seqdb); }
-        bool is_master() const { return seq().is_master(); }
-        bool is_hi_matched() const { return !seq().hi_names.empty(); }
-        seq_id_t seq_id() const;
-        std::string full_name() const { return acmacs::string::join(acmacs::string::join_space, entry->name, acmacs::string::join(acmacs::string::join_space, seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()); }
-        std::string full_name_with_date() const
-        {
-            return fmt::format("{} [{}]", acmacs::string::join(acmacs::string::join_space, entry->name, acmacs::string::join(acmacs::string::join_space, seq().reassortants), seq().passages.empty() ? std::string_view{} : seq().passages.front()),
-                               entry->date());
-        }
-        std::string hi_name_or_full_name() const
-        {
-            if (seq().hi_names.empty())
-                return full_name();
-            else
-                return std::string{seq().hi_names.front()};
-        }
-        bool has_issues(const Seqdb& seqdb) const { return !seq_with_sequence(seqdb).issues.none(); }
-        bool has_lab(std::string_view lab) const { return seq().has_lab(lab); }
-        bool has_clade(const Seqdb& seqdb, std::string_view clade) const { return seq_with_sequence(seqdb).has_clade_master(clade); }
-        bool has_hi_names() const { return !seq().hi_names.empty(); }
-        bool matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
-        bool matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const { return seq().matches(aa_at_pos1); }
-        constexpr bool matches(const SeqdbSeq::master_ref_t& master) const { return entry->name == master.name && seq().matches_without_name(master); }
-
-        sequence_aligned_ref_t aa_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).aa_aligned_master(length); }
-        sequence_aligned_ref_t nuc_aligned(const Seqdb& seqdb, size_t length = std::string_view::npos) const { return seq_with_sequence(seqdb).nuc_aligned_master(length); }
-        size_t aa_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).aa_aligned_length_master(); }
-        size_t nuc_aligned_length(const Seqdb& seqdb) const { return seq_with_sequence(seqdb).nuc_aligned_length_master(); }
-        char aa_at_pos(const Seqdb& seqdb, pos0_t pos0) const { return seq_with_sequence(seqdb).aa_at_pos_master(pos0); }
-        char aa_at_pos(const Seqdb& seqdb, pos1_t pos1) const { return seq_with_sequence(seqdb).aa_at_pos_master(pos1); }
-    };
-
     class subset
     {
       public:
@@ -344,7 +339,7 @@ namespace acmacs::seqdb::inline v3
         enum class master_only { no, yes };
 
         subset() = default;
-        subset(iterator first, iterator last) : refs_{first, last} {} // copy of the part of another subset
+        subset(iterator first, iterator last) : refs_{first, last} {}             // copy of the part of another subset
         subset(const_iterator first, const_iterator last) : refs_{first, last} {} // copy of the part of another subset
 
         auto empty() const { return refs_.empty(); }
@@ -377,7 +372,7 @@ namespace acmacs::seqdb::inline v3
         subset& remove_empty(const Seqdb& seqdb, bool nuc);
         subset& remove_with_front_back_deletions(const Seqdb& seqdb, bool remove, size_t nuc_length);
         subset& remove_with_deletions(const Seqdb& seqdb, bool remove, size_t threshold); // remove if number of deletions >= threshold
-        subset& remove_marked(); // ref::marked_for_removal
+        subset& remove_marked();                                                          // ref::marked_for_removal
         subset& with_hi_name(bool with_hi_name);
         subset& aa_at_pos(const Seqdb& seqdb, const amino_acid_at_pos1_eq_list_t& aa_at_pos);
         subset& nuc_at_pos(const Seqdb& seqdb, const nucleotide_at_pos1_eq_list_t& nuc_at_pos);
@@ -412,7 +407,8 @@ namespace acmacs::seqdb::inline v3
             return *this;
         }
 
-        subset& append(const subset& another) {
+        subset& append(const subset& another)
+        {
             for (const auto& en : another)
                 append(en);
             return *this;
@@ -479,7 +475,96 @@ namespace acmacs::seqdb::inline v3
 
     void remove_nuc_duplicates(subset::refs_t& refs, bool keep_hi_matched = false);
 
-} // namespace acmacs::seqdb::inlinev3
+    inline bool ref::matches(const SeqdbSeq::master_ref_t& master) const
+    {
+        return entry->name == master.name && seq().matches_without_name(master);
+    }
+    inline const SeqdbSeq& ref::seq() const
+    {
+        return entry->seqs[seq_index];
+    }
+    inline const SeqdbSeq& ref::seq_with_sequence(const Seqdb& seqdb) const
+    {
+        return seq().with_sequence(seqdb);
+    }
+    inline bool ref::is_master() const
+    {
+        return seq().is_master();
+    }
+    inline bool ref::is_hi_matched() const
+    {
+        return !seq().hi_names.empty();
+    }
+
+    inline std::string ref::full_name() const
+    {
+        return acmacs::string::join(acmacs::string::join_space, entry->name, acmacs::string::join(acmacs::string::join_space, seq().reassortants),
+                                    seq().passages.empty() ? std::string_view{} : seq().passages.front());
+    }
+    inline std::string ref::full_name_with_date() const
+    {
+        return fmt::format("{} [{}]",
+                           acmacs::string::join(acmacs::string::join_space, entry->name, acmacs::string::join(acmacs::string::join_space, seq().reassortants),
+                                                seq().passages.empty() ? std::string_view{} : seq().passages.front()),
+                           entry->date());
+    }
+    inline std::string ref::hi_name_or_full_name() const
+    {
+        if (seq().hi_names.empty())
+            return full_name();
+        else
+            return std::string{seq().hi_names.front()};
+    }
+    inline bool ref::has_issues(const Seqdb& seqdb) const
+    {
+        return !seq_with_sequence(seqdb).issues.none();
+    }
+    inline bool ref::has_lab(std::string_view lab) const
+    {
+        return seq().has_lab(lab);
+    }
+    inline bool ref::has_clade(const Seqdb& seqdb, std::string_view clade) const
+    {
+        return seq_with_sequence(seqdb).has_clade_master(clade);
+    }
+    inline bool ref::has_hi_names() const
+    {
+        return !seq().hi_names.empty();
+    }
+    inline bool ref::matches(const amino_acid_at_pos1_eq_list_t& aa_at_pos1) const
+    {
+        return seq().matches(aa_at_pos1);
+    }
+    inline bool ref::matches(const amino_acid_at_pos1_list_t& aa_at_pos1) const
+    {
+        return seq().matches(aa_at_pos1);
+    }
+    inline sequence_aligned_ref_t ref::aa_aligned(const Seqdb& seqdb, size_t length) const
+    {
+        return seq_with_sequence(seqdb).aa_aligned_master(length);
+    }
+    inline sequence_aligned_ref_t ref::nuc_aligned(const Seqdb& seqdb, size_t length) const
+    {
+        return seq_with_sequence(seqdb).nuc_aligned_master(length);
+    }
+    inline size_t ref::aa_aligned_length(const Seqdb& seqdb) const
+    {
+        return seq_with_sequence(seqdb).aa_aligned_length_master();
+    }
+    inline size_t ref::nuc_aligned_length(const Seqdb& seqdb) const
+    {
+        return seq_with_sequence(seqdb).nuc_aligned_length_master();
+    }
+    inline char ref::aa_at_pos(const Seqdb& seqdb, pos0_t pos0) const
+    {
+        return seq_with_sequence(seqdb).aa_at_pos_master(pos0);
+    }
+    inline char ref::aa_at_pos(const Seqdb& seqdb, pos1_t pos1) const
+    {
+        return seq_with_sequence(seqdb).aa_at_pos_master(pos1);
+    }
+
+} // namespace acmacs::seqdb::inline v3
 
 // ----------------------------------------------------------------------
 
@@ -491,6 +576,3 @@ template <> struct fmt::formatter<acmacs::seqdb::v3::ref> : fmt::formatter<acmac
 };
 
 // ----------------------------------------------------------------------
-/// Local Variables:
-/// eval: (if (fboundp 'eu-rename-buffer) (eu-rename-buffer))
-/// End:
