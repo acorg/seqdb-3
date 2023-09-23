@@ -138,9 +138,9 @@ template <> struct fmt::formatter<acmacs::seqdb::amino_acid_nucleotide_at_pos1_e
     template <typename AA_NUC, typename FormatContext> auto format(const AA_NUC& pos1_aa_eq, FormatContext& ctx)
     {
         if (std::get<bool>(pos1_aa_eq))
-            return format_to(ctx.out(), "{}{}", std::get<acmacs::seqdb::pos1_t>(pos1_aa_eq), std::get<char>(pos1_aa_eq));
+            return fmt::format_to(ctx.out(), "{}{}", std::get<acmacs::seqdb::pos1_t>(pos1_aa_eq), std::get<char>(pos1_aa_eq));
         else
-            return format_to(ctx.out(), "!{}{}", std::get<acmacs::seqdb::pos1_t>(pos1_aa_eq), std::get<char>(pos1_aa_eq));
+            return fmt::format_to(ctx.out(), "!{}{}", std::get<acmacs::seqdb::pos1_t>(pos1_aa_eq), std::get<char>(pos1_aa_eq));
     }
 };
 

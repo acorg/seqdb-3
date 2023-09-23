@@ -339,11 +339,11 @@ template <> struct fmt::formatter<acmacs::seqdb::v3::scan::deletions_insertions_
     template <typename FormatCtx> auto format(const acmacs::seqdb::v3::scan::deletions_insertions_t& value, FormatCtx& ctx)
     {
         for (const auto& del : value.deletions)
-            format_to(ctx.out(), " DEL-{}-{}", del.pos, del.num);
+            fmt::format_to(ctx.out(), " DEL-{}-{}", del.pos, del.num);
         for (const auto& ins : value.insertions)
-            format_to(ctx.out(), " INS-{}-{}", ins.pos, ins.num);
+            fmt::format_to(ctx.out(), " INS-{}-{}", ins.pos, ins.num);
         if (value.deletions.empty() && value.insertions.empty())
-            format_to(ctx.out(), "<none>");
+            fmt::format_to(ctx.out(), "<none>");
         return ctx.out();
     }
 };

@@ -137,11 +137,11 @@ template <> struct fmt::formatter<acmacs::seqdb::sequence_aligned_t>
     template <typename Seq, typename FormatContext> auto format(const Seq& seq, FormatContext& ctx)
     {
         if (first_ == acmacs::seqdb::pos1_t{0})
-            return format_to(ctx.out(), "{}", *seq);
+            return fmt::format_to(ctx.out(), "{}", *seq);
         else if (len_ == 0 || len_ == 1)
-            return format_to(ctx.out(), "{}", seq.at(first_));
+            return fmt::format_to(ctx.out(), "{}", seq.at(first_));
         else
-            return format_to(ctx.out(), "{}", seq->substr(*first_ - 1, len_));
+            return fmt::format_to(ctx.out(), "{}", seq->substr(*first_ - 1, len_));
     }
 
   private:

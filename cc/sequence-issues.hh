@@ -38,10 +38,10 @@ template <> struct fmt::formatter<acmacs::seqdb::v3::sequence::issues_t> : fmt::
         for (auto iss = static_cast<size_t>(issue::not_aligned); iss < number_of_issues; ++iss) {
             if (has(issues, static_cast<issue>(iss))) {
                 if (!first)
-                    format_to(ctx.out(), " ");
+                    fmt::format_to(ctx.out(), " ");
                 else
                     first = false;
-                format_to(ctx.out(), "{}", issue_name[iss]);
+                fmt::format_to(ctx.out(), "{}", issue_name[iss]);
             }
         }
         return ctx.out();

@@ -571,7 +571,7 @@ namespace acmacs::seqdb::inline v3
 template <> struct fmt::formatter<acmacs::seqdb::v3::ref> : fmt::formatter<acmacs::fmt_helper::default_formatter> {
     template <typename FormatCtx> auto format(const acmacs::seqdb::v3::ref& rf, FormatCtx& ctx)
     {
-        return format_to(ctx.out(), "{}", rf.seq_id());
+        return fmt::format_to(ctx.out(), "{}", rf.seq_id());
     }
 };
 
